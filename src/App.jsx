@@ -53,19 +53,7 @@ export default function LandingBolivar() {
           </div>
         </div>
 
-        {/* Imagen Empresaria 1 - Corregida */}
-<div className="relative flex justify-center items-center">
-  {/* Resplandor de fondo */}
-  <div className="absolute -inset-4 bg-emerald-500/10 rounded-[3rem] blur-3xl"></div>
-  
-  <div className="relative rounded-[3rem] border border-white/10 overflow-hidden bg-gradient-to-b from-transparent to-emerald-900/20">
-    <img 
-      src={heroImg} 
-      alt="Representante Inmobiliaria" 
-      className="w-full h-auto max-h-[600px] object-contain drop-shadow-2xl transform  "
-    />
-  </div>
-</div>
+      
       </header>
 
       {/* --- SECCIÓN DE VALORES (Cuerpo Blanco) --- */}
