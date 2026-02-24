@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from "react"; // IMPORTANTE: Agregamos useState
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo.png";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
+import bgBolivar from "../../assets/Pzo.jpg";
 import Navbar2 from "../../Components/Navbar_sc";
 
 // 1. EL HOOK DEBE ESTAR AQUÍ AFUERA

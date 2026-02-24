@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo.png";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
+import bgBolivar from "../../assets/Pzo.jpg";
 import Navbar2 from "../../Components/Navbar_sc";
 
 const useScrollReveal = () => {
@@ -49,7 +49,7 @@ export default function MisionVision() {
             className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs animate-header-text" 
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
-            Propósito Gremial
+            Mision y visión
           </p>
           <h1 
             className="text-5xl lg:text-7xl font-black tracking-tighter animate-header-text"

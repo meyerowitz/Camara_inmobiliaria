@@ -7,8 +7,9 @@ import MisionVision from './pages/MisionVision/MisionVision';
 import JuntaDirectiva from './pages/Juntadirectiva/JuntaDirectiva';
 import Historia from './pages/Historia/Historia';
 import CIV from './pages/CIV/Civ'
-import Direccion
- from './pages/Direccion/Direccion';
+import Direccion from './pages/Direccion/Direccion';
+import Proposito from './pages/Proposito/Proposito';
+
 export default function LandingBolivar() {
  
   return (
@@ -21,6 +22,7 @@ export default function LandingBolivar() {
         <Route path='/historia' element={<Historia/>} />
         <Route path='/codigo_etica' element={<CIV/>} />
         <Route path='/direccion' element={<Direccion/>} />
+        <Route path='/proposito' element={<Proposito/>} />
       </Routes>
     </BrowserRouter>
   );
