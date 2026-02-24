@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
 import Navbar2 from "../../Components/Navbar_sc";
+import actaPDF from './acta.pdf';
 
 const useScrollReveal = () => {
   const [ref, setRef] = useState(null);
@@ -79,8 +80,10 @@ export default function CodigoEtica() {
                 Ponemos a disposición de nuestros afiliados y el público general el texto íntegro que rige el ejercicio inmobiliario en Venezuela.
               </p>
               <a 
-                href="/docs/codigo-etica-civ.pdf" 
-                target="_blank"
+                href={actaPDF}
+                download="Acta_Oficial.pdf" // 3. Forzar descarga con un nombre bonito
+      target="_blank"
+      rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-10 py-5 bg-emerald-500 text-[#022c22] rounded-full font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-400 transition-all shadow-2xl shadow-emerald-500/20 active:scale-95"
               >
                 Descargar PDF Oficial
