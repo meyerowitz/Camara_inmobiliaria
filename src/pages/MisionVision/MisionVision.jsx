@@ -2,36 +2,41 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo.png";
 import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../Components/Navbar_sc";
+
+const useScrollReveal = () => {
+  const [ref, setRef] = useState(null);
+
+  useEffect(() => {
+    if (!ref) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("active");
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(ref);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return setRef;
+};
 
 export default function MisionVision() {
   const navigate = useNavigate();
   const [darkMode] = useState(true);
+  const setRevealMision = useScrollReveal();
+  const setRevealVision = useScrollReveal();
 
   return (
     <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
-      {/* --- NAVBAR SIMPLIFICADO --- */}
-      <nav className="flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b border-white/10 bg-[#011a14]/90">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-          <img src={logo} alt="Logo Cámara" className="h-10 w-auto object-contain" />
-          <div className="hidden sm:block leading-tight">
-            <p className="text-white font-bold text-sm tracking-widest uppercase">Cámara Inmobiliaria</p>
-            <p className="text-emerald-500 text-[10px] font-bold">Estado Bolívar</p>
-          </div>
-        </div>
-        <button
-          onClick={() => navigate("/")}
-          className="flex items-center gap-2 px-6 py-2 bg-emerald-500 text-[#022c22] rounded-full text-xs font-black uppercase tracking-widest hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          Inicio
-        </button>
-      </nav>
-
+  
+      <Navbar2/>
       {/* --- HERO SECTION --- */}
       <header
-        className="relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover"
+        className="relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover animate-header-bg"
         style={{
           backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.85), rgba(2, 44, 34, 0.85)), url(${bgBolivar})`,
           backgroundSize: "cover",
@@ -40,10 +45,24 @@ export default function MisionVision() {
         }}
       >
         <div className="text-center space-y-4">
-          <p className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs">Propósito Gremial</p>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter">
+          <p 
+            className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs animate-header-text" 
+            style={{ animationDelay: "0.2s", opacity: 0 }}
+          >
+            Propósito Gremial
+          </p>
+          <h1 
+            className="text-5xl lg:text-7xl font-black tracking-tighter animate-header-text"
+            style={{ animationDelay: "0.4s", opacity: 0 }}
+          >
             Nuestra <span className="text-emerald-500 italic">Esencia</span>
           </h1>
+          <p 
+            className="text-emerald-100/60 text-sm tracking-widest uppercase font-medium animate-header-text" 
+            style={{ animationDelay: "0.5s", opacity: 0 }}
+          >
+            Valores y Compromiso
+          </p>
         </div>
       </header>
 

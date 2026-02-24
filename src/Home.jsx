@@ -1,60 +1,360 @@
-import React, { useState, useEffect } from "react";
-import logo from "./assets/Logo.png";
+import React, { useState, useEffect, useRef } from "react";
+import logoA from "./assets/Logo2.png";
+import logo from "./assets/Logo3.png";
 import heroImg from "./assets/empresaria.png";
 import featureImg from "./assets/empresaria_3.png";
 import LoginModal from "./Components/LoginModal";
 import RegisterModal from "./Components/RegisterModal";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import bgBolivar from "./assets/Camara_Metropolitana.jpg";
-import Mision_img from "./assets/Mision.jpeg";
 
-const NavItem = ({ title, options }) => {
-  const [isOpen, setIsOpen] = useState(false);
+
+import Mision_img from "./assets/Mision.jpeg";
+import Navbar from "./Components/Navbar";
+import Header from "./Components/Header";
+
+const Counter = ({ end, duration = 2000, suffix = "" }) => {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const elementRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.5 } // Se activa cuando el 50% del número es visible
+    );
+
+    if (elementRef.current) observer.observe(elementRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    let start = 0;
+    const increment = end / (duration / 16); // 16ms aprox por frame (60fps)
+    
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+
+    return () => clearInterval(timer);
+  }, [hasStarted, end, duration]);
+
+  return <span ref={elementRef}>{count}{suffix}</span>;
+};
+
+const FormacionSection = ({ revealTitle, revealPanels }) => {
+  const cursos = [
+    { 
+      id: "PREANI", 
+      titulo: "Programa de Estudios Académicos", 
+      sub: "Inmobiliarios Nivel Inicial",
+      img: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200"
+    },
+    { 
+      id: "CIBIR", 
+      titulo: "Curso Intensivo de Bienes Raíces", 
+      sub: "Capacitación Técnica Avanzada",
+      img: "https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png"
+    },
+    { 
+      id: "PEGI", 
+      titulo: "Programa Ejecutivo", 
+      sub: "Gestión Inmobiliaria Estratégica",
+      img: "https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp"
+    }
+  ];
 
   return (
-    <div
-      className="relative group"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
-    >
-      <button className="flex items-center gap-1 hover:text-emerald-400 transition py-2 font-medium font-bold text-sm">
-        {title}
-        {options && (
-          <svg
-            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        )}
-      </button>
+    <section id="formacion" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden">
+      {/* Encabezado */}
+      <div ref={revealTitle} className="mb-16 reveal-on-scroll">
+        <p className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4">Potencia tu carrera</p>
+        <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">Formación</h2>
+      </div>
 
-      {options && isOpen && (
-        <div className="absolute top-full left-0 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]">
-          {options.map((opt, idx) => {
-            const label = typeof opt === "string" ? opt : opt.label;
-            const path = typeof opt === "string" ? "/" : opt.path;
-            return (
-              <Link
-                key={idx}
-                to={path}
-                className="block px-4 py-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-600 transition text-xs font-bold"
-              >
-                {label}
-              </Link>
-            );
-          })}
+      {/* Grid de Cards Redondeadas */}
+      <div 
+        ref={revealPanels} 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 reveal-on-scroll"
+      >
+        {cursos.map((curso) => (
+          <div
+            key={curso.id}
+            className="group relative h-[500px] overflow-hidden rounded-[3rem] border border-white/10 bg-emerald-900/20 transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-emerald-900/50"
+          >
+            {/* Imagen de fondo con Zoom */}
+            <div className="absolute inset-0 z-0">
+              <img 
+                src={curso.img} 
+                alt={curso.titulo}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
+              {/* Overlay Gradiente */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#022c22] via-[#022c22]/60 to-transparent opacity-90" />
+            </div>
+
+            {/* Contenido */}
+            <div className="relative z-10 h-full flex flex-col justify-end p-10 space-y-4">
+              <div className="flex justify-between items-start">
+                <span className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 text-emerald-400 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                  {curso.id}
+                </span>
+                <span className="text-4xl font-black text-white/10 group-hover:text-emerald-500/20 transition-colors">
+                  0{cursos.indexOf(curso) + 1}
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-2xl lg:text-3xl font-black text-white leading-tight mb-2">
+                  {curso.titulo}
+                </h3>
+                <p className="text-emerald-100/60 text-sm font-medium leading-relaxed">
+                  {curso.sub}
+                </p>
+              </div>
+
+              <div className="pt-4">
+                <button className="w-full py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22]">
+                  Ver detalles del programa
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+const ConveniosSection = ({ revealTextConvenios }) => {
+  const logos = [
+    { name: "UCAB", url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s" },
+    { name: "Total Salud", url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s" },
+    { name: "Fénix Salud", url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s" },
+    { name: "Aliado 4", url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s" },
+  ];
+
+  // Inyectamos el CSS de la animación directamente para asegurar que funcione
+  const marqueeStyle = `
+    @keyframes marquee-infinite {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    .animate-marquee-infinite {
+      display: flex;
+      width: max-content;
+      animation: marquee-infinite 20s linear infinite;
+    }
+    .pause-on-hover:hover {
+      animation-play-state: paused;
+    }
+  `;
+
+  return (
+    <section id="convenios" className="bg-white py-10 scroll-mt-24 overflow-hidden">
+      <style>{marqueeStyle}</style>
+      
+      <div className="max-w-7xl mx-auto px-6 lg:px-20 mb-16">
+        <div ref={revealTextConvenios} className="space-y-4 reveal-on-scroll -ml-8">
+          <h2 className="text-5xl lg:text-7xl font-bold text-[#333333] tracking-tighter -ml-4">
+            Convenios y beneficios
+          </h2>
         </div>
-      )}
-    </div>
+
+        {/* Contenedor Capsular */}
+        <div className="relative mt-16 bg-slate-50 border border-gray-100 rounded-[3rem] py-12 overflow-hidden">
+          
+          {/* Sombras laterales para efecto de desvanecimiento */}
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+          
+          <div className="flex">
+            {/* Esta es la tira que se mueve */}
+            <div className="animate-marquee-infinite pause-on-hover flex items-center">
+              {/* Duplicamos los logos 2 veces para el loop perfecto */}
+              {[...logos, ...logos, ...logos, ...logos].map((logo, i) => (
+                <div 
+                  key={i} 
+                  className="mx-10 lg:mx-16 flex-shrink-0 grayscale opacity-40 hover:opacity-100 hover:grayscale-0 transition-all duration-500 transform hover:scale-110"
+                >
+                  <img src={logo.url} alt={logo.name} className="h-12 w-auto object-contain" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Link inferior */}
+        <div className="pt-10 border-t border-gray-100">
+            <a href="#cursos" className="group flex items-center gap-3">
+              <span className="text-emerald-600 font-black uppercase tracking-widest text-xs group-hover:mr-4 transition-all">
+                Conoce nuestros programas de formación inmobiliaria
+              </span>
+              <div className="h-[2px] w-12 bg-emerald-500 group-hover:w-24 transition-all"></div>
+            </a>
+          </div>
+      </div>
+    </section>
+  );
+};
+
+const NoticiasSection = ({ scrollRef }) => {
+  const noticiasOriginales = [
+    {
+      t: "Nuevas tasas de registro 2026",
+      d: "Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.",
+      img: "https://www.24horas.cl/24horas/site/artic/20260209/imag/foto_0000000320260209041236/MOCHILA_NOCTURNA_4.1_frame_159829.jpeg",
+      tag: "Legal",
+    },
+    {
+      t: "Crecimiento en Puerto Ordaz",
+      d: "La zona industrial y comercial muestra signos de recuperación tras nuevas inversiones.",
+      img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
+      tag: "Mercado",
+    },
+    {
+      t: "Taller de Ventas Digitales",
+      d: "Éxito total en el último evento presencial realizado en el Hotel Eurobuilding.",
+      img: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800",
+      tag: "Eventos",
+    },
+    {
+      t: "Innovación Inmobiliaria",
+      d: "Nuevas tecnologías aplicadas al sector de bienes raíces en la región.",
+      img: "https://www.elnuevoherald.com/public/ultimas-noticias/5hl2um/picture314557289/alternates/LANDSCAPE_1140/CONDO11.jpg",
+      tag: "Tecnología",
+    }
+  ];
+
+  // Duplicamos las noticias para crear el efecto de loop infinito
+  const noticias = [...noticiasOriginales, ...noticiasOriginales];
+
+  const scroll = (direction) => {
+    const { current } = scrollRef;
+    if (!current) return;
+
+    const cardWidth = current.offsetWidth / 3;
+    const maxScroll = current.scrollWidth - current.offsetWidth;
+
+    if (direction === 'right') {
+      // Si estamos cerca del final del set duplicado, saltamos al inicio sin que se note
+      if (current.scrollLeft >= maxScroll - 10) {
+        current.scrollTo({ left: 0, behavior: 'instant' });
+      } else {
+        current.scrollBy({ left: cardWidth, behavior: 'smooth' });
+      }
+    } else {
+      if (current.scrollLeft <= 0) {
+        current.scrollTo({ left: maxScroll, behavior: 'instant' });
+      } else {
+        current.scrollBy({ left: -cardWidth, behavior: 'smooth' });
+      }
+    }
+  };
+
+  // Efecto para movimiento automático cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      scroll('right');
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section id="noticias" className="bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden  rounded-b-[4rem]">
+      
+      {/* Encabezado */}
+      <div className="max-w-8xl mx-auto flex justify-between items-end mb-12">
+        <div>
+          <h2 className="text-4xl lg:text-5xl font-bold text-[#022c22] tracking-tighter">
+            Actualidad y Noticias
+          </h2>
+          <p className="text-slate-500 mt-2 font-medium">
+            Mantente informado sobre el mercado inmobiliario.
+          </p>
+        </div>
+        <button className="hidden md:flex text-emerald-600 font-bold hover:text-emerald-800 transition-colors items-center gap-2">
+          Ver todas <span className="text-xl">→</span>
+        </button>
+      </div>
+
+      {/* Contenedor Relativo para Flechas y Scroll */}
+      <div className="relative max-w-8xl mx-auto group">
+        
+        {/* Flecha Izquierda */}
+        <button 
+          onClick={() => scroll('left')}
+          className="absolute -left-4 lg:-left-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 hidden md:block"
+        >
+          <span className="block rotate-180 text-xl font-bold">→</span>
+        </button>
+
+        {/* Contenedor del Scroll */}
+        <div 
+          ref={scrollRef}
+          className="flex gap-10 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-8"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {noticias.map((news, i) => (
+            <div 
+              key={i} 
+              className="min-w-full md:min-w-[calc(50%-20px)] lg:min-w-[calc(33.333%-27px)] snap-start group/card cursor-pointer"
+            >
+              <div className="relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5">
+                <div className="absolute inset-0 bg-emerald-900/20 opacity-0 group-hover/card:opacity-100 transition-opacity z-10 duration-500" />
+                <img
+                  src={news.img}
+                  alt={news.t}
+                  className="w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out"
+                />
+                <span className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-sm text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
+                  {news.tag}
+                </span>
+              </div>
+
+              <div className="space-y-3 px-2">
+                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.2em]">
+                  Bolívar • Feb 2026
+                </p>
+                <h4 className="text-2xl font-bold leading-tight text-[#022c22] group-hover/card:text-emerald-600 transition-colors">
+                  {news.t}
+                </h4>
+                <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">
+                  {news.d}
+                </p>
+                <div className="pt-2">
+                  <span className="text-xs font-bold text-slate-400 group-hover/card:text-emerald-500 transition-colors italic">
+                    Leer más...
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Flecha Derecha */}
+        <button 
+          onClick={() => scroll('right')}
+          className="absolute -right-4 lg:-right-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 hidden md:block"
+        >
+          <span className="text-xl font-bold block">→</span>
+        </button>
+      </div>
+    </section>
   );
 };
 
@@ -71,149 +371,51 @@ export default function Home() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const menuConfig = [
-    {
-      title: "Nosotros",
-      isDropdown: true,
-      items: [
-        { label: "Misión y Visión", path: "/mision_vision"},
-        {label: "Junta Directiva", path: "/"},
-        {label: "Historia", path: "/"},
-      ],
-    },
-    { title: "Eventos", isDropdown: false , path:"/"},
-    {
-      title: "Afiliados",
-      isDropdown: true,
-      items: ["Directorio", "Beneficios", "Requisitos"],
-    },
-    {
-      title: "Formación",
-      isDropdown: true,
-      items: ["Cursos", "Talleres", "Diplomados"],
-    },
-    {
-      title: "Convenios",
-      isDropdown: true,
-      items: ["Institucionales", "Comerciales", "Internacionales"],
-    },
-    { title: "Normativas", isDropdown: false },
-    {
-      title: "Prensa",
-      isDropdown: true,
-      items: ["Noticias", "Galería", "Comunicados"],
-    },
-    { title: "Contacto", isDropdown: false },
-  ];
+  const useScrollReveal = () => {
+  const [ref, setRef] = useState(null);
+
+  useEffect(() => {
+    if (!ref) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("active");
+        }
+      },
+      { threshold: 0.2 } // Se activa cuando el 20% es visible
+    );
+    observer.observe(ref);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return setRef;
+};
 
   const opacity = scrollY > 10 ? 0.6 : 0;
   const textOpacity = scrollY > 10 ? 1 : 0;
+  const revealImg = useScrollReveal();
+  const revealStats = useScrollReveal();
+  const revealText = useScrollReveal();
+  const revealJunta = useScrollReveal();
+  const revealTitle = useScrollReveal();
+  const revealPanels = useScrollReveal();
+  const revealTextConvenios = useScrollReveal();
+    const scrollRef = useRef(null);
 
   return (
     <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
       <div
         className={`${darkMode ? "dark bg-[#022c22]" : "bg-slate-50"} min-h-screen transition-colors duration-300 font-sans selection:bg-emerald-500/30 scroll-smooth`}
       >
-        {/* --- NAVBAR --- */}
-        <nav
-          className={`${darkMode ? "dark bg-[#011a14]/90  border-white/10" : "bg-white/90  border-[#011a14]/10"} flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b `}
-        >
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="Logo Cámara"
-              className="h-10 w-auto object-contain"
-            />
-            <div className="hidden sm:block leading-tight">
-              <p
-                className={`${darkMode ? "dark:text-white" : "dark:text-black"} font-bold text-sm tracking-widest uppercase`}
-              >
-                Cámara Inmobiliaria
-              </p>
-              <p
-                className={`${darkMode ? "dark:text-white" : "dark:text-black"} text-emerald-500 text-[10px] font-bold`}
-              >
-                Estado Bolívar
-              </p>
-            </div>
-          </div>
-
-          {/* Links principales*/}
-          <div className="hidden xl:flex gap-6 text-[11px] font-bold uppercase tracking-wider dark:text-gray-300 text-slate-600">
-            <a href="#inicio" className="text-emerald-500 py-2">
-              Inicio
-            </a>
-            {menuConfig.map((item, index) => (
-              <NavItem key={index} title={item.title} options={item.items} />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSesionModalOpen(true)}
-              className="hidden md:block px-5 py-2 text-emerald-500 text-xs font-bold hover:text-emerald-600 transition"
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setIsRegisterModalOpen(true)}
-              className="px-6 py-2 bg-emerald-500 text-white dark:text-[#022c22] rounded-full text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all"
-            >
-              Registro
-            </button>
-            {/* Botón Modo Oscuro/Claro */}
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`pointer-events-auto p-3 rounded-2xl shadow-xl transition-all hover:rotate-12 ${
-                darkMode ? "bg-white text-black" : "bg-[#022c22] text-white"
-              }`}
-            >
-              {darkMode ? (
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
-                </svg>
-              ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </nav>
+      <Navbar 
+        darkMode={darkMode} 
+        setDarkMode={setDarkMode}
+        setIsSesionModalOpen={setIsSesionModalOpen}
+        setIsRegisterModalOpen={setIsRegisterModalOpen}
+      />
 
         {/* --- HERO SECTION --- */}
-        <header
-          id="inicio"
-          className="relative scroll-mt-24 px-6 lg:px-20 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-center min-h-[95vh] bg-cover"
-          style={{
-            backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.8), rgba(2, 44, 34, 0.8)), url(${bgBolivar})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-          }}
-        >
-          <div className="space-y-6">
-            <h1
-              className={`${darkMode ? "dark:text-white" : "dark:text-white"} text-5xl lg:text-7xl font-bold leading-[1.1] `}
-            >
-              Unidos por el{" "}
-              <span className="text-emerald-500 italic">progreso</span>{" "}
-              inmobiliario de Bolívar
-            </h1>
-            <p className="text-gray-300 text-lg max-w-md leading-relaxed">
-              Representamos y fortalecemos a los profesionales del sector en el
-              estado, impulsando la ética y el desarrollo sostenible.
-            </p>
-          </div>
-        </header>
+        <Header darkMode={darkMode}/>
       </div>
 
       {/* --- SECCIÓN NOSOTROS --- */}
@@ -226,12 +428,10 @@ export default function Home() {
             Sobre la Cámara
           </h2>
           <p className="text-lg text-slate-600 leading-relaxed italic">
-            Somos una Asociación Civil sin fines de lucro, que se rige por la
-            Cámara Inmobiliaria del Estado Bolivar. Agrupa a instituciones y
-            personas tanto naturales como jurídicas, quienes como actores de la
-            industria inmobiliaria y dentro del marco de una visión compartida
-            para el logro de su misión, contribuyen con su acción e inversión al
-            desarrollo del Sector Inmobiliario Venezolano.
+            La CÁMARA INMOBILIARIA DEL ESTADO BOLÍVAR (CIEBO) es una
+            Asociación Civil sin fines de lucro, agrupa a instituciones, a personas jurídicas y
+            naturales y que como actores del sector inmobiliario contribuyen con su acción e
+            inversión al desarrollo del sector inmobiliario regional y nacional.
           </p>
           {/* Grid de Cards  */}
           <div className="grid md:grid-cols-3 gap-10">
@@ -240,18 +440,25 @@ export default function Home() {
                 title: "Reseña histórica",
                 img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800",
                 desc: "Décadas de compromiso con el desarrollo regional.",
+                path: "/historia"
               },
               {
                 title: "Propósito",
                 img: "https://gentecompetente.com/wp-content/uploads/2023/10/las-empresas-que-se-hacen-querer.jpg",
                 desc: "Nuestra razón de ser y motor de cambio diario.",
+                path: "/proposito"
               },
               {
                 title: "Misión y Visión",
                 img: "https://escalas.org/wp-content/uploads/2019/10/4-1.jpg",
                 desc: "Hacia dónde proyectamos el futuro del sector.",
+                path: "/mision_vision"
               },
             ].map((card, i) => (
+              <Link 
+                key={i} 
+                to={card.path} 
+                className="group cursor-pointer block" >
               <div key={i} className="group cursor-pointer">
                 {/* Contenedor de Imagen */}
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
@@ -274,6 +481,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+              </Link>
             ))}
           </div>
 
@@ -296,27 +504,28 @@ export default function Home() {
             <div className="space-y-4">
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center">
                 <div className="text-emerald-600 font-bold text-3xl mb-2">
-                  220
+                 <Counter end={220} />
                 </div>
                 <p className="text-sm text-slate-500 font-medium uppercase tracking-tighter">
                   Afiliados
                 </p>
               </div>
-              <img
-                src={featureImg}
-                alt="Gestión"
-                className="rounded-[2rem] h-64 w-full object-cover shadow-lg"
-              />
+             <img
+              src={featureImg}
+              alt="Gestión"
+              ref={revealImg} // Usamos su propio ref
+              className="rounded-[2rem] h-64 w-full object-cover shadow-lg reveal-on-scroll"
+            />
             </div>
             <div className="pt-12 space-y-4">
-              <div className="bg-emerald-600 p-8 rounded-[2rem] text-white shadow-xl shadow-emerald-900/20">
-                <p className="font-bold text-xl leading-snug">
+              <div ref={revealStats} className="bg-emerald-600 p-8 rounded-[2rem] text-white shadow-xl shadow-emerald-900/20 reveal-on-scroll">
+                <p className="font-bold text-xl leading-snug"  >
                   Respaldo Gremial de Alto Nivel
                 </p>
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center">
                 <div className="text-emerald-600 font-bold text-3xl mb-2">
-                  30+
+                 <Counter end={30} />+
                 </div>
                 <p className="text-sm text-slate-500 font-medium uppercase">
                   Años de Historia
@@ -325,7 +534,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="lg:w-1/2 space-y-6">
+          <div ref={revealText} className="lg:w-1/2 space-y-6 reveal-on-scroll">
             <h2 className="text-4xl lg:text-5xl font-bold tracking-tight text-[#022c22]">
               ¿Por qué afiliarse?
             </h2>
@@ -355,10 +564,12 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* --- SECCION FORMACION --- */}
+      <FormacionSection revealPanels={revealPanels} revealTitle={revealTitle}/>
       {/* --- SECCIÓN JUNTA DIRECTIVA --- */}
       <section
         id="directiva"
-        className="bg-white px-6 lg:px-20 py-24 scroll-mt-24"
+        className="bg-white px-6 lg:px-20 py-24 scroll-mt-24 " 
       >
         <div className="max-w-7xl mx-auto space-y-16">
           {/* Encabezado con Botón Lateral */}
@@ -375,7 +586,8 @@ export default function Home() {
               Conócela
             </button>
           </div>
-
+        
+        <Link to={'/junta_directiva'}>
           <div className="max-w-4xl mx-auto group cursor-pointer">
             <div className="relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10">
               <img
@@ -385,7 +597,7 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
-
+     
             {/* Botón Inferior de la Card */}
             <div className="bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm">
               <span className="font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform">
@@ -393,140 +605,16 @@ export default function Home() {
               </span>
             </div>
           </div>
+        </Link>
         </div>
       </section>
+      
       {/* --- SECCIÓN CONVENIOS Y BENEFICIOS --- */}
-      <section
-        id="convenios"
-        className="bg-white px-6 lg:px-50 py-24 scroll-mt-24"
-      >
-        <div className="max-w-7xl mx-auto space-y-16">
-          {/* Encabezado Principal */}
-          <div className="space-y-4">
-            <h2 className="text-5xl lg:text-7xl font-bold text-[#333333] tracking-tighter">
-              Convenios y beneficios
-            </h2>
-          </div>
+      <ConveniosSection revealTextConvenios={revealTextConvenios}/>
 
-          {/* Grilla de Logotipos de Aliados */}
-          {/* Usamos flex-wrap y items-center para que los logos de diferentes tamaños se vean alineados */}
-          <div className="flex flex-wrap items-center justify-between gap-12 grayscale opacity-70 hover:grayscale-0 transition-all duration-700">
-            {/* Logo UCAB */}
-            <div className="h-12 w-auto group cursor-pointer">
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s"
-                alt="UCAB"
-                className="h-full object-contain group-hover:scale-110 transition-transform"
-              />
-            </div>
-
-            {/* Logo TotalSalud */}
-            <div className="h-10 w-auto group cursor-pointer">
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s"
-                alt="Total Salud"
-                className="h-full object-contain group-hover:scale-110 transition-transform"
-              />
-            </div>
-
-            {/* Logo Fénix Salud */}
-            <div className="h-12 w-auto group cursor-pointer">
-              <img
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s"
-                alt="Fénix Salud"
-                className="h-full object-contain group-hover:scale-110 transition-transform"
-              />
-            </div>
-          </div>
-
-          {/* Link inferior estilo Banner */}
-          <div className="pt-10 border-t border-gray-100">
-            <a href="#cursos" className="group flex items-center gap-3">
-              <span className="text-emerald-600 font-black uppercase tracking-widest text-xs group-hover:mr-4 transition-all">
-                Conoce nuestros programas de formación inmobiliaria
-              </span>
-              <div className="h-[2px] w-12 bg-emerald-500 group-hover:w-24 transition-all"></div>
-            </a>
-          </div>
-        </div>
-      </section>
+      <NoticiasSection scrollRef={scrollRef}/>
       {/* --- SECCIÓN NOTICIAS --- */}
-      <section
-        id="noticias"
-        className="bg-white text-slate-900 px-6 lg:px-20 py-20 rounded-b-[4rem] scroll-mt-24"
-      >
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <h2 className="text-4xl lg:text-5xl font-bold text-[#022c22] tracking-tighter">
-              Actualidad y Noticias
-            </h2>
-            <p className="text-slate-500 mt-2 font-medium">
-              Mantente informado sobre el mercado inmobiliario.
-            </p>
-          </div>
-          <button className="text-emerald-600 font-bold hover:text-emerald-800 transition-colors flex items-center gap-2">
-            Ver todas <span className="text-xl">→</span>
-          </button>
-        </div>
 
-        <div className="grid md:grid-cols-3 gap-10">
-          {[
-            {
-              t: "Nuevas tasas de registro 2026",
-              d: "Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.",
-              img: "https://www.24horas.cl/24horas/site/artic/20260209/imag/foto_0000000320260209041236/MOCHILA_NOCTURNA_4.1_frame_159829.jpeg",
-              tag: "Legal",
-            },
-            {
-              t: "Crecimiento en Puerto Ordaz",
-              d: "La zona industrial y comercial muestra signos de recuperación tras nuevas inversiones.",
-              img: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
-              tag: "Mercado",
-            },
-            {
-              t: "Taller de Ventas Digitales",
-              d: "Éxito total en el último evento presencial realizado en el Hotel Eurobuilding.",
-              img: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800",
-              tag: "Eventos",
-            },
-          ].map((news, i) => (
-            <div key={i} className="group cursor-pointer">
-              <div className="relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5">
-                {/* Overlay de color al hacer hover */}
-                <div className="absolute inset-0 bg-emerald-900/20 opacity-0 group-hover:opacity-100 transition-opacity z-10 duration-500"></div>
-
-                <img
-                  src={news.img}
-                  alt={news.t}
-                  className="w-full h-full object-cover group-hover:scale-110 transition duration-700 ease-out"
-                />
-
-                {/* Badge sobre la imagen */}
-                <span className="absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-sm text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
-                  {news.tag}
-                </span>
-              </div>
-
-              <div className="space-y-3 px-2">
-                <p className="text-[10px] text-emerald-600 font-black uppercase tracking-[0.2em]">
-                  Bolívar • Feb 2026
-                </p>
-                <h4 className="text-2xl font-bold leading-tight text-[#022c22] group-hover:text-emerald-600 transition-colors">
-                  {news.t}
-                </h4>
-                <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">
-                  {news.d}
-                </p>
-                <div className="pt-2">
-                  <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-500 transition-colors italic">
-                    Leer más...
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* --- FOOTER INFORMATIVO --- */}
       <footer className="bg-[#011a14] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6">

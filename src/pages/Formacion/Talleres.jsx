@@ -42,7 +42,7 @@ const cursos = [
 
 export default function Cursos() {
   const navigate = useNavigate();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   return (
     <section 
