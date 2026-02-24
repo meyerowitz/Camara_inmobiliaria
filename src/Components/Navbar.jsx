@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import logoA from "../assets/Logo2.png";
 import logo from "../assets/Logo3.png";
 
-const NavItem = ({ title, options }) => {
+const NavItem = ({ title, options, Tpath }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -12,6 +12,7 @@ const NavItem = ({ title, options }) => {
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
+        <Link to={!options ? Tpath : "#"}>
       <button className="flex items-center gap-1 hover:text-emerald-400 transition py-2 font-medium font-bold text-sm">
         {title}
         {options && (
@@ -25,7 +26,7 @@ const NavItem = ({ title, options }) => {
           </svg>
         )}
       </button>
-
+            </Link>
       {options && isOpen && (
         <div className="absolute top-full left-0 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]">
           {options.map((opt, idx) => {
@@ -55,15 +56,17 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
         { label: "Misión y Visión", path: "/mision_vision" },
         { label: "Junta Directiva", path: "/junta_directiva" },
         { label: "Historia", path: "/historia" },
-      ],
+        {label:"Dirección", path:"/direccion"}
+      ],Tpath:''
     },
-    { title: "Eventos", items: null, path: "/" },
-    { title: "Afiliados", items: [{label:"Directorio", path:'/junta_directiva'}, "Beneficios", "Requisitos"] },
-    { title: "Formación", items: [{ label:"PREANI", path:'/talleres'}, "CIBIR","PEGI"] },
-    { title: "Convenios", items: ["Institucionales", "Comerciales", "Internacionales"] },
-    { title: "Normativas", items: null },
-    { title: "Prensa", items: [{label:"Noticias", path:'#noticias'}, "Galería", "Comunicados"] },
-    { title: "Contacto", items: null },
+    { title: "CIV", items: null, Tpath:'/codigo_etica' },
+    { title: "Eventos", items: null, Tpath:''},
+    { title: "Afiliados", items: [{label:"Directorio", path:'/junta_directiva'}, "Beneficios", "Requisitos"],Tpath:'' },
+    { title: "Formación", items: [{ label:"PREANI", path:'/talleres'}, "CIBIR","PEGI", "PADI"],Tpath:'' },
+    { title: "Convenios", items: ["Institucionales", "Comerciales", "Internacionales"],Tpath:'' },
+    { title: "Normativas", items: null,Tpath:'' },
+    { title: "Prensa", items: [{label:"Noticias", path:'#noticias'}, "Galería", "Comunicados"],Tpath:'' },
+    { title: "Contacto", items: null,Tpath:'' },
   ];
 
   return (
@@ -77,7 +80,7 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
         <img
           src={darkMode ? logo : logoA}
           alt="Logo Cámara"
-          className="h-16 w-auto object-contain"
+          className="h-23 w-auto object-contain"
         />
       </Link>
 
@@ -87,7 +90,7 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
           Inicio
         </a>
         {menuConfig.map((item, index) => (
-          <NavItem key={index} title={item.title} options={item.items} />
+          <NavItem key={index} title={item.title} options={item.items} Tpath={item.Tpath || "/"} />
         ))}
       </div>
 

@@ -56,6 +56,8 @@ const Counter = ({ end, duration = 2000, suffix = "" }) => {
 };
 
 const FormacionSection = ({ revealTitle, revealPanels }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const cursos = [
     { 
       id: "PREANI", 
@@ -67,73 +69,116 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
       id: "CIBIR", 
       titulo: "Curso Intensivo de Bienes Raíces", 
       sub: "Capacitación Técnica Avanzada",
-      img: "https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png"
+      img: "https://observatorio.tec.mx/wp-content/uploads/2020/04/CC3B3mohacerunaclaseenvivoefectivaysincomplicaciones.jpg"
     },
     { 
       id: "PEGI", 
       titulo: "Programa Ejecutivo", 
       sub: "Gestión Inmobiliaria Estratégica",
       img: "https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp"
+    }, 
+    { 
+      id: "PADI", 
+      titulo: "Programa de Administración", 
+      sub: "Administración en inmuebles",
+      img: "https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png"
     }
   ];
 
+  const nextSlide = () => {
+    if (currentIndex < cursos.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1);
+    }
+  };
+
   return (
-    <section id="formacion" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden">
+    <section id="formacion" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden relative">
+      
       {/* Encabezado */}
-      <div ref={revealTitle} className="mb-16 reveal-on-scroll">
-        <p className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4">Potencia tu carrera</p>
-        <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">Formación</h2>
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+        <div ref={revealTitle} className="reveal-on-scroll">
+          <p className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4">Potencia tu carrera</p>
+          <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">Formación</h2>
+        </div>
+
+        {/* Botones de Control */}
+        <div className="flex gap-4">
+          <button 
+            onClick={prevSlide}
+            disabled={currentIndex === 0}
+            className={`p-4 rounded-full border ${currentIndex === 0 ? 'border-white/5 text-white/10' : 'border-white/20 text-white hover:bg-emerald-500 hover:text-[#022c22]'} transition-all`}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <button 
+            onClick={nextSlide}
+            disabled={currentIndex >= cursos.length - 3}
+            className={`p-4 rounded-full border ${currentIndex >= cursos.length - 3 ? 'border-white/5 text-white/10' : 'border-white/20 text-white hover:bg-emerald-500 hover:text-[#022c22]'} transition-all`}
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
       </div>
 
-      {/* Grid de Cards Redondeadas */}
-      <div 
-        ref={revealPanels} 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 reveal-on-scroll"
-      >
-        {cursos.map((curso) => (
-          <div
-            key={curso.id}
-            className="group relative h-[500px] overflow-hidden rounded-[3rem] border border-white/10 bg-emerald-900/20 transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl hover:shadow-emerald-900/50"
-          >
-            {/* Imagen de fondo con Zoom */}
-            <div className="absolute inset-0 z-0">
-              <img 
-                src={curso.img} 
-                alt={curso.titulo}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              {/* Overlay Gradiente */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#022c22] via-[#022c22]/60 to-transparent opacity-90" />
+      {/* Contenedor del Carrusel */}
+      <div className="relative overflow-visible">
+        <div 
+          ref={revealPanels}
+          className="flex transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] gap-8 reveal-on-scroll"
+          style={{ transform: `translateX(-${currentIndex * (100 / (window.innerWidth < 1024 ? 1 : 3.1))}%)` }}
+        >
+          {cursos.map((curso, index) => (
+            <div
+              key={curso.id}
+              className="min-w-full md:min-w-[48%] lg:min-w-[32%] group relative h-[500px] overflow-hidden rounded-[3rem] border border-white/10 bg-emerald-900/20 transition-all duration-500"
+            >
+              {/* Imagen de fondo */}
+              <div className="absolute inset-0 z-0">
+                <img 
+                  src={curso.img} 
+                  alt={curso.titulo}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                {/* SOLUCIÓN OSCURIDAD: Gradiente más suave y menos opaco */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#022c22] via-[#022c22]/40 to-transparent opacity-70 group-hover:opacity-50 transition-opacity duration-500" />
+              </div>
+
+              {/* Contenido */}
+              <div className="relative z-10 h-full flex flex-col justify-end p-10 space-y-4">
+                <div className="flex justify-between items-start">
+                  {/* SOLUCIÓN ID: Más grande (text-sm), más padding y más legible */}
+                  <span className="bg-emerald-500 backdrop-blur-md text-white px-6 py-2 rounded-xl text-sm font-black uppercase tracking-widest shadow-lg">
+                    {curso.id}
+                  </span>
+                  <span className="text-4xl font-black text-white/20 group-hover:text-emerald-500/40 transition-colors">
+                    0{index + 1}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 className="text-2xl lg:text-3xl font-black text-white leading-tight mb-2">
+                    {curso.titulo}
+                  </h3>
+                  <p className="text-white/80 text-sm font-medium leading-relaxed">
+                    {curso.sub}
+                  </p>
+                </div>
+
+                <div className="pt-4">
+                  <button className="w-full py-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22] shadow-xl">
+                    Ver detalles del programa
+                  </button>
+                </div>
+              </div>
             </div>
-
-            {/* Contenido */}
-            <div className="relative z-10 h-full flex flex-col justify-end p-10 space-y-4">
-              <div className="flex justify-between items-start">
-                <span className="bg-emerald-500/20 backdrop-blur-md border border-emerald-500/30 text-emerald-400 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                  {curso.id}
-                </span>
-                <span className="text-4xl font-black text-white/10 group-hover:text-emerald-500/20 transition-colors">
-                  0{cursos.indexOf(curso) + 1}
-                </span>
-              </div>
-
-              <div>
-                <h3 className="text-2xl lg:text-3xl font-black text-white leading-tight mb-2">
-                  {curso.titulo}
-                </h3>
-                <p className="text-emerald-100/60 text-sm font-medium leading-relaxed">
-                  {curso.sub}
-                </p>
-              </div>
-
-              <div className="pt-4">
-                <button className="w-full py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22]">
-                  Ver detalles del programa
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -465,7 +510,7 @@ export default function Home() {
                   <img
                     src={card.img}
                     alt={card.title}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
+                    className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
                   />
                   {/* Overlay sutil hover */}
                   <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -593,7 +638,7 @@ export default function Home() {
               <img
                 src={Mision_img}
                 alt="Junta Directiva"
-                className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out"
+                className="w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out"
               />
               <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
@@ -621,7 +666,8 @@ export default function Home() {
         <img src={logo} alt="Logo" className="h-10 mx-auto opacity-50" />
         <p className="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed">
           Cámara Inmobiliaria del Estado Bolívar. Afiliada a la CIV. <br />
-          Piso 1, Centro Comercial Ciudad Alta Vista II, Puerto Ordaz.
+         Carrera Guri, Nro. 255-03-14, Alta Vista.
+Sede de la Cámara de la Construcción.
         </p>
         <div className="flex justify-center gap-6 text-gray-400 text-xs">
           <a href="#" className="hover:text-emerald-400">

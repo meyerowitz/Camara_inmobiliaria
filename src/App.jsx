@@ -6,7 +6,9 @@ import Home from './Home';
 import MisionVision from './pages/MisionVision/MisionVision';
 import JuntaDirectiva from './pages/Juntadirectiva/JuntaDirectiva';
 import Historia from './pages/Historia/Historia';
-
+import CIV from './pages/CIV/Civ'
+import Direccion
+ from './pages/Direccion/Direccion';
 export default function LandingBolivar() {
  
   return (
@@ -17,6 +19,8 @@ export default function LandingBolivar() {
         <Route path='/mision_vision' element={<MisionVision/>} />
         <Route path='/junta_directiva' element={<JuntaDirectiva/>} />
         <Route path='/historia' element={<Historia/>} />
+        <Route path='/codigo_etica' element={<CIV/>} />
+        <Route path='/direccion' element={<Direccion/>} />
       </Routes>
     </BrowserRouter>
   );

@@ -51,7 +51,7 @@ const DirectorCard = ({ nombre, cargo, foto, index }) => {
         <img
           src={foto}
           alt={nombre}
-          className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700 ease-in-out group-hover:scale-110"
+          className="w-full h-full object-cover group-hover:grayscale-0 transition-all duration-700 ease-in-out group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#022c22]/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
       </div>
