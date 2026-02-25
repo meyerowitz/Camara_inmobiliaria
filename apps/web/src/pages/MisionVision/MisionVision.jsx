@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/Logo.png";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
-import Navbar2 from "../../Components/Navbar_sc";
+import logo from "../../features/landing/assets/Logo.png";
+import bgBolivar from "../../features/landing/assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 
 const useScrollReveal = () => {
   const [ref, setRef] = useState(null);
@@ -32,8 +32,8 @@ export default function MisionVision() {
 
   return (
     <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
-  
-      <Navbar2/>
+
+      <Navbar2 />
       {/* --- HERO SECTION --- */}
       <header
         className="relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover animate-header-bg"
@@ -45,20 +45,20 @@ export default function MisionVision() {
         }}
       >
         <div className="text-center space-y-4">
-          <p 
-            className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs animate-header-text" 
+          <p
+            className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs animate-header-text"
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
             Propósito Gremial
           </p>
-          <h1 
+          <h1
             className="text-5xl lg:text-7xl font-black tracking-tighter animate-header-text"
             style={{ animationDelay: "0.4s", opacity: 0 }}
           >
             Nuestra <span className="text-emerald-500 italic">Esencia</span>
           </h1>
-          <p 
-            className="text-emerald-100/60 text-sm tracking-widest uppercase font-medium animate-header-text" 
+          <p
+            className="text-emerald-100/60 text-sm tracking-widest uppercase font-medium animate-header-text"
             style={{ animationDelay: "0.5s", opacity: 0 }}
           >
             Valores y Compromiso
@@ -69,7 +69,7 @@ export default function MisionVision() {
       {/* --- CONTENIDO --- */}
       <main className="bg-white text-slate-900 rounded-t-[4rem] -mt-12 relative z-10 px-6 lg:px-20 py-24">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 lg:gap-20">
-          
+
           {/* SECCIÓN MISIÓN */}
           <div className="group space-y-6 p-8 rounded-[2.5rem] bg-slate-50 border border-emerald-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-500">
             <div className="w-14 h-14 bg-emerald-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-110 transition-transform">
@@ -110,7 +110,7 @@ export default function MisionVision() {
           <p className="text-emerald-600 font-black uppercase tracking-widest text-xs mb-4">
             Comprometidos con Bolívar
           </p>
-          <button 
+          <button
             onClick={() => navigate('/')}
             className="px-10 py-4 border-2 border-[#022c22] text-[#022c22] rounded-full font-black uppercase text-xs tracking-widest hover:bg-[#022c22] hover:text-white transition-all"
           >

@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from "react"; // IMPORTANTE: Agregamos useState
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/Logo.png";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
-import Navbar2 from "../../Components/Navbar_sc";
+import logo from "../../features/landing/assets/Logo.png";
+import bgBolivar from "../../features/landing/assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 
 // 1. EL HOOK DEBE ESTAR AQUÍ AFUERA
 const useScrollReveal = () => {
@@ -35,16 +35,16 @@ const directiva = [
   { nombre: "Pedro Vallenilla", cargo: "Director de Comunicaciones", foto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400" },
   { nombre: "Graciela Ledezma", cargo: "Director de Formación", foto: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400&h=400" },
   { nombre: "Yorjharry Vicent", cargo: "Director de Eventos", foto: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400" },
-  { nombre: "Rina Centeno", cargo: "Directora de Responsabilidad Social", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400"},
+  { nombre: "Rina Centeno", cargo: "Directora de Responsabilidad Social", foto: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400" },
   { nombre: "Pedro Castro", cargo: "Director de Relaciones Interinstitucionales", foto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400&h=400" },
 ];
 
 const DirectorCard = ({ nombre, cargo, foto, index }) => {
-  const setReveal = useScrollReveal(); 
+  const setReveal = useScrollReveal();
   return (
-    <div 
-      ref={setReveal} 
-      style={{ transitionDelay: `${index * 0.1}s` }} 
+    <div
+      ref={setReveal}
+      style={{ transitionDelay: `${index * 0.1}s` }}
       className="reveal-on-scroll group bg-white rounded-[2.5rem] p-5 border border-emerald-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-700"
     >
       <div className="relative overflow-hidden rounded-[2rem] aspect-square mb-6 bg-slate-100">
@@ -96,11 +96,11 @@ export default function EquipoDirectivo() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
             {directiva.map((miembro, index) => (
-              <DirectorCard 
-                key={index} 
+              <DirectorCard
+                key={index}
                 index={index} // PASAMOS EL INDEX PARA EL DELAY
-                nombre={miembro.nombre} 
-                cargo={miembro.cargo} 
+                nombre={miembro.nombre}
+                cargo={miembro.cargo}
                 foto={miembro.foto}
               />
             ))}

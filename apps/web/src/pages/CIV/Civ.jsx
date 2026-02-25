@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
-import Navbar2 from "../../Components/Navbar_sc";
+import bgBolivar from "../../features/landing/assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 import actaPDF from './acta.pdf';
 
 const useScrollReveal = () => {
@@ -48,7 +48,7 @@ export default function CodigoEtica() {
 
       <main className="bg-white text-slate-900 rounded-t-[4rem] -mt-12 relative z-10 px-6 lg:px-20 py-24">
         <div className="max-w-6xl mx-auto">
-          
+
           <div className="grid lg:grid-cols-2 gap-16 items-center mb-24">
             <div ref={setReveal} className="reveal-on-scroll space-y-6">
               <h2 className="text-4xl font-black text-[#022c22] leading-none uppercase">La base de nuestra confianza</h2>
@@ -59,7 +59,7 @@ export default function CodigoEtica() {
                 "Ser un profesional inmobiliario de la Cámara es sinónimo de seguridad jurídica y transparencia."
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {principios.map((p, i) => (
                 <div key={i} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-emerald-500 transition-colors group">
@@ -79,11 +79,11 @@ export default function CodigoEtica() {
               <p className="text-emerald-100/70 max-w-2xl mx-auto">
                 Ponemos a disposición de nuestros afiliados y el público general el texto íntegro que rige el ejercicio inmobiliario en Venezuela.
               </p>
-              <a 
+              <a
                 href={actaPDF}
                 download="Acta_Oficial.pdf" // 3. Forzar descarga con un nombre bonito
-      target="_blank"
-      rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-10 py-5 bg-emerald-500 text-[#022c22] rounded-full font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-400 transition-all shadow-2xl shadow-emerald-500/20 active:scale-95"
               >
                 Descargar PDF Oficial
