@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import bgBolivar from "../../assets/Pzo.jpg"; // Asegúrate de que la ruta sea correcta
-import Navbar2 from "../../Components/Navbar_sc";
+import bgBolivar from "../../features/landing/assets/Pzo.jpg"; // Asegúrate de que la ruta sea correcta
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 
 const useScrollReveal = () => {
   const [ref, setRef] = useState(null);

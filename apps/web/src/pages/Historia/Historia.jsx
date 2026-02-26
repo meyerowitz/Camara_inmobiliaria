@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
-import Navbar2 from "../../Components/Navbar_sc";
+import bgBolivar from "../../features/landing/assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 
 // Hook de revelado (mismo que usas en las otras pestañas)
 const useScrollReveal = () => {

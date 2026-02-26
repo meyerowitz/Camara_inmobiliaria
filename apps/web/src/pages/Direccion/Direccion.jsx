@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar2 from "../../Components/Navbar_sc";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 
 export default function Direccion() {
   const puntosAgenda = [
