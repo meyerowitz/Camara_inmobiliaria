@@ -261,7 +261,7 @@ const NoticiasSection = ({ scrollRef }) => {
     {
       t: "Nuevas tasas de registro 2026",
       d: "Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.",
-      img: "https://www.24horas.cl/24horas/site/artic/20260209/imag/foto_0000000320260209041236/MOCHILA_NOCTURNA_4.1_frame_159829.jpeg",
+      img: "https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg",
       tag: "Legal",
     },
     {
