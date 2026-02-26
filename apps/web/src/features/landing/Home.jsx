@@ -7,8 +7,6 @@ import LoginModal from "./Components/LoginModal";
 import RegisterModal from "./Components/RegisterModal";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-
-
 import Mision_img from "./assets/Mision.jpeg";
 import Navbar from "./Components/Navbar";
 import Header from "./Components/Header";
@@ -38,7 +36,7 @@ const Counter = ({ end, duration = 2000, suffix = "" }) => {
 
     let start = 0;
     const increment = end / (duration / 16); // 16ms aprox por frame (60fps)
-    
+
     const timer = setInterval(() => {
       start += increment;
       if (start >= end) {
@@ -59,27 +57,27 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const cursos = [
-    { 
-      id: "PREANI", 
-      titulo: "Programa de Estudios Académicos", 
+    {
+      id: "PREANI",
+      titulo: "Programa de Estudios Académicos",
       sub: "Inmobiliarios Nivel Inicial",
       img: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200"
     },
-    { 
-      id: "CIBIR", 
-      titulo: "Curso Intensivo de Bienes Raíces", 
+    {
+      id: "CIBIR",
+      titulo: "Curso Intensivo de Bienes Raíces",
       sub: "Capacitación Técnica Avanzada",
       img: "https://observatorio.tec.mx/wp-content/uploads/2020/04/CC3B3mohacerunaclaseenvivoefectivaysincomplicaciones.jpg"
     },
-    { 
-      id: "PEGI", 
-      titulo: "Programa Ejecutivo", 
+    {
+      id: "PEGI",
+      titulo: "Programa Ejecutivo",
       sub: "Gestión Inmobiliaria Estratégica",
       img: "https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp"
-    }, 
-    { 
-      id: "PADI", 
-      titulo: "Programa de Administración", 
+    },
+    {
+      id: "PADI",
+      titulo: "Programa de Administración",
       sub: "Administración en inmuebles",
       img: "https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png"
     }
@@ -99,7 +97,7 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
 
   return (
     <section id="formacion" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden relative">
-      
+
       {/* Encabezado */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
         <div ref={revealTitle} className="reveal-on-scroll">
@@ -109,26 +107,26 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
 
         {/* Botones de Control */}
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={prevSlide}
             disabled={currentIndex === 0}
             className={`p-4 rounded-full border ${currentIndex === 0 ? 'border-white/5 text-white/10' : 'border-white/20 text-white hover:bg-emerald-500 hover:text-[#022c22]'} transition-all`}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <button 
+          <button
             onClick={nextSlide}
             disabled={currentIndex >= cursos.length - 3}
             className={`p-4 rounded-full border ${currentIndex >= cursos.length - 3 ? 'border-white/5 text-white/10' : 'border-white/20 text-white hover:bg-emerald-500 hover:text-[#022c22]'} transition-all`}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
       {/* Contenedor del Carrusel */}
       <div className="relative overflow-visible">
-        <div 
+        <div
           ref={revealPanels}
           className="flex transition-transform duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] gap-8 reveal-on-scroll"
           style={{ transform: `translateX(-${currentIndex * (100 / (window.innerWidth < 1024 ? 1 : 3.1))}%)` }}
@@ -140,8 +138,8 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
             >
               {/* Imagen de fondo */}
               <div className="absolute inset-0 z-0">
-                <img 
-                  src={curso.img} 
+                <img
+                  src={curso.img}
                   alt={curso.titulo}
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
@@ -211,7 +209,7 @@ const ConveniosSection = ({ revealTextConvenios }) => {
   return (
     <section id="convenios" className="bg-white py-10 scroll-mt-24 overflow-hidden">
       <style>{marqueeStyle}</style>
-      
+
       <div className="max-w-7xl mx-auto px-6 lg:px-20 mb-16">
         <div ref={revealTextConvenios} className="space-y-4 reveal-on-scroll -ml-8">
           <h2 className="text-5xl lg:text-7xl font-bold text-[#333333] tracking-tighter -ml-4">
@@ -221,18 +219,18 @@ const ConveniosSection = ({ revealTextConvenios }) => {
 
         {/* Contenedor Capsular */}
         <div className="relative mt-16 bg-slate-50 border border-gray-100 rounded-[3rem] py-12 overflow-hidden">
-          
+
           {/* Sombras laterales para efecto de desvanecimiento */}
           <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
           <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
-          
+
           <div className="flex">
             {/* Esta es la tira que se mueve */}
             <div className="animate-marquee-infinite pause-on-hover flex items-center">
               {/* Duplicamos los logos 2 veces para el loop perfecto */}
               {[...logos, ...logos, ...logos, ...logos].map((logo, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className="mx-10 lg:mx-16 flex-shrink-0 grayscale opacity-40 hover:opacity-100 hover:grayscale-0 transition-all duration-500 transform hover:scale-110"
                 >
                   <img src={logo.url} alt={logo.name} className="h-12 w-auto object-contain" />
@@ -244,13 +242,13 @@ const ConveniosSection = ({ revealTextConvenios }) => {
 
         {/* Link inferior */}
         <div className="pt-10 border-t border-gray-100">
-            <a href="#cursos" className="group flex items-center gap-3">
-              <span className="text-emerald-600 font-black uppercase tracking-widest text-xs group-hover:mr-4 transition-all">
-                Conoce nuestros programas de formación inmobiliaria
-              </span>
-              <div className="h-[2px] w-12 bg-emerald-500 group-hover:w-24 transition-all"></div>
-            </a>
-          </div>
+          <a href="#cursos" className="group flex items-center gap-3">
+            <span className="text-emerald-600 font-black uppercase tracking-widest text-xs group-hover:mr-4 transition-all">
+              Conoce nuestros programas de formación inmobiliaria
+            </span>
+            <div className="h-[2px] w-12 bg-emerald-500 group-hover:w-24 transition-all"></div>
+          </a>
+        </div>
       </div>
     </section>
   );
@@ -261,7 +259,7 @@ const NoticiasSection = ({ scrollRef }) => {
     {
       t: "Nuevas tasas de registro 2026",
       d: "Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.",
-      img: "https://www.24horas.cl/24horas/site/artic/20260209/imag/foto_0000000320260209041236/MOCHILA_NOCTURNA_4.1_frame_159829.jpeg",
+      img: "https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg",
       tag: "Legal",
     },
     {
@@ -321,7 +319,7 @@ const NoticiasSection = ({ scrollRef }) => {
 
   return (
     <section id="noticias" className="bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden  rounded-b-[4rem]">
-      
+
       {/* Encabezado */}
       <div className="max-w-8xl mx-auto flex justify-between items-end mb-12">
         <div>
@@ -339,9 +337,9 @@ const NoticiasSection = ({ scrollRef }) => {
 
       {/* Contenedor Relativo para Flechas y Scroll */}
       <div className="relative max-w-8xl mx-auto group">
-        
+
         {/* Flecha Izquierda */}
-        <button 
+        <button
           onClick={() => scroll('left')}
           className="absolute -left-4 lg:-left-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 hidden md:block"
         >
@@ -349,14 +347,14 @@ const NoticiasSection = ({ scrollRef }) => {
         </button>
 
         {/* Contenedor del Scroll */}
-        <div 
+        <div
           ref={scrollRef}
           className="flex gap-10 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-8"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {noticias.map((news, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className="min-w-full md:min-w-[calc(50%-20px)] lg:min-w-[calc(33.333%-27px)] snap-start group/card cursor-pointer"
             >
               <div className="relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5">
@@ -392,7 +390,7 @@ const NoticiasSection = ({ scrollRef }) => {
         </div>
 
         {/* Flecha Derecha */}
-        <button 
+        <button
           onClick={() => scroll('right')}
           className="absolute -right-4 lg:-right-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 hidden md:block"
         >
@@ -417,24 +415,24 @@ export default function Home() {
   }, []);
 
   const useScrollReveal = () => {
-  const [ref, setRef] = useState(null);
+    const [ref, setRef] = useState(null);
 
-  useEffect(() => {
-    if (!ref) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("active");
-        }
-      },
-      { threshold: 0.2 } // Se activa cuando el 20% es visible
-    );
-    observer.observe(ref);
-    return () => observer.disconnect();
-  }, [ref]);
+    useEffect(() => {
+      if (!ref) return;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("active");
+          }
+        },
+        { threshold: 0.2 } // Se activa cuando el 20% es visible
+      );
+      observer.observe(ref);
+      return () => observer.disconnect();
+    }, [ref]);
 
-  return setRef;
-};
+    return setRef;
+  };
 
   const opacity = scrollY > 10 ? 0.6 : 0;
   const textOpacity = scrollY > 10 ? 1 : 0;
@@ -445,22 +443,20 @@ export default function Home() {
   const revealTitle = useScrollReveal();
   const revealPanels = useScrollReveal();
   const revealTextConvenios = useScrollReveal();
-    const scrollRef = useRef(null);
+  const scrollRef = useRef(null);
 
   return (
     <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
       <div
         className={`${darkMode ? "dark bg-[#022c22]" : "bg-slate-50"} min-h-screen transition-colors duration-300 font-sans selection:bg-emerald-500/30 scroll-smooth`}
       >
-      <Navbar 
-        darkMode={darkMode} 
-        setDarkMode={setDarkMode}
-        setIsSesionModalOpen={setIsSesionModalOpen}
-        setIsRegisterModalOpen={setIsRegisterModalOpen}
-      />
+        <Navbar
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+        />
 
         {/* --- HERO SECTION --- */}
-        <Header darkMode={darkMode}/>
+        <Header darkMode={darkMode} />
       </div>
 
       {/* --- SECCIÓN NOSOTROS --- */}
@@ -500,32 +496,32 @@ export default function Home() {
                 path: "/mision_vision"
               },
             ].map((card, i) => (
-              <Link 
-                key={i} 
-                to={card.path} 
+              <Link
+                key={i}
+                to={card.path}
                 className="group cursor-pointer block" >
-              <div key={i} className="group cursor-pointer">
-                {/* Contenedor de Imagen */}
-                <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
-                  <img
-                    src={card.img}
-                    alt={card.title}
-                    className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
-                  />
-                  {/* Overlay sutil hover */}
-                  <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                </div>
+                <div key={i} className="group cursor-pointer">
+                  {/* Contenedor de Imagen */}
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
+                    <img
+                      src={card.img}
+                      alt={card.title}
+                      className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
+                    />
+                    {/* Overlay sutil hover */}
+                    <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  </div>
 
-                {/* Botón Inferior Estilo Card */}
-                <div className="bg-emerald-600 group-hover:bg-emerald-500 text-white p-5 rounded-2xl flex items-center justify-between transition-colors duration-300 shadow-lg shadow-emerald-600/20">
-                  <span className="font-bold uppercase tracking-wider text-sm">
-                    {card.title}
-                  </span>
-                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <span className="text-xl">→</span>
+                  {/* Botón Inferior Estilo Card */}
+                  <div className="bg-emerald-600 group-hover:bg-emerald-500 text-white p-5 rounded-2xl flex items-center justify-between transition-colors duration-300 shadow-lg shadow-emerald-600/20">
+                    <span className="font-bold uppercase tracking-wider text-sm">
+                      {card.title}
+                    </span>
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                      <span className="text-xl">→</span>
+                    </div>
                   </div>
                 </div>
-              </div>
               </Link>
             ))}
           </div>
@@ -549,18 +545,18 @@ export default function Home() {
             <div className="space-y-4">
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center">
                 <div className="text-emerald-600 font-bold text-3xl mb-2">
-                 <Counter end={220} />
+                  <Counter end={220} />
                 </div>
                 <p className="text-sm text-slate-500 font-medium uppercase tracking-tighter">
                   Afiliados
                 </p>
               </div>
-             <img
-              src={featureImg}
-              alt="Gestión"
-              ref={revealImg} // Usamos su propio ref
-              className="rounded-[2rem] h-64 w-full object-cover shadow-lg reveal-on-scroll"
-            />
+              <img
+                src={featureImg}
+                alt="Gestión"
+                ref={revealImg} // Usamos su propio ref
+                className="rounded-[2rem] h-64 w-full object-cover shadow-lg reveal-on-scroll"
+              />
             </div>
             <div className="pt-12 space-y-4">
               <div ref={revealStats} className="bg-emerald-600 p-8 rounded-[2rem] text-white shadow-xl shadow-emerald-900/20 reveal-on-scroll">
@@ -570,7 +566,7 @@ export default function Home() {
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center">
                 <div className="text-emerald-600 font-bold text-3xl mb-2">
-                 <Counter end={30} />+
+                  <Counter end={30} />+
                 </div>
                 <p className="text-sm text-slate-500 font-medium uppercase">
                   Años de Historia
@@ -609,12 +605,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       {/* --- SECCION FORMACION --- */}
-      <FormacionSection revealPanels={revealPanels} revealTitle={revealTitle}/>
+      <FormacionSection revealPanels={revealPanels} revealTitle={revealTitle} />
+
       {/* --- SECCIÓN JUNTA DIRECTIVA --- */}
       <section
         id="directiva"
-        className="bg-white px-6 lg:px-20 py-24 scroll-mt-24 " 
+        className="bg-white px-6 lg:px-20 py-24 scroll-mt-24 "
       >
         <div className="max-w-7xl mx-auto space-y-16">
           {/* Encabezado con Botón Lateral */}
@@ -631,43 +629,41 @@ export default function Home() {
               Conócela
             </button>
           </div>
-        
-        <Link to={'/junta_directiva'}>
-          <div className="max-w-4xl mx-auto group cursor-pointer">
-            <div className="relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10">
-              <img
-                src={Mision_img}
-                alt="Junta Directiva"
-                className="w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out"
-              />
-              <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+          <Link to={'/junta_directiva'}>
+            <div className="max-w-4xl mx-auto group cursor-pointer">
+              <div className="relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10">
+                <img
+                  src={Mision_img}
+                  alt="Junta Directiva"
+                  className="w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out"
+                />
+                <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+
+              {/* Botón Inferior de la Card */}
+              <div className="bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm">
+                <span className="font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform">
+                  Conozca a la Junta Directiva
+                </span>
+              </div>
             </div>
-     
-            {/* Botón Inferior de la Card */}
-            <div className="bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm">
-              <span className="font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform">
-                Conozca a la Junta Directiva
-              </span>
-            </div>
-          </div>
-        </Link>
+          </Link>
         </div>
       </section>
-      
+
       {/* --- SECCIÓN CONVENIOS Y BENEFICIOS --- */}
-      <ConveniosSection revealTextConvenios={revealTextConvenios}/>
+      <ConveniosSection revealTextConvenios={revealTextConvenios} />
 
-      <NoticiasSection scrollRef={scrollRef}/>
       {/* --- SECCIÓN NOTICIAS --- */}
-
+      <NoticiasSection scrollRef={scrollRef} />
 
       {/* --- FOOTER INFORMATIVO --- */}
-      <footer className="bg-[#011a14] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6">
-        <img src={logo} alt="Logo" className="h-10 mx-auto opacity-50" />
+      <footer className="bg-[#022c22] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6">
+        <img src={logo} alt="Logo" className="h-10 mx-auto opacity-50 grayscale brightness-200" />
         <p className="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed">
           Cámara Inmobiliaria del Estado Bolívar. Afiliada a la CIV. <br />
-         Carrera Guri, Nro. 255-03-14, Alta Vista.
-Sede de la Cámara de la Construcción.
+          Carrera Guri, Nro. 255-03 - 14, Alta Vista. Piso 1, Centro Comercial Ciudad Alta Vista II, Puerto Ordaz.
         </p>
         <div className="flex justify-center gap-6 text-gray-400 text-xs">
           <a href="#" className="hover:text-emerald-400">
@@ -681,7 +677,7 @@ Sede de la Cámara de la Construcción.
           </a>
         </div>
         <p className="text-gray-600 text-[10px] pt-4">
-          © 2026 Cámara Inmobiliaria del Estado Bolívar.
+          © 2026 Cámara Inmobiliaria del Estado Bolívar. Todos los derechos reservados.
         </p>
       </footer>
 

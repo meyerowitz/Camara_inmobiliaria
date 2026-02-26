@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import bgBolivar from "../../assets/Camara_Metropolitana.jpg";
-import Navbar2 from "../../Components/Navbar_sc";
+import bgBolivar from "../../features/landing/assets/Camara_Metropolitana.jpg";
+import Navbar2 from "../../features/landing/Components/Navbar_sc";
 import actaPDF from './acta.pdf';
 
 const useScrollReveal = () => {
