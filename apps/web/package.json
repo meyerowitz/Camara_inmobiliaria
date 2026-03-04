@@ -11,14 +11,24 @@
         "check-types": "tsc --noEmit"
     },
     "dependencies": {
+        "@tailwindcss/vite": "^4.2.1",
+        "@vitejs/plugin-react": "^5.1.4",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "react-router-dom": "^7.13.0"
+        "react-router-dom": "^7.13.0",
+        "tailwindcss": "^4.2.1"
     },
     "devDependencies": {
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@typescript-eslint/eslint-plugin": "^8.56.1",
+        "@typescript-eslint/parser": "^8.56.1",
         "eslint": "^9.39.1",
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.4.24",
+        "globals": "^17.4.0",
+        "standard": "^17.1.2",
+        "typescript-eslint": "^8.56.1",
         "vite": "^7.3.1"
     },
     "packageManager": "pnpm@10.30.0"
