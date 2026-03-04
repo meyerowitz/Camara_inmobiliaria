@@ -9,10 +9,16 @@
     "check-types": "turbo check-types"
   },
   "devDependencies": {
+    "standard": "^17.1.2",
     "turbo": "^2.8.10"
   },
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.30.0"
+  "packageManager": "pnpm@10.30.0",
+  "dependencies": {
+    "@tailwindcss/vite": "^4.2.1",
+    "@vitejs/plugin-react": "^5.1.4",
+    "react-router-dom": "^7.13.0"
+  }
 }
