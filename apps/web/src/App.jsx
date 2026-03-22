@@ -10,6 +10,7 @@ import CivPage from './pages/landing/CIV/CivPage'
 import AdminPage from './pages/admin/AdminPage'
 import DireccionPage from './pages/landing/direccion/DireccionPage'
 import PropositoPage from './pages/landing/proposito/PropositoPage'
+import AfiliadoPage from './pages/afiliado/afiliadoPage'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path='/direccion' element={<DireccionPage />} />
         <Route path='/proposito' element={<PropositoPage />} />
         <Route path='/admin' element={<AdminPage />} />
+        <Route path='/afiliado' element={<AfiliadoPage />} />
       </Routes>
     </BrowserRouter>
   )

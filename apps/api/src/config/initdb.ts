@@ -29,6 +29,7 @@ const statements = [
   `CREATE TABLE IF NOT EXISTS agremiados (
     id_agremiado                INTEGER     PRIMARY KEY,
     codigo_cibir                TEXT        UNIQUE,
+    cedula_rif                  TEXT        UNIQUE NOT NULL,
     nombre_completo             TEXT        NOT NULL,
     email                       TEXT        UNIQUE NOT NULL,
     telefono                    TEXT,

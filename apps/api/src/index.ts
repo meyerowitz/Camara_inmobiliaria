@@ -1,12 +1,18 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { env } from './config/env.js'
+import { afiliadosRoutes, publicRoutes } from './routes/index.js'
+
 
 const app = express()
 
 // Middleware
 app.use(cors({ origin: env.CORS_ORIGIN }))
 app.use(express.json())
+
+// Rutas de API
+app.use('/api/afiliados', afiliadosRoutes)
+app.use('/api/public', publicRoutes)
 
 // Rutas base
 app.get('/', (req: Request, res: Response) => {
