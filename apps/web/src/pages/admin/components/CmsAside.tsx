@@ -112,18 +112,21 @@ const NavButton = ({
   <button
     onClick={onClick}
     title={isCollapsed ? item.label : undefined}
+    style={isActive
+      ? { backgroundColor: 'var(--color-admin-accent-muted)', color: 'var(--color-admin-active-text)' }
+      : undefined}
     className={[
       'relative flex items-center gap-3 rounded-xl py-2.5 transition-all duration-150 w-full text-left group',
       isCollapsed ? 'justify-center px-0' : 'px-3',
       isActive
-        ? 'bg-[#E9FAF4] text-[#00C07A]'
+        ? ''
         : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
     ].join(' ')}
   >
     <span className="flex-shrink-0">{item.icon}</span>
     {!isCollapsed && <span className="text-sm font-medium truncate">{item.label}</span>}
     {isCollapsed && isActive && (
-      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00C07A] rounded-r-full" />
+      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ backgroundColor: 'var(--color-admin-active-text)' }} />
     )}
   </button>
 )
@@ -255,7 +258,17 @@ const CmsAside = ({
         {/* Desktop collapse toggle */}
         <button
           onClick={() => setInternalCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-[72px] z-10 flex items-center justify-center w-6 h-6 rounded-full bg-white border border-gray-200 text-slate-500 shadow-sm hover:bg-[#00D084] hover:text-white hover:border-[#00D084] transition-all duration-150"
+          className="absolute -right-3 top-[72px] z-10 flex items-center justify-center w-6 h-6 rounded-full bg-white border border-gray-200 text-slate-500 shadow-sm transition-all duration-150"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'var(--color-admin-accent)'
+            e.currentTarget.style.color = 'white'
+            e.currentTarget.style.borderColor = 'var(--color-admin-accent)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'white'
+            e.currentTarget.style.color = ''
+            e.currentTarget.style.borderColor = '#e5e7eb'
+          }}
         >
           {isCollapsed ? icons.chevronRight : icons.chevronLeft}
         </button>

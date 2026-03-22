@@ -55,20 +55,27 @@ const WidgetAcademico = ({ courses = DEFAULT_COURSES, onViewAll }: WidgetAcademi
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 py-2">
       {courses.map((course, i) => (
         <div key={i} className="group cursor-pointer">
-          <div className="relative h-44 rounded-2xl overflow-hidden shadow-sm border border-emerald-100/50">
+          <div
+            className="relative h-44 rounded-2xl overflow-hidden"
+            style={{ border: '1px solid var(--color-border-accent)' }}
+          >
             <img
               src={course.img}
               alt={course.title}
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             />
             {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#022c22]/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{ background: `linear-gradient(to top, var(--color-primary) 0%, transparent 60%)` }}
+            />
             {/* Badge */}
             {course.tag && (
               <div
-                className={`absolute top-3 left-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-lg ${
-                  course.tag === 'Destacado' ? 'bg-amber-500' : 'bg-emerald-500'
-                }`}
+                className="absolute top-3 left-3 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white shadow-lg"
+                style={{
+                  backgroundColor: course.tag === 'Destacado' ? 'var(--color-warning)' : 'var(--color-accent)',
+                }}
               >
                 {course.tag}
               </div>
@@ -78,14 +85,24 @@ const WidgetAcademico = ({ courses = DEFAULT_COURSES, onViewAll }: WidgetAcademi
               {course.price}
             </div>
           </div>
+
           <div className="mt-3">
-            <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest mb-1 block">
+            <span
+              className="text-[9px] font-bold uppercase tracking-widest mb-1 block"
+              style={{ color: 'var(--color-accent-hover)' }}
+            >
               {course.level}
             </span>
-            <h4 className="font-extrabold text-[#022c22] text-sm group-hover:text-emerald-600 transition-colors leading-tight">
+            <h4
+              className="font-extrabold text-sm leading-tight transition-colors"
+              style={{ color: 'var(--color-primary)' }}
+            >
               {course.title}
             </h4>
-            <div className="mt-3 flex items-center text-[10px] font-black text-emerald-600 uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+            <div
+              className="mt-3 flex items-center text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0"
+              style={{ color: 'var(--color-accent-hover)' }}
+            >
               Formalizar Inscripción <ChevronRight size={12} className="ml-1" />
             </div>
           </div>

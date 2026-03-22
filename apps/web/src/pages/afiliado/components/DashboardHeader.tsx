@@ -14,50 +14,63 @@ const DashboardHeader = ({
   userCode = 'CIBIR-2026-001',
   searchPlaceholder = 'Buscar trámites, cursos o solvencias...',
 }: DashboardHeaderProps) => (
-  <header className="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-emerald-100/50 px-4 sm:px-8 h-18 py-3 flex items-center justify-between gap-4 shadow-sm">
+  <header
+    className="sticky top-0 z-40 px-4 sm:px-8 py-3 h-18 flex items-center justify-between gap-4 shadow-sm border-b"
+    style={{
+      backgroundColor: 'var(--color-bg-surface)',
+      borderColor: 'var(--color-border-accent)',
+    }}
+  >
     {/* Left: Hamburger + Search */}
     <div className="flex items-center gap-3 flex-grow max-w-xl">
-      {/* Hamburger — mobile only */}
       <button
         onClick={onMenuOpen}
-        className="md:hidden p-2 hover:bg-emerald-50 rounded-lg transition-colors text-slate-500 flex-shrink-0"
+        className="md:hidden p-2 rounded-lg transition-colors flex-shrink-0"
+        style={{ color: 'var(--color-text-muted)' }}
         aria-label="Abrir menú"
       >
         <Menu size={20} />
       </button>
 
-      {/* Search */}
       <div className="relative w-full">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-faint)' }} />
         <input
           type="text"
           placeholder={searchPlaceholder}
-          className="w-full bg-slate-50 border border-slate-100 rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-emerald-400/30 focus:border-emerald-400 transition-all outline-none text-slate-700"
+          className="w-full rounded-full py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
+          style={{
+            backgroundColor: 'var(--color-bg-subtle)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-base)',
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-accent)')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
         />
       </div>
     </div>
 
     {/* Right: Notifications + Profile */}
     <div className="flex items-center gap-4 flex-shrink-0">
-      {/* Notification bell */}
-      <div className="flex items-center gap-1 border-r border-slate-200 pr-4">
-        <button className="relative p-2 hover:bg-emerald-50 rounded-full transition-colors group">
-          <Bell size={20} className="text-slate-500 group-hover:text-emerald-600" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
+      <div className="flex items-center gap-1 pr-4" style={{ borderRight: '1px solid var(--color-border)' }}>
+        <button className="relative p-2 rounded-full transition-colors">
+          <Bell size={20} style={{ color: 'var(--color-text-muted)' }} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 border-2 border-white rounded-full" style={{ backgroundColor: 'var(--color-danger)' }} />
         </button>
-        <button className="p-2 hover:bg-emerald-50 rounded-full transition-colors">
-          <HelpCircle size={20} className="text-slate-500 hover:text-emerald-600" />
+        <button className="p-2 rounded-full transition-colors">
+          <HelpCircle size={20} style={{ color: 'var(--color-text-muted)' }} />
         </button>
       </div>
 
-      {/* User */}
       <div className="flex items-center gap-3 cursor-pointer group">
         <div className="hidden sm:flex flex-col text-right leading-tight">
-          <span className="font-bold text-sm text-slate-800">{userName}</span>
-          <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">{userCode}</span>
+          <span className="font-bold text-sm" style={{ color: 'var(--color-text-base)' }}>{userName}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent-hover)' }}>{userCode}</span>
         </div>
-        <div className="w-9 h-9 rounded-full bg-emerald-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden group-hover:border-emerald-400 transition-all">
-          <User size={18} className="text-emerald-600" />
+        <div
+          className="w-9 h-9 rounded-full border-2 border-white shadow-sm flex items-center justify-center overflow-hidden transition-all"
+          style={{ backgroundColor: 'var(--color-accent-muted)' }}
+        >
+          <User size={18} style={{ color: 'var(--color-accent-hover)' }} />
         </div>
       </div>
     </div>

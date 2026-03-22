@@ -43,33 +43,47 @@ const WidgetNotificaciones = ({
   notifications = DEFAULT_NOTIFICATIONS,
   onMarkRead,
 }: WidgetNotificacionesProps) => (
-  <DashboardCard
-    title="Alertas y Avisos"
-    icon={Bell}
-    actionText="Marcar como leídas"
-    onAction={onMarkRead}
-  >
+  <DashboardCard title="Alertas y Avisos" icon={Bell} actionText="Marcar como leídas" onAction={onMarkRead}>
     <div className="space-y-3">
       {notifications.map((notif, i) => (
         <div
           key={i}
-          className="flex gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-emerald-100 hover:bg-emerald-50/30 transition-colors cursor-pointer group"
+          className="flex gap-3 p-3.5 rounded-xl transition-colors cursor-pointer group"
+          style={{ backgroundColor: 'var(--color-bg-subtle)', border: '1px solid var(--color-border)' }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-border-accent)';
+            (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--color-accent-subtle)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--color-border)';
+            (e.currentTarget as HTMLDivElement).style.backgroundColor = 'var(--color-bg-subtle)';
+          }}
         >
+          {/* Side bar indicator */}
           <div
-            className={`mt-0.5 w-1 flex-shrink-0 rounded-full ${notif.type === 'danger' ? 'bg-red-500' : 'bg-emerald-500'}`}
+            className="mt-0.5 w-1 flex-shrink-0 rounded-full"
+            style={{ backgroundColor: notif.type === 'danger' ? 'var(--color-danger)' : 'var(--color-accent)' }}
           />
           <div className="flex-grow min-w-0">
-            <h4 className="font-extrabold text-slate-800 text-sm leading-tight group-hover:text-emerald-700 transition-colors truncate">
+            <h4 className="font-extrabold text-sm leading-tight truncate" style={{ color: 'var(--color-text-base)' }}>
               {notif.title}
             </h4>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">{notif.desc}</p>
-            <span className="text-[9px] font-bold text-slate-400 uppercase mt-2 block tracking-wider">
+            <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+              {notif.desc}
+            </p>
+            <span className="text-[9px] font-bold uppercase mt-2 block tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
               {notif.time}
             </span>
           </div>
         </div>
       ))}
-      <button className="w-full text-center py-2 text-xs font-bold text-slate-400 hover:text-emerald-600 transition-colors uppercase tracking-widest mt-2">
+
+      <button
+        className="w-full text-center py-2 text-xs font-bold uppercase tracking-widest mt-2 transition-colors"
+        style={{ color: 'var(--color-text-faint)' }}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-accent-hover)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-faint)')}
+      >
         Ver todas las notificaciones
       </button>
     </div>

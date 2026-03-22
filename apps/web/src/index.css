@@ -1,5 +1,47 @@
 @import "tailwindcss";
 
+/* ─── Color Tokens ──────────────────────────────────────────────────────────
+   Edita estas variables para cambiar la paleta en todo el proyecto.
+   Afiliado Panel: verde oscuro + emerald (alineado con la landing).
+──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* ── Afiliado Panel / Landing ───────────────────────────── */
+  --color-primary:        #022c22;
+  --color-primary-light:  #04432f;
+  --color-accent:         #10b981;   /* emerald-500 */
+  --color-accent-hover:   #059669;   /* emerald-600 */
+  --color-accent-muted:   #d1fae5;   /* emerald-100 */
+  --color-accent-subtle:  rgba(16,185,129,0.12);
+
+  /* ── Admin Panel ────────────────────────────────────────── */
+  --color-admin-accent:       #00D084;
+  --color-admin-accent-hover: #00B870;
+  --color-admin-accent-muted: #E9FAF4;
+  --color-admin-active-text:  #00C07A;
+
+  /* ── Texto ──────────────────────────────────────────────── */
+  --color-text-base:      #1e293b;
+  --color-text-muted:     #64748b;
+  --color-text-faint:     #94a3b8;
+  --color-text-on-dark:   #ffffff;
+  --color-text-on-accent: #ffffff;
+
+  /* ── Fondos ─────────────────────────────────────────────── */
+  --color-bg-page:        #f8fafc;
+  --color-bg-surface:     #ffffff;
+  --color-bg-subtle:      #f1f5f9;
+
+  /* ── Bordes ─────────────────────────────────────────────── */
+  --color-border:         #e2e8f0;
+  --color-border-accent:  #a7f3d0;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --color-danger:         #ef4444;
+  --color-warning:        #f59e0b;
+  --color-success:        #10b981;
+}
+
+
 @keyframes revealUp {
   from {
     opacity: 0;

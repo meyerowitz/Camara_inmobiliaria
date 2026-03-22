@@ -9,10 +9,24 @@ interface QuickActionButtonProps {
   onClick?: () => void
 }
 
-const variantClasses: Record<Variant, string> = {
-  primary: 'bg-[#00D084] text-white hover:bg-[#00B870]',
-  danger: 'bg-red-50 text-red-500 hover:bg-red-100',
-  ghost: 'bg-gray-50 text-slate-600 hover:bg-gray-100',
+const getVariantStyle = (variant: Variant): React.CSSProperties => {
+  switch (variant) {
+    case 'primary':
+      return {
+        backgroundColor: 'var(--color-admin-accent)',
+        color: 'var(--color-text-on-accent)',
+      }
+    case 'danger':
+      return {
+        backgroundColor: 'var(--color-bg-subtle)',
+        color: 'var(--color-danger)',
+      }
+    default:
+      return {
+        backgroundColor: 'var(--color-bg-subtle)',
+        color: 'var(--color-text-base)',
+      }
+  }
 }
 
 const QuickActionButton = ({
@@ -24,10 +38,8 @@ const QuickActionButton = ({
   return (
     <button
       onClick={onClick}
-      className={[
-        'inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-full',
-        variantClasses[variant],
-      ].join(' ')}
+      style={getVariantStyle(variant)}
+      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors w-full"
     >
       {icon && <span className="w-4 h-4 flex-shrink-0">{icon}</span>}
       {label}

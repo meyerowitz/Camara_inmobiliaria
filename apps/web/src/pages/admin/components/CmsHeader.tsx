@@ -44,7 +44,10 @@ const CmsHeader = ({
         </button>
 
         {/* Icon */}
-        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#00D084] text-white shadow-sm flex-shrink-0">
+        <div
+          className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-sm flex-shrink-0"
+          style={{ backgroundColor: 'var(--color-admin-accent)' }}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
@@ -75,16 +78,22 @@ const CmsHeader = ({
           </div>
           <input
             type="text"
-            className="block w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-full text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00D084]/50 focus:border-[#00D084] transition-all"
+            className="block w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-full text-sm placeholder-gray-400 outline-none transition-all"
+            style={{ '--tw-ring-color': 'var(--color-admin-accent)' } as React.CSSProperties}
             placeholder={searchPlaceholder}
             onChange={(e) => onSearch?.(e.target.value)}
+            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-admin-accent)')}
+            onBlur={(e)  => (e.currentTarget.style.borderColor = '')}
           />
         </div>
 
         {/* Action button */}
         <button
           onClick={onNewPost}
-          className="flex-shrink-0 inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent rounded-full font-semibold text-white bg-[#00D084] hover:bg-[#00B970] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00D084] transition-colors shadow-sm text-sm whitespace-nowrap"
+          className="flex-shrink-0 inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-transparent rounded-full font-semibold text-white transition-colors shadow-sm text-sm whitespace-nowrap"
+          style={{ backgroundColor: 'var(--color-admin-accent)' }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-admin-accent-hover)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-admin-accent)')}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
             <line x1="12" y1="5" x2="12" y2="19" />

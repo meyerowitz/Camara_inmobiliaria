@@ -54,7 +54,10 @@ const CmsDashboard = () => {
             Resumen de flujo de caja y actividad reciente — Marzo 2026
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-[#00D084] text-white hover:bg-[#00B870] transition-colors shadow-sm whitespace-nowrap">
+        <button
+          style={{ backgroundColor: 'var(--color-admin-accent)', color: 'var(--color-text-on-accent)' }}
+          className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-colors shadow-sm whitespace-nowrap"
+        >
           {Icon.plus}
           <span className="hidden xs:inline sm:inline">Nueva Transacción</span>
           <span className="xs:hidden sm:hidden">Nueva</span>
