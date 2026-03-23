@@ -34,7 +34,7 @@ const statements = [
     email                       TEXT        UNIQUE NOT NULL,
     telefono                    TEXT,
     estatus                     TEXT        NOT NULL DEFAULT 'Preinscrito'
-                                CHECK (estatus IN ('Preinscrito','CIBIR','Moroso','Suspendido')),
+                                CHECK (estatus IN ('Preinscrito','CIBIR','Moroso','Suspendido', 'Rechazado')),
     fecha_registro              TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     fecha_ultimo_cambio_estatus TEXT,
     CONSTRAINT chk_email_formato CHECK (email LIKE '%@%.%')
@@ -234,7 +234,68 @@ const statements = [
                         CHECK (es_publico IN (0, 1))
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_actas_tipo ON actas_y_convocatorias(tipo_registro)`
+  `CREATE INDEX IF NOT EXISTS idx_actas_tipo ON actas_y_convocatorias(tipo_registro)`,
+
+  // ===========================================================
+  // CMS — MÓDULO DE CONTENIDO DINÁMICO
+  // ===========================================================
+
+  `CREATE TABLE IF NOT EXISTS cms_noticias (
+    id            INTEGER  PRIMARY KEY,
+    titulo        TEXT     NOT NULL,
+    extracto      TEXT     NOT NULL,
+    imagen_url    TEXT,
+    categoria     TEXT     NOT NULL DEFAULT 'Noticias',
+    tag           TEXT,
+    fecha         TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    publicado     INTEGER  NOT NULL DEFAULT 1
+                  CHECK (publicado IN (0, 1)),
+    creado_en     TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS cms_cursos (
+    id            INTEGER  PRIMARY KEY,
+    codigo        TEXT     NOT NULL UNIQUE,
+    titulo        TEXT     NOT NULL,
+    subtitulo     TEXT,
+    imagen_url    TEXT,
+    orden         INTEGER  NOT NULL DEFAULT 0,
+    activo        INTEGER  NOT NULL DEFAULT 1
+                  CHECK (activo IN (0, 1))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS cms_convenios (
+    id            INTEGER  PRIMARY KEY,
+    nombre        TEXT     NOT NULL,
+    logo_url      TEXT     NOT NULL,
+    orden         INTEGER  NOT NULL DEFAULT 0,
+    activo        INTEGER  NOT NULL DEFAULT 1
+                  CHECK (activo IN (0, 1))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS cms_directiva (
+    id            INTEGER  PRIMARY KEY,
+    nombre        TEXT     NOT NULL,
+    cargo         TEXT     NOT NULL,
+    foto_url      TEXT,
+    orden         INTEGER  NOT NULL DEFAULT 0,
+    activo        INTEGER  NOT NULL DEFAULT 1
+                  CHECK (activo IN (0, 1))
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS cms_hitos (
+    id            INTEGER  PRIMARY KEY,
+    anio          TEXT     NOT NULL,
+    titulo        TEXT     NOT NULL,
+    descripcion   TEXT     NOT NULL,
+    orden         INTEGER  NOT NULL DEFAULT 0
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS cms_configuracion (
+    clave         TEXT     PRIMARY KEY,
+    valor         TEXT     NOT NULL,
+    descripcion   TEXT
+  )`
 ]
 
 async function initDb(): Promise<void> {

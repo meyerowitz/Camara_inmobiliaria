@@ -53,35 +53,28 @@ const Counter = ({ end, duration = 2000, suffix = '' }) => {
   return <span ref={elementRef}>{count}{suffix}</span>
 }
 
-const FormacionSection = ({ revealTitle, revealPanels }) => {
-  const [currentIndex, setCurrentIndex] = useState(0)
+const FALLBACK_CURSOS = [
+  { id: 'PREANI', codigo: 'PREANI', titulo: 'Programa de Estudios Académicos', subtitulo: 'Inmobiliarios Nivel Inicial', imagen_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200' },
+  { id: 'CIBIR', codigo: 'CIBIR', titulo: 'Curso Intensivo de Bienes Raíces', subtitulo: 'Capacitación Técnica Avanzada', imagen_url: 'https://observatorio.tec.mx/wp-content/uploads/2020/04/CC3B3mohacerunaclaseenvivoefectivaysincomplicaciones.jpg' },
+  { id: 'PEGI', codigo: 'PEGI', titulo: 'Programa Ejecutivo', subtitulo: 'Gestión Inmobiliaria Estratégica', imagen_url: 'https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp' },
+  { id: 'PADI', codigo: 'PADI', titulo: 'Programa de Administración', subtitulo: 'Administración en inmuebles', imagen_url: 'https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png' }
+]
 
-  const cursos = [
-    {
-      id: 'PREANI',
-      titulo: 'Programa de Estudios Académicos',
-      sub: 'Inmobiliarios Nivel Inicial',
-      img: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200'
-    },
-    {
-      id: 'CIBIR',
-      titulo: 'Curso Intensivo de Bienes Raíces',
-      sub: 'Capacitación Técnica Avanzada',
-      img: 'https://observatorio.tec.mx/wp-content/uploads/2020/04/CC3B3mohacerunaclaseenvivoefectivaysincomplicaciones.jpg'
-    },
-    {
-      id: 'PEGI',
-      titulo: 'Programa Ejecutivo',
-      sub: 'Gestión Inmobiliaria Estratégica',
-      img: 'https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp'
-    },
-    {
-      id: 'PADI',
-      titulo: 'Programa de Administración',
-      sub: 'Administración en inmuebles',
-      img: 'https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png'
-    }
-  ]
+const FormacionSection = ({ revealTitle, revealPanels, cfg = {} }) => {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [cursos, setCursos] = useState(FALLBACK_CURSOS)
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    fetch(`${apiUrl}/api/cms/cursos`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.data.length > 0) {
+          setCursos(data.data.map(c => ({ ...c, id: c.codigo })))
+        }
+      })
+      .catch(() => {}) // mantener fallback
+  }, [])
 
   const nextSlide = () => {
     if (currentIndex < cursos.length - 1) {
@@ -135,7 +128,7 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
             >
               <div className='absolute inset-0 z-0'>
                 <img
-                  src={curso.img}
+                  src={curso.imagen_url || curso.img}
                   alt={curso.titulo}
                   className='h-full w-full object-cover transition-transform duration-700 group-hover:scale-110'
                 />
@@ -157,13 +150,13 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
                     {curso.titulo}
                   </h3>
                   <p className='text-white/80 text-sm font-medium leading-relaxed'>
-                    {curso.sub}
+                    {curso.subtitulo || curso.sub}
                   </p>
                 </div>
 
                 <div className='pt-4'>
                   <button className='w-full py-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl text-white font-bold text-xs uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22] shadow-xl'>
-                    Ver detalles del programa
+                    {cfg['formacion_boton'] || 'Ver detalles del programa'}
                   </button>
                 </div>
               </div>
@@ -175,13 +168,23 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
   )
 }
 
-const ConveniosSection = ({ revealTextConvenios }) => {
-  const logos = [
-    { name: 'UCAB', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
-    { name: 'Total Salud', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
-    { name: 'Fénix Salud', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
-    { name: 'Aliado 4', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' }
-  ]
+const FALLBACK_LOGOS = [
+  { id: 1, nombre: 'UCAB', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
+  { id: 2, nombre: 'Total Salud', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
+  { id: 3, nombre: 'Fénix Salud', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
+  { id: 4, nombre: 'Aliado 4', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' }
+]
+
+const ConveniosSection = ({ revealTextConvenios, cfg = {} }) => {
+  const [logos, setLogos] = useState(FALLBACK_LOGOS)
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    fetch(`${apiUrl}/api/cms/convenios`)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.data.length > 0) setLogos(data.data) })
+      .catch(() => {})
+  }, [])
 
   const marqueeStyle = `
     @keyframes marquee-infinite {
@@ -220,7 +223,7 @@ const ConveniosSection = ({ revealTextConvenios }) => {
                   key={i}
                   className='mx-10 lg:mx-16 flex-shrink-0 grayscale opacity-40 hover:opacity-100 hover:grayscale-0 transition-all duration-500 transform hover:scale-110'
                 >
-                  <img src={logo.url} alt={logo.name} className='h-12 w-auto object-contain' />
+                  <img src={logo.logo_url || logo.url} alt={logo.nombre || logo.name} className='h-12 w-auto object-contain' />
                 </div>
               ))}
             </div>
@@ -230,7 +233,7 @@ const ConveniosSection = ({ revealTextConvenios }) => {
         <div className='pt-10 border-t border-gray-100'>
           <a href='#cursos' className='group flex items-center gap-3'>
             <span className='text-emerald-600 font-black uppercase tracking-widest text-xs group-hover:mr-4 transition-all'>
-              Conoce nuestros programas de formación inmobiliaria
+              {cfg['convenios_link'] || 'Conoce nuestros programas de formación inmobiliaria'}
             </span>
             <div className='h-[2px] w-12 bg-emerald-500 group-hover:w-24 transition-all' />
           </a>
@@ -240,35 +243,25 @@ const ConveniosSection = ({ revealTextConvenios }) => {
   )
 }
 
-const NoticiasSection = ({ scrollRef }) => {
-  const noticiasOriginales = [
-    {
-      t: 'Nuevas tasas de registro 2026',
-      d: 'Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.',
-      img: 'https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg',
-      tag: 'Legal'
-    },
-    {
-      t: 'Crecimiento en Puerto Ordaz',
-      d: 'La zona industrial y comercial muestra signos de recuperación tras nuevas inversiones.',
-      img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800',
-      tag: 'Mercado'
-    },
-    {
-      t: 'Taller de Ventas Digitales',
-      d: 'Éxito total en el último evento presencial realizado en el Hotel Eurobuilding.',
-      img: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800',
-      tag: 'Eventos'
-    },
-    {
-      t: 'Innovación Inmobiliaria',
-      d: 'Nuevas tecnologías aplicadas al sector de bienes raíces en la región.',
-      img: 'https://www.elnuevoherald.com/public/ultimas-noticias/5hl2um/picture314557289/alternates/LANDSCAPE_1140/CONDO11.jpg',
-      tag: 'Tecnología'
-    }
-  ]
+const FALLBACK_NOTICIAS = [
+  { id: 1, titulo: 'Nuevas tasas de registro 2026', extracto: 'Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.', imagen_url: 'https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg', tag: 'Legal' },
+  { id: 2, titulo: 'Crecimiento en Puerto Ordaz', extracto: 'La zona industrial y comercial muestra signos de recuperación tras nuevas inversiones.', imagen_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', tag: 'Mercado' },
+  { id: 3, titulo: 'Taller de Ventas Digitales', extracto: 'Éxito total en el último evento presencial realizado en el Hotel Eurobuilding.', imagen_url: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800', tag: 'Eventos' },
+  { id: 4, titulo: 'Innovación Inmobiliaria', extracto: 'Nuevas tecnologías aplicadas al sector de bienes raíces en la región.', imagen_url: 'https://www.elnuevoherald.com/public/ultimas-noticias/5hl2um/picture314557289/alternates/LANDSCAPE_1140/CONDO11.jpg', tag: 'Tecnología' }
+]
 
-  const noticias = [...noticiasOriginales, ...noticiasOriginales]
+const NoticiasSection = ({ scrollRef, cfg = {} }) => {
+  const [noticiasBase, setNoticiasBase] = useState(FALLBACK_NOTICIAS)
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    fetch(`${apiUrl}/api/cms/noticias?publicado=1`)
+      .then(r => r.json())
+      .then(data => { if (data.success && data.data.length > 0) setNoticiasBase(data.data) })
+      .catch(() => {})
+  }, [])
+
+  const noticias = [...noticiasBase, ...noticiasBase]
 
   const scroll = (direction) => {
     const { current } = scrollRef
@@ -313,7 +306,7 @@ const NoticiasSection = ({ scrollRef }) => {
           </p>
         </div>
         <button className='hidden md:flex text-emerald-600 font-bold hover:text-emerald-800 transition-colors items-center gap-2'>
-          Ver todas <span className='text-xl'>→</span>
+          {cfg['noticias_boton'] || 'Ver todas'} <span className='text-xl'>→</span>
         </button>
       </div>
 
@@ -339,7 +332,7 @@ const NoticiasSection = ({ scrollRef }) => {
               <div className='relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5'>
                 <div className='absolute inset-0 bg-emerald-900/20 opacity-0 group-hover/card:opacity-100 transition-opacity z-10 duration-500' />
                 <img
-                  src={news.img}
+                  src={news.imagen_url || news.img}
                   alt={news.t}
                   className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out'
                 />
@@ -353,10 +346,10 @@ const NoticiasSection = ({ scrollRef }) => {
                   Bolívar • Feb 2026
                 </p>
                 <h4 className='text-2xl font-bold leading-tight text-[#022c22] group-hover/card:text-emerald-600 transition-colors'>
-                  {news.t}
+                  {news.titulo || news.t}
                 </h4>
                 <p className='text-slate-500 text-sm leading-relaxed line-clamp-2'>
-                  {news.d}
+                  {news.extracto || news.d}
                 </p>
                 <div className='pt-2'>
                   <span className='text-xs font-bold text-slate-400 group-hover/card:text-emerald-500 transition-colors italic'>
@@ -384,7 +377,17 @@ export default function LandingPage() {
   const [isModalRegisterOpen, setIsRegisterModalOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(true)
   const [scrollY, setScrollY] = useState(0)
+  const [cfg, setCfg] = useState({})
   const navigate = useNavigate()
+
+  // Cargar configuración CMS global
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    fetch(`${apiUrl}/api/cms/config`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setCfg(data.config || {}) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY)
@@ -438,7 +441,7 @@ export default function LandingPage() {
         />
 
         {/* --- HERO SECTION --- */}
-        <Header darkMode={darkMode} />
+        <Header darkMode={darkMode} cfg={cfg} />
       </div>
 
       {/* --- SECCIÓN NOSOTROS --- */}
@@ -448,32 +451,29 @@ export default function LandingPage() {
       >
         <div className='max-w-4xl mx-auto text-center space-y-8'>
           <h2 className='text-4xl lg:text-5xl font-bold text-[#022c22]'>
-            Sobre la Cámara
+            {cfg['nosotros_titulo'] || 'Sobre la Cámara'}
           </h2>
           <p className='text-lg text-slate-600 leading-relaxed italic'>
-            La CÁMARA INMOBILIARIA DEL ESTADO BOLÍVAR (CIEBO) es una
-            Asociación Civil sin fines de lucro, agrupa a instituciones, a personas jurídicas y
-            naturales y que como actores del sector inmobiliario contribuyen con su acción e
-            inversión al desarrollo del sector inmobiliario regional y nacional.
+            {cfg['nosotros_descripcion'] || 'La CÁMARA INMOBILIARIA DEL ESTADO BOLÍVAR (CIEBO) es una Asociación Civil sin fines de lucro, agrupa a instituciones, a personas jurídicas y naturales y que como actores del sector inmobiliario contribuyen con su acción e inversión al desarrollo del sector inmobiliario regional y nacional.'}
           </p>
           <div className='grid md:grid-cols-3 gap-10'>
             {[
               {
-                title: 'Reseña histórica',
-                img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
-                desc: 'Décadas de compromiso con el desarrollo regional.',
+                title: cfg['nosotros_card1_titulo'] || 'Reseña histórica',
+                img: cfg['nosotros_card1_img'] || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800',
+                desc: cfg['nosotros_card1_desc'] || 'Décadas de compromiso con el desarrollo regional.',
                 path: '/historia'
               },
               {
-                title: 'Propósito',
-                img: 'https://gentecompetente.com/wp-content/uploads/2023/10/las-empresas-que-se-hacen-querer.jpg',
-                desc: 'Nuestra razón de ser y motor de cambio diario.',
+                title: cfg['nosotros_card2_titulo'] || 'Propósito',
+                img: cfg['nosotros_card2_img'] || 'https://gentecompetente.com/wp-content/uploads/2023/10/las-empresas-que-se-hacen-querer.jpg',
+                desc: cfg['nosotros_card2_desc'] || 'Nuestra razón de ser y motor de cambio diario.',
                 path: '/proposito'
               },
               {
-                title: 'Misión y Visión',
-                img: 'https://escalas.org/wp-content/uploads/2019/10/4-1.jpg',
-                desc: 'Hacia dónde proyectamos el futuro del sector.',
+                title: cfg['nosotros_card3_titulo'] || 'Misión y Visión',
+                img: cfg['nosotros_card3_img'] || 'https://escalas.org/wp-content/uploads/2019/10/4-1.jpg',
+                desc: cfg['nosotros_card3_desc'] || 'Hacia dónde proyectamos el futuro del sector.',
                 path: '/mision_vision'
               }
             ].map((card, i) => (
@@ -507,7 +507,7 @@ export default function LandingPage() {
 
           <div className='flex justify-center pt-8'>
             <button className='px-10 py-3 border-2 border-emerald-500 text-emerald-600 rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-500 hover:text-white transition-all'>
-              Contáctanos
+              {cfg['nosotros_boton'] || 'Contáctanos'}
             </button>
           </div>
         </div>
@@ -523,7 +523,7 @@ export default function LandingPage() {
             <div className='space-y-4'>
               <div className='bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center'>
                 <div className='text-emerald-600 font-bold text-3xl mb-2'>
-                  <Counter end={220} />
+                  <Counter end={Number(cfg['afiliados_contador'] || 220)} />
                 </div>
                 <p className='text-sm text-slate-500 font-medium uppercase tracking-tighter'>
                   Afiliados
@@ -539,12 +539,12 @@ export default function LandingPage() {
             <div className='pt-12 space-y-4'>
               <div ref={revealStats} className='bg-emerald-600 p-8 rounded-[2rem] text-white shadow-xl shadow-emerald-900/20 reveal-on-scroll'>
                 <p className='font-bold text-xl leading-snug'>
-                  Respaldo Gremial de Alto Nivel
+                  {cfg['afiliados_respaldo'] || 'Respaldo Gremial de Alto Nivel'}
                 </p>
               </div>
               <div className='bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center'>
                 <div className='text-emerald-600 font-bold text-3xl mb-2'>
-                  <Counter end={30} />+
+                  <Counter end={Number(cfg['afiliados_anos'] || 30)} />+
                 </div>
                 <p className='text-sm text-slate-500 font-medium uppercase'>
                   Años de Historia
@@ -555,20 +555,18 @@ export default function LandingPage() {
 
           <div ref={revealText} className='lg:w-1/2 space-y-6 reveal-on-scroll'>
             <h2 className='text-4xl lg:text-5xl font-bold tracking-tight text-[#022c22]'>
-              ¿Por qué afiliarse?
+              {cfg['afiliados_titulo'] || '¿Por qué afiliarse?'}
             </h2>
             <p className='text-slate-600 text-lg'>
-              Al formar parte de la Cámara, accedes a una red nacional de
-              contactos, asesoría legal de primera y programas de formación
-              exclusivos.
+              {cfg['afiliados_descripcion'] || 'Al formar parte de la Cámara, accedes a una red nacional de contactos, asesoría legal de primera y programas de formación exclusivos.'}
             </p>
             <ul className='space-y-4 pt-4'>
-              {[
-                'Certificación Profesional',
-                'Respaldo Gremial Nacional',
-                'Asesoría Legal Especializada',
-                'Networking Estratégico'
-              ].map((item, i) => (
+                {[
+                  cfg['afiliados_beneficio1'] || 'Certificación Profesional',
+                  cfg['afiliados_beneficio2'] || 'Respaldo Gremial Nacional',
+                  cfg['afiliados_beneficio3'] || 'Asesoría Legal Especializada',
+                  cfg['afiliados_beneficio4'] || 'Networking Estratégico'
+                ].map((item, i) => (
                 <li
                   key={i}
                   className='flex items-center gap-3 font-semibold text-slate-700'
@@ -585,7 +583,7 @@ export default function LandingPage() {
       </section>
 
       {/* --- SECCION FORMACION --- */}
-      <FormacionSection revealPanels={revealPanels} revealTitle={revealTitle} />;
+      <FormacionSection revealPanels={revealPanels} revealTitle={revealTitle} cfg={cfg} />
 
       {/* --- SECCIÓN JUNTA DIRECTIVA --- */}
       <section
@@ -596,14 +594,14 @@ export default function LandingPage() {
           <div className='flex flex-col md:flex-row md:items-end justify-between gap-6'>
             <div className='space-y-4'>
               <p className='text-emerald-600 font-black uppercase tracking-[0.3em] text-xs'>
-                Nuestro Equipo
+                {cfg['directiva_supertitulo'] || 'Nuestro Equipo'}
               </p>
               <h2 className='text-5xl lg:text-7xl font-black text-[#022c22] tracking-tighter'>
-                Junta Directiva
+                {cfg['directiva_titulo'] || 'Junta Directiva'}
               </h2>
             </div>
             <button className='px-8 py-4 bg-emerald-500 text-white rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20 self-start md:self-auto'>
-              Conócela
+              {cfg['directiva_boton'] || 'Conócela'}
             </button>
           </div>
 
@@ -620,7 +618,7 @@ export default function LandingPage() {
 
               <div className='bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm'>
                 <span className='font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform'>
-                  Conozca a la Junta Directiva
+                  {cfg['directiva_cta'] || 'Conozca a la Junta Directiva'}
                 </span>
               </div>
             </div>
@@ -629,31 +627,25 @@ export default function LandingPage() {
       </section>
 
       {/* --- SECCIÓN CONVENIOS Y BENEFICIOS --- */}
-      <ConveniosSection revealTextConvenios={revealTextConvenios} />
+      <ConveniosSection revealTextConvenios={revealTextConvenios} cfg={cfg} />
 
       {/* --- SECCIÓN NOTICIAS --- */}
-      <NoticiasSection scrollRef={scrollRef} />
+      <NoticiasSection scrollRef={scrollRef} cfg={cfg} />
 
       {/* --- FOOTER INFORMATIVO --- */}
       <footer className='bg-[#022c22] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6'>
         <img src={logo} alt='Logo' className='h-10 mx-auto opacity-50 grayscale brightness-200' />
         <p className='text-gray-500 text-sm max-w-lg mx-auto leading-relaxed'>
-          Cámara Inmobiliaria del Estado Bolívar. Afiliada a la CIV. <br />
-          Carrera Guri, Nro. 255-03 - 14, Alta Vista. Piso 1, Centro Comercial Ciudad Alta Vista II, Puerto Ordaz.
+          {cfg['footer_descripcion'] || 'Cámara Inmobiliaria del Estado Bolívar. Afiliada a la CIV.'} <br />
+          {cfg['footer_direccion'] || 'Carrera Guri, Nro. 255-03 - 14, Alta Vista. Piso 1, Centro Comercial Ciudad Alta Vista II, Puerto Ordaz.'}
         </p>
         <div className='flex justify-center gap-6 text-gray-400 text-xs'>
-          <a href='#' className='hover:text-emerald-400'>
-            Instagram
-          </a>
-          <a href='#' className='hover:text-emerald-400'>
-            Facebook
-          </a>
-          <a href='#' className='hover:text-emerald-400'>
-            LinkedIn
-          </a>
+          <a href={cfg['redes_instagram'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>Instagram</a>
+          <a href={cfg['redes_facebook'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>Facebook</a>
+          <a href={cfg['redes_linkedin'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>LinkedIn</a>
         </div>
         <p className='text-gray-600 text-[10px] pt-4'>
-          © 2026 Cámara Inmobiliaria del Estado Bolívar. Todos los derechos reservados.
+          {cfg['footer_copyright'] || '© 2026 Cámara Inmobiliaria del Estado Bolívar. Todos los derechos reservados.'}
         </p>
       </footer>
 

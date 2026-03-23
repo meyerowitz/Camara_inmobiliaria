@@ -35,12 +35,24 @@ const HitoHistoria = ({ año, titulo, descripcion, index }) => {
 
 export default function Historia() {
   const navigate = useNavigate()
-  const hitos = [
+  const [hitos, setHitos] = useState([
     { año: '1994', titulo: 'Fundación', descripcion: 'Nace la Cámara Inmobiliaria del Estado Bolívar con la visión de profesionalizar el sector en la región.' },
     { año: '2005', titulo: 'Crecimiento Gremial', descripcion: 'Se alcanzan los primeros 100 afiliados activos, fortaleciendo la presencia en Puerto Ordaz y Ciudad Bolívar.' },
     { año: '2015', titulo: 'Innovación Digital', descripcion: 'Implementación de los primeros sistemas de formación online para corredores inmobiliarios de la zona.' },
     { año: '2024', titulo: 'Nueva Gestión', descripcion: 'Inicio del periodo 2024-2026 enfocado en la vanguardia, sostenibilidad y alianzas estratégicas.' }
-  ]
+  ])
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    fetch(`${apiUrl}/api/cms/hitos`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success && data.data.length > 0) {
+          setHitos(data.data.map(h => ({ año: h.anio, titulo: h.titulo, descripcion: h.descripcion })))
+        }
+      })
+      .catch(() => {})
+  }, [])
   return (
     <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
       <Navbar2 />

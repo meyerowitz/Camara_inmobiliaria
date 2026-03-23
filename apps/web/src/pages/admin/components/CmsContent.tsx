@@ -64,7 +64,14 @@ const icons = {
 const PANELS: Record<string, React.ReactNode> = {
   dashboard: <CmsDashboard />,
   articles: <Placeholder title='Articles' icon={icons.articles} />,
-  cms: <CmsArticlesPanel />,
+  cms_noticias: <CmsArticlesPanel externalTab="noticias" />,
+  cms_cursos: <CmsArticlesPanel externalTab="cursos" />,
+  cms_convenios: <CmsArticlesPanel externalTab="convenios" />,
+  cms_directiva: <CmsArticlesPanel externalTab="directiva" />,
+  cms_hitos: <CmsArticlesPanel externalTab="hitos" />,
+  cms_config: <CmsArticlesPanel externalTab="config" />,
+  // Main CMS generic redirect
+  cms: <CmsArticlesPanel externalTab="config" />, 
   formacion: <FormacionPanel />,
   media: <Placeholder title='Media Library' icon={icons.media} />,
   users: <UsersPanel />,

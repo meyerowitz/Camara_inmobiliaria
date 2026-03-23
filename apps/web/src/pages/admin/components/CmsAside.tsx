@@ -74,15 +74,70 @@ const icons = {
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
+  news: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9" />
+      <path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" />
+    </svg>
+  ),
+  courses: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+    </svg>
+  ),
+  handshake: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M20.42 4.58a5.4 5.4 0 00-7.65 0l-.77.78-.77-.78a5.4 5.4 0 00-7.65 7.65l.77.79L12 21l-2.39-2.39" />
+      <path d="M16 8l1.5 1.5" />
+    </svg>
+  ),
+  team: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  ),
+  history: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  sliders: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" />
+      <line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" />
+      <line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" />
+    </svg>
+  ),
 }
 
-const NAV_MAIN: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: icons.dashboard },
-  { id: 'cms', label: 'Contenido', icon: icons.cms },
-  { id: 'formacion', label: 'Formación', icon: icons.formacion },
-  { id: 'media', label: 'Medios', icon: icons.media },
-  { id: 'users', label: 'Afiliados', icon: icons.users },
-  { id: 'analytics', label: 'Análisis', icon: icons.analytics },
+interface NavGroup {
+  id: string
+  label: string
+  icon: React.ReactNode
+  children?: NavItem[]
+}
+
+const CMS_CHILDREN: NavItem[] = [
+  { id: 'cms_noticias',   label: 'Noticias',     icon: icons.news },
+  { id: 'cms_cursos',    label: 'Cursos',        icon: icons.courses },
+  { id: 'cms_convenios', label: 'Convenios',     icon: icons.handshake },
+  { id: 'cms_directiva', label: 'Directiva',     icon: icons.team },
+  { id: 'cms_hitos',     label: 'Historia',      icon: icons.history },
+  { id: 'cms_config',    label: 'Configuración', icon: icons.sliders },
+]
+
+const NAV_MAIN: NavGroup[] = [
+  { id: 'dashboard', label: 'Dashboard',  icon: icons.dashboard },
+  { id: 'cms',       label: 'Contenido',  icon: icons.cms,       children: CMS_CHILDREN },
+  { id: 'formacion', label: 'Formación',  icon: icons.formacion },
+  { id: 'media',     label: 'Medios',     icon: icons.media },
+  { id: 'users',     label: 'Afiliados',  icon: icons.users },
+  { id: 'analytics', label: 'Análisis',   icon: icons.analytics },
 ]
 
 const NAV_BOTTOM: NavItem[] = [
@@ -143,57 +198,110 @@ const SidebarContent = ({
   onNav: (id: string) => void
   onClose?: () => void
   isMobile?: boolean
-}) => (
-  <>
-    {/* Logo area */}
-    <div className={['flex items-center gap-3 px-4 py-5 border-b border-gray-100 overflow-hidden', isCollapsed ? 'justify-center px-0' : ''].join(' ')}>
-      <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-[#00D084] text-white font-bold text-base shadow-sm">
-        RE
-      </div>
-      {!isCollapsed && (
-        <div className="flex flex-col leading-tight min-w-0 flex-1">
-          <span className="text-slate-800 font-bold text-sm truncate">CIEBO</span>
-          <span className="text-slate-400 text-xs truncate">Panel Admin</span>
+}) => {
+  // Auto-expand CMS group if any child is active
+  const cmsChildIds = CMS_CHILDREN.map(c => c.id)
+  const [cmsOpen, setCmsOpen] = React.useState(cmsChildIds.includes(activeId) || activeId === 'cms')
+
+  return (
+    <>
+      {/* Logo area */}
+      <div className={['flex items-center gap-3 px-4 py-5 border-b border-gray-100 overflow-hidden', isCollapsed ? 'justify-center px-0' : ''].join(' ')}>
+        <div className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-[#00D084] text-white font-bold text-base shadow-sm">
+          RE
         </div>
-      )}
-      {/* Close button visible only on mobile */}
-      {isMobile && onClose && (
-        <button
-          onClick={onClose}
-          className="ml-auto p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-        >
-          {icons.close}
-        </button>
-      )}
-    </div>
+        {!isCollapsed && (
+          <div className="flex flex-col leading-tight min-w-0 flex-1">
+            <span className="text-slate-800 font-bold text-sm truncate">CIEBO</span>
+            <span className="text-slate-400 text-xs truncate">Panel Admin</span>
+          </div>
+        )}
+        {isMobile && onClose && (
+          <button onClick={onClose} className="ml-auto p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+            {icons.close}
+          </button>
+        )}
+      </div>
 
-    {/* Main nav */}
-    <nav className="flex-1 py-4 flex flex-col gap-1 px-2 overflow-y-auto">
-      {NAV_MAIN.map((item) => (
-        <NavButton
-          key={item.id}
-          item={item}
-          isActive={activeId === item.id}
-          isCollapsed={isCollapsed}
-          onClick={() => onNav(item.id)}
-        />
-      ))}
-    </nav>
+      {/* Main nav */}
+      <nav className="flex-1 py-4 flex flex-col gap-0.5 px-2 overflow-y-auto">
+        {NAV_MAIN.map((item) => {
+          const isCmsGroup = item.id === 'cms'
+          const isGroupActive = isCmsGroup
+            ? cmsChildIds.includes(activeId) || activeId === 'cms'
+            : activeId === item.id
 
-    {/* Bottom nav */}
-    <div className="pb-4 px-2 flex flex-col gap-1 border-t border-gray-100 pt-4">
-      {NAV_BOTTOM.map((item) => (
-        <NavButton
-          key={item.id}
-          item={item}
-          isActive={activeId === item.id}
-          isCollapsed={isCollapsed}
-          onClick={() => onNav(item.id)}
-        />
-      ))}
-    </div>
-  </>
-)
+          return (
+            <React.Fragment key={item.id}>
+              <button
+                onClick={() => {
+                  if (isCmsGroup) {
+                    setCmsOpen(o => !o)
+                  } else {
+                    onNav(item.id)
+                  }
+                }}
+                title={isCollapsed ? item.label : undefined}
+                style={isGroupActive && !isCmsGroup
+                  ? { backgroundColor: 'var(--color-admin-accent-muted)', color: 'var(--color-admin-active-text)' }
+                  : undefined}
+                className={[
+                  'relative flex items-center gap-3 rounded-xl py-2.5 transition-all duration-150 w-full text-left group',
+                  isCollapsed ? 'justify-center px-0' : 'px-3',
+                  isGroupActive && !isCmsGroup ? '' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800',
+                  isCmsGroup && cmsOpen ? 'text-slate-700 font-semibold' : ''
+                ].join(' ')}
+              >
+                <span className="flex-shrink-0">{item.icon}</span>
+                {!isCollapsed && <span className="text-sm font-medium truncate flex-1">{item.label}</span>}
+                {!isCollapsed && isCmsGroup && (
+                  <span className={['transition-transform duration-200 text-slate-400', cmsOpen ? 'rotate-90' : ''].join(' ')}>
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                  </span>
+                )}
+              </button>
+
+              {/* CMS sub-items */}
+              {isCmsGroup && cmsOpen && !isCollapsed && (
+                <div className="ml-3 pl-3 border-l border-gray-100 flex flex-col gap-0.5 mb-1">
+                  {CMS_CHILDREN.map(child => (
+                    <button
+                      key={child.id}
+                      onClick={() => onNav(child.id)}
+                      style={activeId === child.id
+                        ? { backgroundColor: 'var(--color-admin-accent-muted)', color: 'var(--color-admin-active-text)' }
+                        : undefined}
+                      className={[
+                        'flex items-center gap-2.5 rounded-xl py-2 px-3 text-sm transition-all duration-150 w-full text-left',
+                        activeId === child.id ? '' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                      ].join(' ')}
+                    >
+                      <span className="flex-shrink-0">{child.icon}</span>
+                      <span className="truncate font-medium">{child.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </React.Fragment>
+          )
+        })}
+      </nav>
+
+      {/* Bottom nav */}
+      <div className="pb-4 px-2 flex flex-col gap-1 border-t border-gray-100 pt-4">
+        {NAV_BOTTOM.map((item) => (
+          <NavButton
+            key={item.id}
+            item={item}
+            isActive={activeId === item.id}
+            isCollapsed={isCollapsed}
+            onClick={() => onNav(item.id)}
+          />
+        ))}
+      </div>
+    </>
+  )
+}
 
 const CmsAside = ({
   mobileOpen = false,

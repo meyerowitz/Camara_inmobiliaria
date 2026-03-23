@@ -1,6 +1,6 @@
 import bgBolivar from '../assets/Pzo.jpg'
 
-export default function Header({ darkMode }) {
+export default function Header({ darkMode, cfg = {} }) {
   return (
     <header
       id='inicio'
@@ -30,20 +30,15 @@ export default function Header({ darkMode }) {
         className='relative z-20 space-y-6 animate-text-reveal'
         style={{ animationDelay: '0.8s', opacity: 0 }}
       >
-        <h1 className='text-white text-5xl lg:text-7xl font-bold leading-[1.1]'>
-          Unidos por el{' '}
-          <span className='text-emerald-500 italic'>progreso</span>{' '}
-          inmobiliario de Bolívar
-        </h1>
+        <h1 className='text-white text-5xl lg:text-7xl font-bold leading-[1.1]' dangerouslySetInnerHTML={{ __html: cfg['hero_titulo'] || 'Unidos por el <span class="text-emerald-500 italic">progreso</span> inmobiliario de Bolívar' }} />
 
         <p className='text-gray-300 text-lg max-w-md leading-relaxed'>
-          Representamos y fortalecemos a los profesionales del sector en el
-          estado, impulsando la ética y el desarrollo sostenible.
+          {cfg['hero_subtitulo'] || 'Representamos y fortalecemos a los profesionales del sector en el estado, impulsando la ética y el desarrollo sostenible.'}
         </p>
 
         <div className='pt-4'>
           <button className='px-10 py-3 bg-emerald-600 text-white rounded-full font-bold uppercase text-xs tracking-widest hover:bg-emerald-500 transition-all shadow-lg'>
-            Unirse
+            {cfg['hero_boton'] || 'Unirse'}
           </button>
         </div>
       </div>
