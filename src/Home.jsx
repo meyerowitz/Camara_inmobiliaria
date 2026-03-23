@@ -86,7 +86,7 @@ const FormacionSection = ({ revealTitle, revealPanels }) => {
       titulo: "Programa de Administración", 
       sub: "Administración en inmuebles",
       img: "https://cms.usanmarcos.ac.cr/sites/default/files/tips-para-el-primer-dia-de-clases.png",
-      route:'/pagi'
+      route:'/padi'
     }
   ];
 
