@@ -1,6 +1,7 @@
 import React from 'react'
+import { API_URL } from '@/config/env'
 
-export const API = import.meta.env?.VITE_API_URL || 'http://localhost:3000'
+export const API = API_URL
 
 export const api = {
   get: (path: string) => fetch(`${API}${path}`).then(r => r.json()),

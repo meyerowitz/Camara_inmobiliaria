@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, IdCard, Mail, Phone, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { API_URL } from '@/config/env'
 
 interface FormField {
   name: string;
@@ -32,8 +33,7 @@ const PreinscripcionForm = () => {
     setErrorMsg('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/afiliados/registro`, {
+      const response = await fetch(`${API_URL}/api/afiliados/registro`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

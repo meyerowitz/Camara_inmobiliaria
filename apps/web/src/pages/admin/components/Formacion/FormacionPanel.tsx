@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-
+import { API_URL } from '@/config/env'
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CibirStatus = 'Pendiente' | 'Aprobado' | 'Rechazado'
 type CursoNivel = 'Principiante' | 'Intermedio' | 'Avanzado'
@@ -162,8 +162,7 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
     setLoading(true)
     try {
       const tabParam = filter.toLowerCase();
-      const apiUrl = import.meta.env?.VITE_API_URL || 'http://localhost:3000';
-      const res = await fetch(`${apiUrl}/api/afiliados/cibir/solicitudes?tab=${tabParam}`)
+      const res = await fetch(`${API_URL}/api/afiliados/cibir/solicitudes?tab=${tabParam}`)
       const json = await res.json()
 
       if (json.success) {
@@ -208,11 +207,10 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
 
   const updateStatus = async (id: string, status: CibirStatus) => {
     try {
-      const apiUrl = import.meta.env?.VITE_API_URL || 'http://localhost:3000';
       if (status === 'Aprobado') {
-        await fetch(`${apiUrl}/api/afiliados/${id}/aprobar`, { method: 'PATCH' })
+        await fetch(`${API_URL}/api/afiliados/${id}/aprobar`, { method: 'PATCH' })
       } else if (status === 'Rechazado') {
-        await fetch(`${apiUrl}/api/afiliados/${id}/rechazar`, { method: 'PATCH' })
+        await fetch(`${API_URL}/api/afiliados/${id}/rechazar`, { method: 'PATCH' })
       }
       // Re-descargar información de servidor 
       setNota('')
@@ -410,8 +408,7 @@ const FormacionPanel = () => {
   useEffect(() => {
     const fetchGlobalCounts = async () => {
       try {
-        const apiUrl = import.meta.env?.VITE_API_URL || 'http://localhost:3000';
-        const res = await fetch(`${apiUrl}/api/afiliados/cibir/solicitudes?tab=todos`)
+        const res = await fetch(`${API_URL}/api/afiliados/cibir/solicitudes?tab=todos`)
         const json = await res.json()
         if (json.success) setPendientesCount(json.meta.counts.pendiente || 0)
       } catch (e) {

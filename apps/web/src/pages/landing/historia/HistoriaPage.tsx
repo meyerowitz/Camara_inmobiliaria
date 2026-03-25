@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgBolivar from '@/pages/landing/assets/Camara_Metropolitana.jpg'
 import Navbar2 from '@/pages/landing/components/Navbar_sc'
+import { API_URL } from '@/config/env'
 
 const useScrollReveal = () => {
   const [node, setNode] = useState<HTMLElement | null>(null)
@@ -43,8 +44,7 @@ export default function Historia() {
   ])
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    fetch(`${apiUrl}/api/cms/hitos`)
+    fetch(`${API_URL}/api/cms/hitos`)
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data.length > 0) {

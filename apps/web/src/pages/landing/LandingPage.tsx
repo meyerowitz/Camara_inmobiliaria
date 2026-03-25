@@ -10,6 +10,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Mision_img from '@/pages/landing/assets/Mision.jpeg'
 import Navbar from '@/pages/landing/components/Navbar'
 import Header from '@/pages/landing/components/Header'
+import { API_URL } from '@/config/env'
 
 interface CounterProps {
   end: number;
@@ -89,8 +90,7 @@ const FormacionSection = ({ revealTitle, revealPanels, cfg = {} }: SectionProps)
   const [cursos, setCursos] = useState<CursoLanding[]>(FALLBACK_CURSOS)
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    fetch(`${apiUrl}/api/cms/cursos`)
+    fetch(`${API_URL}/api/cms/cursos`)
       .then(r => r.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
@@ -211,8 +211,7 @@ const ConveniosSection = ({ revealTextConvenios, cfg = {} }: SectionProps) => {
   const [logos, setLogos] = useState<LogoLanding[]>(FALLBACK_LOGOS)
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    fetch(`${apiUrl}/api/cms/convenios`)
+    fetch(`${API_URL}/api/cms/convenios`)
       .then(r => r.json())
       .then(data => { if (data.success && data.data.length > 0) setLogos(data.data) })
       .catch(() => {})
@@ -297,8 +296,7 @@ const NoticiasSection = ({ scrollRef, cfg = {} }: SectionProps) => {
   const [noticiasBase, setNoticiasBase] = useState<NoticiaLanding[]>(FALLBACK_NOTICIAS)
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    fetch(`${apiUrl}/api/cms/noticias?publicado=1`)
+    fetch(`${API_URL}/api/cms/noticias?publicado=1`)
       .then(r => r.json())
       .then(data => { if (data.success && data.data.length > 0) setNoticiasBase(data.data) })
       .catch(() => {})
@@ -425,8 +423,7 @@ export default function LandingPage() {
 
   // Cargar configuración CMS global
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-    fetch(`${apiUrl}/api/cms/config`)
+    fetch(`${API_URL}/api/cms/config`)
       .then(r => r.json())
       .then(data => { if (data.success) setCfg(data.config || {}) })
       .catch(() => {})
