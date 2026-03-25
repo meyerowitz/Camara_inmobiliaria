@@ -38,26 +38,96 @@ const useScrollReveal = () => {
 
 // Datos de la directiva
 const directiva = [
-  { nombre: "Francisco Piñango", cargo: "Presidente", foto: francisco },
-  { nombre: "Zulay Amaya", cargo: "Vicepresidenta", foto: Zulay },
-  { nombre: "Margaret Vásquez", cargo: "Directora General", foto: margaret },
-  { nombre: "Romelina Rodríguez", cargo: "Directora de Finanzas", foto:Romelina },
-  { nombre: "Margot Castro", cargo: "Directora de Asuntos Legales", foto: margot},
-  { nombre: "Pedro Vallenilla", cargo: "Director de Comunicaciones", foto: pedro },
-  { nombre: "Graciela Ledezma", cargo: "Directora de Formación", foto: graciela },
-  { nombre: "Yorjharry Vicent", cargo: "Director de Eventos", foto: Yorjharry },
-  { nombre: "Rina Centeno", cargo: "Directora de Labor Social", foto: Rina},
-  { nombre: "Pedro Castro", cargo: "Director de Relaciones Interinstitucionales", foto: Pedro_C},
-  { nombre: "Neohomar Longart", cargo: "Director de Atención al Gremiado", foto: neohomar},
+  { nombre: "Francisco Piñango", cargo: "Presidente", foto: francisco, perfil: "Líder con amplia trayectoria en el sector inmobiliario, comprometido con la innovación y el fortalecimiento gremial en el estado Bolívar." },
+  { nombre: "Zulay Amaya", cargo: "Vicepresidenta", foto: Zulay, perfil: "Especialista en gestión administrativa y relaciones corporativas, enfocada en la excelencia operativa de la cámara." },
+  { nombre: "Margaret Vásquez", cargo: "Directora General", foto: margaret, perfil: "Coordinadora de proyectos estratégicos y enlace principal para el desarrollo de iniciativas institucionales." },
+  { nombre: "Romelina Rodríguez", cargo: "Directora de Finanzas", foto: Romelina, perfil: "Responsable de la transparencia y solidez financiera, con amplia experiencia en contabilidad y auditoría." },
+  { nombre: "Margot Castro", cargo: "Directora de Asuntos Legales", foto: margot, perfil: "Asesora jurídica experta en derecho inmobiliario, velando por el marco legal y ético de nuestra organización." },
+  { nombre: "Pedro Vallenilla", cargo: "Director de Comunicaciones", foto: pedro, perfil: "Encargado de la proyección mediática y la identidad corporativa de la Cámara Inmobiliaria de Bolívar." },
+  { nombre: "Graciela Ledezma", cargo: "Directora de Formación", foto: graciela, perfil: "Impulsora del crecimiento profesional de nuestros miembros a través de programas de capacitación de alto nivel." },
+  { nombre: "Yorjharry Vicent", cargo: "Director de Eventos", foto: Yorjharry, perfil: "Organizador de encuentros clave y networking empresarial para el fortalecimiento del gremio inmobiliario." },
+  { nombre: "Rina Centeno", cargo: "Directora de Labor Social", foto: Rina, perfil: "Líder de proyectos de impacto social, estrechando los lazos entre el sector inmobiliario y la comunidad." },
+  { nombre: "Pedro Castro", cargo: "Director de Relaciones Interinstitucionales", foto: Pedro_C, perfil: "Facilitador de convenios y alianzas estratégicas con organismos públicos y privados." },
+  { nombre: "Neohomar Longart", cargo: "Director de Atención al Gremiado", foto: neohomar, perfil: "Dedicado a escuchar y atender las necesidades de nuestros agremiados, garantizando su bienestar." },
 ];
 
-const DirectorCard = ({ nombre, cargo, foto, index }) => {
-  const setReveal = useScrollReveal(); 
+const MemberModal = ({ miembro, onClose }) => {
+  if (!miembro) return null;
+
   return (
-    <div 
-      ref={setReveal} 
-      style={{ transitionDelay: `${index * 0.1}s` }} 
-      className="reveal-on-scroll group bg-white rounded-[2.5rem] p-5 border border-emerald-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-700"
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300"
+        onClick={onClose}
+      />
+
+      {/* Modal Content */}
+      <div
+        className="relative bg-white w-full max-w-4xl overflow-hidden rounded-[3rem] shadow-2xl flex flex-col md:flex-row animate-in zoom-in-95 slide-in-from-bottom-4 duration-300"
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-2 left-5 lg:top-4 lg:left-5 z-10 p-3 bg-emerald-200 hover:bg-emerald-500 hover:text-white rounded-full transition-colors cursor-pointer"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Info Section (Left) */}
+        <div className="flex-1 p-10 md:p-16 flex flex-col justify-center text-center md:text-left">
+          <div className="space-y-6 pt-4">
+            <div>
+              <p className="text-emerald-500 font-black uppercase tracking-[0.2em] text-xs mb-2">Miembro de Junta Directiva</p>
+              <h2 className="text-4xl md:text-5xl font-black text-[#022c22] tracking-tight leading-tight">
+                {miembro.nombre}
+              </h2>
+            </div>
+
+            <div className="h-1 w-20 bg-emerald-500 mx-auto md:mx-0 rounded-full" />
+
+            <div className="space-y-4 pt-4 md:pt-2">
+              <p className="text-xl font-bold text-emerald-600 uppercase tracking-widest text-sm">
+                {miembro.cargo}
+              </p>
+              <p className="text-slate-600 leading-relaxed text-lg max-w-md mx-auto md:mx-0">
+                {miembro.perfil}
+              </p>
+            </div>
+
+            <div className="pt-8">
+              <button className="px-8 py-3 bg-[#022c22] text-white rounded-full font-bold text-sm tracking-widest hover:bg-emerald-600 transition-colors">
+                Contactar Ahora
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Photo Section (Right) */}
+        <div className="w-full md:w-[45%] bg-slate-50 relative aspect-square md:aspect-auto h-[300px] md:h-auto">
+          <img
+            src={miembro.foto}
+            alt={miembro.nombre}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent hidden md:block" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const DirectorCard = ({ nombre, cargo, foto, index, onClick }) => {
+  const setReveal = useScrollReveal();
+  return (
+    <div
+      ref={setReveal}
+      style={{ transitionDelay: `${index * 0.1}s` }}
+      onClick={onClick}
+      className="reveal-on-scroll group bg-white rounded-[2.5rem] p-5 border border-emerald-100 shadow-sm hover:shadow-xl hover:shadow-emerald-900/5 transition-all duration-700 cursor-pointer"
     >
       <div className="relative overflow-hidden rounded-[2rem] aspect-square mb-6 bg-slate-100">
         <img
@@ -81,10 +151,25 @@ const DirectorCard = ({ nombre, cargo, foto, index }) => {
 
 export default function EquipoDirectivo() {
   const navigate = useNavigate();
+  const [selectedMember, setSelectedMember] = useState(null);
+
+  // Cerrar modal al presionar Escape
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setSelectedMember(null);
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
+    <div className={`min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth ${selectedMember ? 'overflow-hidden' : ''}`}>
       <Navbar2 />
+
+      <MemberModal
+        miembro={selectedMember}
+        onClose={() => setSelectedMember(null)}
+      />
 
       <header
         className="relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover animate-header-bg"
@@ -108,12 +193,13 @@ export default function EquipoDirectivo() {
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
             {directiva.map((miembro, index) => (
-              <DirectorCard 
-                key={index} 
+              <DirectorCard
+                key={index}
                 index={index} // PASAMOS EL INDEX PARA EL DELAY
-                nombre={miembro.nombre} 
-                cargo={miembro.cargo} 
+                nombre={miembro.nombre}
+                cargo={miembro.cargo}
                 foto={miembro.foto}
+                onClick={() => setSelectedMember(miembro)}
               />
             ))}
           </div>
