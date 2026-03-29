@@ -12,21 +12,26 @@ const NavItem = ({ title, options, Tpath }) => {
       onMouseEnter={() => setIsOpen(true)}
       onMouseLeave={() => setIsOpen(false)}
     >
-        <Link to={!options ? Tpath : "#"}>
-      <button className="flex items-center gap-1 hover:text-emerald-400 transition py-2 font-medium font-bold text-sm">
-        {title}
-        {options && (
-          <svg
-            className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        )}
-      </button>
-            </Link>
+      <Link to={!options ? Tpath : "#"}>
+        <button className="flex items-center gap-1 hover:text-emerald-400 transition py-2 font-medium font-bold text-sm">
+          {title}
+          {options && (
+            <svg
+              className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          )}
+        </button>
+      </Link>
       {options && isOpen && (
         <div className="absolute top-full left-0 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]">
           {options.map((opt, idx) => {
@@ -48,7 +53,12 @@ const NavItem = ({ title, options, Tpath }) => {
   );
 };
 
-export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModalOpen }) {
+export default function Navbar({
+  darkMode,
+  setDarkMode,
+  setIsSesionModalOpen,
+  setIsRegisterModalOpen,
+}) {
   const menuConfig = [
     {
       title: "Nosotros",
@@ -56,28 +66,69 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
         { label: "Misión y Visión", path: "/mision_vision" },
         { label: "Junta Directiva", path: "/junta_directiva" },
         { label: "Historia", path: "/historia" },
-        {label:"Dirección", path:"/direccion"}
-      ],Tpath:''
+        { label: "Dirección", path: "/direccion" },
+      ],
+      Tpath: "",
     },
-    { title: "CIV", items: null, Tpath:'/codigo_etica' },
-    { title: "Eventos", items: null, Tpath:''},
-    { title: "Afiliados", items: [{label:"Directorio", path:'/junta_directiva'}, "Beneficios", "Requisitos"],Tpath:'' },
-    { title: "Formación", items: [{ label:"PADI", path:'/padi'},{ label:"PEGI", path:'/pegi'},{ label:"CIBIR", path:'/cibir'},
-      { label:"PREANI", path:'/preani'},{ label:"Talleres", path:'/talleres'},{ label:"Otras Actividades", path:'/otros'}],Tpath:'' },
-    { title: "Convenios", items: ["Institucionales", "Comerciales", "Internacionales"],Tpath:'' },
-    { title: "Normativas", items: null,Tpath:'' },
-    { title: "Prensa", items: [{label:"Noticias", path:'#noticias'}, "Galería", "Comunicados"],Tpath:'' },
-    { title: "Contacto", items: null,Tpath:'' },
+    { title: "CIV", items: null, Tpath: "/codigo_etica" },
+    { title: "Eventos", items: null, Tpath: "/Eventos" },
+    {
+      title: "Afiliados",
+      items: [
+        { label: "Directorio", path: "/junta_directiva" },
+        "Beneficios",
+        "Requisitos",
+      ],
+      Tpath: "",
+    },
+    {
+      title: "Formación",
+      items: [
+        { label: "PADI", path: "/padi" },
+        { label: "PEGI", path: "/pegi" },
+        { label: "CIBIR", path: "/cibir" },
+        { label: "PREANI", path: "/preani" },
+        { label: "Talleres", path: "/talleres" },
+        { label: "Otras Actividades", path: "/otros" },
+      ],
+      Tpath: "",
+    },
+    // ... dentro de menuConfig en Navbar.jsx
+    {
+      title: "Convenios",
+      items: [
+        { label: "Institucionales", path: "/institucionales" },
+        { label: "Comerciales", path: "/comerciales" },
+        { label: "Internacionales", path: "/internacionales" },
+      ],
+      Tpath: "",
+    },
+    { title: "Normativas", items: null, Tpath: "" },
+    {
+      title: "Prensa",
+      items: [
+        { label: "Noticias", path: "#noticias" },
+        "Galería",
+        "Comunicados",
+      ],
+      Tpath: "",
+    },
+    { title: "Contacto", items: null, Tpath: "" },
   ];
 
   return (
     <nav
       className={`${
-        darkMode ? "dark bg-[#011a14]/90 border-white/10" : "bg-white/90 border-[#011a14]/10"
+        darkMode
+          ? "dark bg-[#011a14]/90 border-white/10"
+          : "bg-white/90 border-[#011a14]/10"
       } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
     >
       {/* LOGO CON LINK AL INICIO */}
-      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <Link
+        to="/"
+        className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+      >
         <img
           src={darkMode ? logo : logoA}
           alt="Logo Cámara"
@@ -91,7 +142,12 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
           Inicio
         </a>
         {menuConfig.map((item, index) => (
-          <NavItem key={index} title={item.title} options={item.items} Tpath={item.Tpath || "/"} />
+          <NavItem
+            key={index}
+            title={item.title}
+            options={item.items}
+            Tpath={item.Tpath || "/"}
+          />
         ))}
       </div>
 
@@ -108,7 +164,7 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
         >
           Registro
         </button>
-        
+
         {/* Botón Modo Oscuro/Claro */}
         <button
           onClick={() => setDarkMode(!darkMode)}
