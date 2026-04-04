@@ -139,6 +139,21 @@ export function ListDetail<T extends { id?: string | number }>({
     }
   }, [])
 
+  // ── Breadcrumb integration ──────────────────────────────────────────────────
+  useEffect(() => {
+    const titleObj = selected as any
+    const titleStr = titleObj ? (titleObj.titulo || titleObj.nombre || titleObj.etiqueta || 'Elemento') : null
+    const finalTitle = selectedId === 'new' ? 'Nuevo' : titleStr
+    window.dispatchEvent(new CustomEvent('cms-breadcrumb', { detail: finalTitle }))
+    return () => { window.dispatchEvent(new CustomEvent('cms-breadcrumb', { detail: null })) }
+  }, [selectedId, selected])
+
+  useEffect(() => {
+    const handler = () => setSelectedId(null)
+    window.addEventListener('cms-clear-selection', handler)
+    return () => window.removeEventListener('cms-clear-selection', handler)
+  }, [setSelectedId])
+
   // Transition string — disabled during drag to avoid jitter
   const colTransition = dragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)'
 

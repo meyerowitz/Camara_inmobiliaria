@@ -418,7 +418,7 @@ export const ConfigPanel = () => {
     <div ref={containerRef} className="flex w-full h-full overflow-hidden select-none">
       {/* ── LEFT PANEL (form) */}
       <div
-        className="flex flex-col flex-shrink-0 bg-gray-50 overflow-hidden"
+        className="flex flex-col flex-shrink-0 bg-gray-50 overflow-hidden max-lg:!w-full max-lg:!flex-1"
         style={{
           width: previewVisible ? leftWidth : undefined,
           flex:  previewVisible ? 'none' : '1 1 0%',

@@ -27,6 +27,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   const [previewVisible, setPreviewVisible] = useState(true)
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT)
   const [dividerDragging, setDividerDragging] = useState(false)
+  const [detailName, setDetailName] = useState<string | null>(null)
 
   const containerRef  = useRef<HTMLDivElement>(null)
   const isDragging    = useRef(false)
@@ -68,6 +69,12 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
     }
   }, [])
 
+  useEffect(() => {
+    const handler = (e: any) => setDetailName(e.detail)
+    window.addEventListener('cms-breadcrumb', handler)
+    return () => window.removeEventListener('cms-breadcrumb', handler)
+  }, [])
+
   // ── ConfigPanel renders its own split screen ───────────────────────────────
   if (externalTab === 'config') {
     return (
@@ -84,18 +91,34 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
 
       {/* ── LEFT: content panel ───────────────────────────────────────────── */}
       <div
-        className="flex flex-col overflow-hidden flex-shrink-0"
+        className="flex flex-col overflow-hidden flex-shrink-0 max-lg:!w-full max-lg:!flex-1"
         style={{
           width: previewVisible ? leftWidth : undefined,
           flex:  previewVisible ? 'none' : '1 1 0%',
           transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
-        {/* Mini toolbar */}
+        {/* Mini toolbar with interactive breadcrumb */}
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-gray-50 border-b border-gray-100">
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            {externalTab}
-          </span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-slate-400">
+            {detailName ? (
+              <>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('cms-clear-selection'))}
+                  className="uppercase hover:text-slate-700 transition-colors cursor-pointer outline-none"
+                  title="Volver a la lista completa"
+                >
+                  {externalTab}
+                </button>
+                <span className="text-slate-300">/</span>
+                <span className="uppercase text-slate-600 truncate max-w-[140px] sm:max-w-[200px]" title={detailName}>
+                  {detailName}
+                </span>
+              </>
+            ) : (
+              <span className="uppercase">{externalTab}</span>
+            )}
+          </div>
           {/* Show-preview button when hidden */}
           {!previewVisible && (
             <button
