@@ -1,4 +1,3 @@
 // Barrel de middlewares
-// Ejemplo:
-// export { authMiddleware } from './auth.middleware.js'
-// export { validateBody } from './validate.middleware.js'
+export { requireAuth, requireRole } from './auth.middleware.js'
+export type { JwtPayload } from './auth.middleware.js'

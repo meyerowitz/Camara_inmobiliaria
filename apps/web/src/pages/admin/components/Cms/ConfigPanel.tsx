@@ -27,6 +27,7 @@ const CONFIG_GROUPS: Array<{
         { clave: 'hero_titulo', descripcion: 'Título principal', type: 'text' },
         { clave: 'hero_subtitulo', descripcion: 'Subtítulo', type: 'textarea' },
         { clave: 'hero_boton', descripcion: 'Texto del botón CTA', type: 'text' },
+        { clave: 'hero_img', descripcion: 'Imagen de fondo', type: 'url_img' },
       ],
     },
     {
@@ -278,6 +279,9 @@ const AccordionGroup = ({
             title="Ver en preview"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all text-xs"
           >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+            </svg>
           </button>
           <span className="text-slate-400 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>

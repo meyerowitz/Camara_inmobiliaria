@@ -35,10 +35,39 @@ const statements = [
     telefono                    TEXT,
     estatus                     TEXT        NOT NULL DEFAULT 'Preinscrito'
                                 CHECK (estatus IN ('Preinscrito','CIBIR','Moroso','Suspendido', 'Rechazado')),
+    inscripcion_pagada          INTEGER     NOT NULL DEFAULT 0,
     fecha_registro              TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     fecha_ultimo_cambio_estatus TEXT,
     CONSTRAINT chk_email_formato CHECK (email LIKE '%@%.%')
   )`,
+
+  `CREATE TABLE IF NOT EXISTS verificaciones_email (
+    token_verificacion  TEXT PRIMARY KEY,
+    nombre_completo     TEXT NOT NULL,
+    cedula_rif          TEXT NOT NULL,
+    email               TEXT NOT NULL,
+    telefono            TEXT,
+    fecha_expiracion    TEXT NOT NULL,
+    creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  // ── Tabla de autenticación (usuarios del sistema) ───────────────────────────
+  `CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER  PRIMARY KEY,
+    email         TEXT     NOT NULL UNIQUE,
+    password_hash TEXT     NOT NULL,
+    roles         TEXT     NOT NULL DEFAULT '["afiliado"]',
+    rol           TEXT     NOT NULL DEFAULT 'afiliado', -- deprecado pero mantenido temporalmente si hay codigo viejo
+    id_agremiado  INTEGER  REFERENCES agremiados(id_agremiado) ON DELETE SET NULL,
+    activo        INTEGER  NOT NULL DEFAULT 1
+                  CHECK (activo IN (0, 1)),
+    reset_token         TEXT,
+    reset_token_expira  TEXT,
+    creado_en     TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
+  `CREATE INDEX IF NOT EXISTS idx_users_rol   ON users(rol)`,
 
   // ===========================================================
   // FASE 1 — MÓDULO ACADÉMICO Y DE FORMACIÓN

@@ -178,7 +178,7 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
         const mapped: Solicitud[] = json.data.map((item: { id_agremiado: string | number; nombre_completo: string; cedula_rif: string; email: string; telefono: string; estatus: string; fecha_registro: string }) => {
           let status: CibirStatus = 'Pendiente'
           if (item.estatus === 'CIBIR') status = 'Aprobado'
-          if (item.estatus === 'Rechazado') status = 'Rechazado'
+          if (item.estatus === 'Rechazado' || item.estatus === 'Suspendido') status = 'Rechazado'
 
           return {
             id: String(item.id_agremiado),
@@ -213,6 +213,9 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
         await fetch(`${API_URL}/api/afiliados/${id}/rechazar`, { method: 'PATCH' })
       }
       // Re-descargar información de servidor 
+      if (selected && String(selected.id) === String(id)) {
+        setSelected({ ...selected, status });
+      }
       setNota('')
       fetchSolicitudes()
     } catch (error) {

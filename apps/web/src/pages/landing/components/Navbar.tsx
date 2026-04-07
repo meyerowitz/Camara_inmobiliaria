@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/context/AuthContext'
 import logoA from '@/pages/landing/assets/Logo2.png'
 import logo from '@/pages/landing/assets/Logo3.png'
+import LoginModal from '@/pages/landing/components/LoginModal'
 
 export interface NavOption {
   label: string;
@@ -63,11 +65,14 @@ const NavItem = ({ title, options, Tpath }: NavItemProps) => {
 interface NavbarProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
-  setIsSesionModalOpen: (val: boolean) => void;
-  setIsRegisterModalOpen: (val: boolean) => void;
+  setIsSesionModalOpen?: (val: boolean) => void;
+  setIsRegisterModalOpen?: (val: boolean) => void;
 }
 
 export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModalOpen }: NavbarProps) {
+  const { user, logout } = useAuth()
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
   const menuConfig = [
     {
       title: 'Nosotros',
@@ -80,30 +85,30 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
       Tpath: ''
     },
     { title: 'CIV', items: null, Tpath: '/codigo_etica' },
-    { title: 'Eventos', items: null, Tpath: '' },
-    { title: 'Afiliados', items: [{ label: 'Directorio', path: '/junta_directiva' }, 'Beneficios', 'Requisitos'], Tpath: '' },
-    { title: 'Formación', items: [{ label: 'PREANI', path: '/talleres' }, 'CIBIR', 'PEGI', 'PADI'], Tpath: '' },
-    { title: 'Convenios', items: ['Institucionales', 'Comerciales', 'Internacionales'], Tpath: '' },
-    { title: 'Normativas', items: null, Tpath: '' },
-    { title: 'Prensa', items: [{ label: 'Noticias', path: '#noticias' }, 'Galería', 'Comunicados'], Tpath: '' },
-    { title: 'Contacto', items: null, Tpath: '' }
+    { title: 'Eventos', items: null, Tpath: '/eventos' },
+    { title: 'Afiliados', items: [{ label: 'Directorio', path: '/directorio' }, { label: 'Beneficios', path: '/beneficios' }, { label: 'Requisitos', path: '/requisitos' }], Tpath: '' },
+    { title: 'Formación', items: [{ label: 'PREANI', path: '/preani' }, { label: 'CIBIR', path: '/cibir' }, { label: 'PEGI', path: '/pegi' }, { label: 'PADI', path: '/padi' }], Tpath: '' },
+    { title: 'Convenios', items: [{ label: 'Institucionales', path: '/convenios-institucionales' }, { label: 'Comerciales', path: '/convenios-comerciales' }, { label: 'Internacionales', path: '/convenios-internacionales' }], Tpath: '' },
+    { title: 'Normativas', items: null, Tpath: '/normativas' },
+    { title: 'Prensa', items: [{ label: 'Noticias', path: '#noticias' }, { label: 'Galería', path: '/galeria' }, { label: 'Comunicados', path: '/comunicados' }], Tpath: '' },
+    { title: 'Contacto', items: null, Tpath: '/contacto' }
   ]
 
   return (
     <nav
-      className={`${darkMode ? 'dark bg-[#011a14]/90 border-white/10' : 'bg-white/90 border-[#011a14]/10'
-        } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
+      className={`${darkMode ? 'dark bg-[#011a14]/95 border-white/5' : 'bg-[#022c22]/95 border-[#04432f]/60'
+        } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b transition-colors duration-300`}
     >
       <Link to='/' className='flex items-center gap-3 hover:opacity-80 transition-opacity'>
         <img
-          src={darkMode ? logo : logoA}
+          src={logo}
           alt='Logo Cámara'
           className='h-23 w-auto object-contain'
         />
       </Link>
 
-      <div className='hidden xl:flex ml-auto gap-6 text-[11px] font-bold uppercase tracking-wider dark:text-gray-300 text-slate-600'>
-        <a href='#inicio' className='text-emerald-500 py-2 flex items-center'>
+      <div className='hidden xl:flex ml-auto gap-6 text-[11px] font-bold uppercase tracking-wider text-emerald-100/90 dark:text-emerald-100/80'>
+        <a href='#inicio' className='text-emerald-400 py-2 flex items-center'>
           Inicio
         </a>
         {menuConfig.map((item, index) => (
@@ -112,18 +117,40 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
       </div>
 
       <div className='flex items-center gap-4 ml-7'>
-        <button
-          onClick={() => setIsSesionModalOpen(true)}
-          className='hidden md:block px-5 py-2 text-emerald-500 text-xs font-bold hover:text-emerald-600 transition'
-        >
-          Login
-        </button>
-        <button
-          onClick={() => setIsRegisterModalOpen(true)}
-          className='px-6 py-2 bg-emerald-500 text-white dark:text-[#022c22] rounded-full text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all'
-        >
-          Registro
-        </button>
+        {user ? (
+          /* ── Sesión activa ─────────────────────────────────── */
+          <>
+            <Link
+              to='/panel'
+              className='hidden md:flex items-center gap-2 px-5 py-2 text-emerald-600 text-xs font-bold hover:text-emerald-700 transition'
+            >
+              <span className='w-2 h-2 rounded-full bg-emerald-500 inline-block' />
+              {user.email.split('@')[0]}
+            </Link>
+            <button
+              onClick={logout}
+              className='px-6 py-2 border border-emerald-400 text-emerald-500 rounded-full text-xs font-bold hover:bg-emerald-50 transition-all'
+            >
+              Salir
+            </button>
+          </>
+        ) : (
+          /* ── Sin sesión ────────────────────────────────────── */
+          <>
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className='hidden md:block px-5 py-2 text-emerald-400 text-xs font-bold hover:text-emerald-300 transition'
+            >
+              Login
+            </button>
+            <Link
+              to='/cibir'
+              className='px-6 py-2 bg-emerald-500 text-white dark:text-[#022c22] rounded-full text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all'
+            >
+              Registro
+            </Link>
+          </>
+        )}
 
         <button
           onClick={() => setDarkMode(!darkMode)}
@@ -143,6 +170,10 @@ export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, se
             )}
         </button>
       </div>
+
+      {showLoginModal && (
+        <LoginModal onClose={() => setShowLoginModal(false)} />
+      )}
     </nav>
   )
 }

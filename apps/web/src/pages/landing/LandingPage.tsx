@@ -419,14 +419,27 @@ export default function LandingPage() {
   const [darkMode, setDarkMode] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [cfg, setCfg] = useState<Record<string, string>>({})
+  const [directivaMembers, setDirectivaMembers] = useState<any[]>([])
+  const [hitos, setHitos] = useState<any[]>([])
   const navigate = useNavigate()
 
   useEffect(() => {
-    // Cargar inicial
     fetch(`${API_URL}/api/cms/config`)
       .then(r => r.json())
       .then(data => { if (data.success) setCfg(data.config || {}) })
-      .catch(() => {})
+      .catch(() => { })
+
+    // Cargar Directiva
+    fetch(`${API_URL}/api/cms/directiva`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setDirectivaMembers(data.data || []) })
+      .catch(() => { })
+
+    // Cargar Hitos (Historia)
+    fetch(`${API_URL}/api/cms/hitos`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setHitos(data.data || []) })
+      .catch(() => { })
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === 'preview_cfg') {
@@ -435,6 +448,11 @@ export default function LandingPage() {
       if (event.data?.type === 'scroll_to' && event.data.anchor) {
         const el = document.querySelector(event.data.anchor)
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      if (event.data?.type === 'refresh_data') {
+        // Re-cargar todo lo dinámico
+        fetch(`${API_URL}/api/cms/directiva`).then(r => r.json()).then(d => { if (d.success) setDirectivaMembers(d.data || []) })
+        fetch(`${API_URL}/api/cms/hitos`).then(r => r.json()).then(d => { if (d.success) setHitos(d.data || []) })
       }
     }
     window.addEventListener('message', handleMessage)
@@ -581,6 +599,39 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* --- SECCIÓN HISTORIA (HITOS) --- */}
+      {hitos.length > 0 && (
+        <section id="historia" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden relative">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+              <div>
+                <p className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4">Nuestra Trayectoria</p>
+                <h2 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">Nuestra Historia</h2>
+              </div>
+              <Link to="/historia" className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex items-center gap-2">
+                Ver cronología completa <span>→</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {hitos.slice(0, 3).map((hito, i) => (
+                <div key={hito.id} className="bg-white/5 backdrop-blur-sm border border-white/10 p-8 rounded-[3rem] space-y-4 hover:bg-white/10 transition-all group">
+                  <div className="text-4xl font-black text-emerald-500 opacity-50 group-hover:opacity-100 transition-opacity">
+                    {hito.anio}
+                  </div>
+                  <h3 className="text-xl font-bold text-white leading-tight">
+                    {hito.titulo}
+                  </h3>
+                  <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">
+                    {hito.descripcion}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* --- SECCIÓN AFILIADOS --- */}
       <section
         id='afiliados'
@@ -673,24 +724,50 @@ export default function LandingPage() {
             </button>
           </div>
 
-          <Link to='/junta_directiva'>
-            <div className='max-w-4xl mx-auto group cursor-pointer'>
-              <div className='relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10'>
-                <img
-                  src={Mision_img}
-                  alt='Junta Directiva'
-                  className='w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out'
-                />
-                <div className='absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500' />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {directivaMembers.length > 0 ? (
+              directivaMembers.slice(0, 4).map((m, i) => (
+                <div key={m.id} className="group relative flex flex-col items-center text-center space-y-4">
+                  <div className="relative w-40 h-40 lg:w-48 lg:h-48 rounded-[2.5rem] overflow-hidden shadow-xl ring-4 ring-emerald-50 transition-all group-hover:ring-emerald-500/20">
+                    <img
+                      src={m.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.nombre)}&background=10b981&color=fff&size=200`}
+                      alt={m.nombre}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                    />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-[#022c22]">{m.nombre}</h4>
+                    <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mt-1 opacity-80">{m.cargo}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <Link to='/junta_directiva' className='col-span-full max-w-4xl mx-auto group cursor-pointer w-full'>
+                <div className='relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10'>
+                  <img
+                    src={Mision_img}
+                    alt='Junta Directiva'
+                    className='w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out'
+                  />
+                  <div className='absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500' />
+                </div>
 
-              <div className='bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm'>
-                <span className='font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform'>
-                  {cfg['directiva_cta'] || 'Conozca a la Junta Directiva'}
-                </span>
-              </div>
+                <div className='bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm'>
+                  <span className='font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform'>
+                    {cfg['directiva_cta'] || 'Conozca a la Junta Directiva'}
+                  </span>
+                </div>
+              </Link>
+            )}
+          </div>
+
+          {directivaMembers.length > 0 && (
+            <div className="flex justify-center pt-8">
+              <Link to="/junta_directiva" className="px-10 py-3 border-2 border-emerald-500 text-emerald-600 rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
+                Ver todos los miembros
+              </Link>
             </div>
-          </Link>
+          )}
         </div>
       </section>
 

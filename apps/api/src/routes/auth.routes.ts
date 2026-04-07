@@ -1,0 +1,22 @@
+import { Router } from 'express'
+import { login, getMe, logout, forgotPassword, setupInitialPassword } from '../controllers/auth.controller.js'
+import { requireAuth } from '../middlewares/auth.middleware.js'
+
+const router = Router()
+
+// POST /api/auth/login — público
+router.post('/login', login)
+
+// GET /api/auth/me — protegido
+router.get('/me', requireAuth, getMe)
+
+// POST /api/auth/logout — público (limpia en cliente)
+router.post('/logout', logout)
+
+// POST /api/auth/forgot-password — público
+router.post('/forgot-password', forgotPassword)
+
+// POST /api/auth/setup-initial-password — público
+router.post('/setup-initial-password', setupInitialPassword)
+
+export { router as authRoutes }

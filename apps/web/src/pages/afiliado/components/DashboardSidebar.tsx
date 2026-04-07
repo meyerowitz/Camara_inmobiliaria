@@ -4,6 +4,7 @@ import { LogOut, X, ChevronLeft, ChevronRight } from 'lucide-react';
 export interface NavItem {
   icon: React.ElementType;
   label: string;
+  isDivider?: boolean;
 }
 
 interface DashboardSidebarProps {
@@ -12,6 +13,7 @@ interface DashboardSidebarProps {
   onTabChange: (label: string) => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
+  onLogout?: () => void;
 }
 
 // ─── Nav Button ───────────────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ const SidebarContent = ({
   onTabChange,
   isCollapsed,
   onMobileClose,
+  onLogout,
   isMobile = false,
 }: {
   navItems: NavItem[];
@@ -65,6 +68,7 @@ const SidebarContent = ({
   onTabChange: (label: string) => void;
   isCollapsed: boolean;
   onMobileClose?: () => void;
+  onLogout?: () => void;
   isMobile?: boolean;
 }) => (
   <div className="flex flex-col h-full">
@@ -84,7 +88,7 @@ const SidebarContent = ({
             CIEBO
           </span>
           <span className="text-[10px] font-bold tracking-widest uppercase opacity-50" style={{ color: 'var(--color-accent)' }}>
-            Portal Afiliado
+            Mi Portal
           </span>
         </div>
       )}
@@ -101,24 +105,34 @@ const SidebarContent = ({
     {/* Nav */}
     <nav className="flex-grow py-4 px-2 space-y-1 overflow-y-auto">
       {navItems.map((item) => (
-        <NavButton
-          key={item.label}
-          icon={item.icon}
-          label={item.label}
-          isActive={activeTab === item.label}
-          isCollapsed={isCollapsed}
-          onClick={() => {
-            onTabChange(item.label);
-            onMobileClose?.();
-          }}
-        />
+        item.isDivider ? (
+          <div key={item.label} className="px-3 pt-4 pb-1">
+            <span className="text-[9px] font-black tracking-widest uppercase opacity-40 text-white">
+              {item.label.replace('— ', '').replace(' —', '')}
+            </span>
+            <div className="mt-1 border-t border-white/10" />
+          </div>
+        ) : (
+          <NavButton
+            key={item.label}
+            icon={item.icon}
+            label={item.label}
+            isActive={activeTab === item.label}
+            isCollapsed={isCollapsed}
+            onClick={() => {
+              onTabChange(item.label);
+              onMobileClose?.();
+            }}
+          />
+        )
       ))}
     </nav>
 
     {/* Logout */}
     <div className={`p-4 border-t border-white/10 ${isCollapsed ? 'flex justify-center' : ''}`}>
       <button
-        className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+        onClick={onLogout}
+        className={`flex items-center gap-3 w-full px-3 py-3 rounded-xl transition-colors hover:bg-white/10 ${isCollapsed ? 'justify-center' : ''}`}
         style={{ color: 'var(--color-danger)' }}
       >
         <LogOut size={18} />
@@ -136,6 +150,7 @@ const DashboardSidebar = ({
   onTabChange,
   mobileOpen,
   onMobileClose,
+  onLogout,
 }: DashboardSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -158,7 +173,7 @@ const DashboardSidebar = ({
         ].join(' ')}
         style={{ backgroundColor: 'var(--color-primary)' }}
       >
-        <SidebarContent navItems={navItems} activeTab={activeTab} onTabChange={onTabChange} isCollapsed={false} onMobileClose={onMobileClose} isMobile />
+        <SidebarContent navItems={navItems} activeTab={activeTab} onTabChange={onTabChange} isCollapsed={false} onMobileClose={onMobileClose} onLogout={onLogout} isMobile />
       </aside>
 
       {/* Desktop sidebar */}
@@ -169,7 +184,7 @@ const DashboardSidebar = ({
         ].join(' ')}
         style={{ backgroundColor: 'var(--color-primary)' }}
       >
-        <SidebarContent navItems={navItems} activeTab={activeTab} onTabChange={onTabChange} isCollapsed={isCollapsed} />
+        <SidebarContent navItems={navItems} activeTab={activeTab} onTabChange={onTabChange} isCollapsed={isCollapsed} onLogout={onLogout} />
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}

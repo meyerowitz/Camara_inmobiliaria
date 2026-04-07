@@ -60,6 +60,8 @@ const icons = {
   ),
 }
 
+import SuperAdminUsersPanel from '@/pages/admin/components/Users/SuperAdminUsersPanel'
+
 // ─── Map of nav id → rendered panel ──────────────────────────────────────────
 const PANELS: Record<string, React.ReactNode> = {
   dashboard: <CmsDashboard />,
@@ -75,6 +77,7 @@ const PANELS: Record<string, React.ReactNode> = {
   formacion: <FormacionPanel />,
   media: <Placeholder title='Media Library' icon={icons.media} />,
   users: <UsersPanel />,
+  admin_users: <SuperAdminUsersPanel />,
   analytics: <AnalyticsPanel />,
   settings: <Placeholder title='Settings' icon={icons.settings} />,
 }

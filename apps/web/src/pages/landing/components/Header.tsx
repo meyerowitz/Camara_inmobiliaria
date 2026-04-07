@@ -10,7 +10,7 @@ export default function Header({ darkMode, cfg = {} }: { darkMode?: boolean, cfg
       <div
         className='absolute inset-0 z-0 animate-bg-zoom'
         style={{
-          backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.68), rgba(2, 44, 34, 0.68)), url(${bgBolivar})`,
+          backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.68), rgba(2, 44, 34, 0.68)), url(${cfg['hero_img'] || bgBolivar})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'

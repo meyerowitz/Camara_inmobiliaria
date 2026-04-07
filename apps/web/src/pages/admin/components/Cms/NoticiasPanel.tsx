@@ -18,6 +18,7 @@ export const NoticiasPanel = () => {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [form, setForm] = useState({ titulo: '', extracto: '', imagen_url: '', categoria: 'Noticias', tag: '', fecha: '', publicado: true })
   const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -31,11 +32,13 @@ export const NoticiasPanel = () => {
   const openEdit = (item: NoticiaItem) => {
     setSelectedId(item.id)
     setForm({ titulo: item.titulo, extracto: item.extracto, imagen_url: item.imagen_url || '', categoria: item.categoria, tag: item.tag || '', fecha: item.fecha?.split('T')[0] || '', publicado: item.publicado === 1 || item.publicado === true })
+    setIsEditing(true)
   }
 
   const openNew = () => {
     setSelectedId('new')
     setForm({ titulo: '', extracto: '', imagen_url: '', categoria: 'Noticias', tag: '', fecha: new Date().toISOString().split('T')[0], publicado: true })
+    setIsEditing(true)
   }
 
   const save = async () => {
@@ -44,6 +47,7 @@ export const NoticiasPanel = () => {
     else await api.put(`/api/cms/noticias/${selectedId}`, form)
     setSaving(false)
     setSelectedId(null)
+    setIsEditing(false)
     load()
   }
 
@@ -75,14 +79,15 @@ export const NoticiasPanel = () => {
       </div>
       <div className="flex gap-2 pt-2">
         <BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
-        <BtnSecondary onClick={() => setSelectedId(null)}>Cancelar</BtnSecondary>
+        <BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary>
       </div>
     </div>
   )
 
   return (
     <ListDetail
-      items={items} loading={loading} selectedId={selectedId} setSelectedId={setSelectedId}
+      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); setIsEditing(false) }}
+      isEditing={isEditing} setIsEditing={setIsEditing}
       onNew={openNew}
       renderRow={(item, sel) => (
         <div className="flex flex-col gap-0.5">

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@custom-variant dark (&:where(.dark, .dark *));
 /* ─── Color Tokens ──────────────────────────────────────────────────────────
    Edita estas variables para cambiar la paleta en todo el proyecto.
    Afiliado Panel: verde oscuro + emerald (alineado con la landing).

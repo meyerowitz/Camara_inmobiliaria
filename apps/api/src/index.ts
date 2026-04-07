@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { env } from './config/env.js'
-import { afiliadosRoutes, publicRoutes, cmsRoutes } from './routes/index.js'
+import { afiliadosRoutes, publicRoutes, cmsRoutes, authRoutes, usersRoutes } from './routes/index.js'
 
 
 const app = express()
@@ -11,9 +11,11 @@ app.use(cors({ origin: env.NODE_ENV === 'production' ? env.CORS_ORIGIN : '*' }))
 app.use(express.json())
 
 // Rutas de API
+app.use('/api/auth',      authRoutes)
+app.use('/api/users',     usersRoutes)
 app.use('/api/afiliados', afiliadosRoutes)
-app.use('/api/public', publicRoutes)
-app.use('/api/cms', cmsRoutes)
+app.use('/api/public',    publicRoutes)
+app.use('/api/cms',       cmsRoutes)
 
 // Rutas base
 app.get('/', (req: Request, res: Response) => {

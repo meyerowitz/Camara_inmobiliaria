@@ -12,10 +12,15 @@
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.7.9",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "resend": "^6.10.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

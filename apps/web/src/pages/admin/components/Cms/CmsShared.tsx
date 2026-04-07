@@ -86,6 +86,8 @@ export function ListDetail<T extends { id?: string | number }>({
   onNew,
   selectedId,
   setSelectedId,
+  isEditing,
+  setIsEditing,
 }: {
   items: T[]
   loading: boolean
@@ -95,6 +97,8 @@ export function ListDetail<T extends { id?: string | number }>({
   onNew: () => void
   selectedId: string | number | null
   setSelectedId: (id: string | number | null) => void
+  isEditing?: boolean
+  setIsEditing?: (val: boolean) => void
 }) {
   const selected    = items.find(i => String(i.id) === String(selectedId)) ?? null
   const showDetail  = !!(selected || selectedId === 'new')
@@ -229,7 +233,7 @@ export function ListDetail<T extends { id?: string | number }>({
         {showDetail ? (
           /* key forces re-mount animation on every selection change */
           <div key={String(selectedId)} className="p-5 cms-slide-left">
-            {selectedId === 'new' ? renderForm() : selected && renderDetail(selected)}
+            {(selectedId === 'new' || isEditing) ? renderForm() : selected && renderDetail(selected)}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-300 cms-fade-up">

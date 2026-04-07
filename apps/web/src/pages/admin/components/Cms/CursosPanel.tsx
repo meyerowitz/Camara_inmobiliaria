@@ -17,6 +17,7 @@ export const CursosPanel = () => {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [form, setForm] = useState({ codigo: '', titulo: '', subtitulo: '', imagen_url: '', orden: 0, activo: true })
   const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -30,13 +31,14 @@ export const CursosPanel = () => {
   const openEdit = (item: CursoItem) => {
     setSelectedId(item.id)
     setForm({ codigo: item.codigo, titulo: item.titulo, subtitulo: item.subtitulo || '', imagen_url: item.imagen_url || '', orden: item.orden, activo: item.activo === 1 })
+    setIsEditing(true)
   }
-  const openNew = () => { setSelectedId('new'); setForm({ codigo: '', titulo: '', subtitulo: '', imagen_url: '', orden: 0, activo: true }) }
+  const openNew = () => { setSelectedId('new'); setForm({ codigo: '', titulo: '', subtitulo: '', imagen_url: '', orden: 0, activo: true }); setIsEditing(true) }
   const save = async () => {
     setSaving(true)
     if (selectedId === 'new') await api.post('/api/cms/cursos', form)
     else await api.put(`/api/cms/cursos/${selectedId}`, form)
-    setSaving(false); setSelectedId(null); load()
+    setSaving(false); setSelectedId(null); setIsEditing(false); load()
   }
   const remove = async (id: string | number) => {
     if (!confirm('¿Eliminar?')) return
@@ -62,14 +64,15 @@ export const CursosPanel = () => {
       </FormField>
       <div className="flex gap-2 pt-2">
         <BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
-        <BtnSecondary onClick={() => setSelectedId(null)}>Cancelar</BtnSecondary>
+        <BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary>
       </div>
     </div>
   )
 
   return (
     <ListDetail
-      items={items} loading={loading} selectedId={selectedId} setSelectedId={setSelectedId}
+      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); setIsEditing(false) }}
+      isEditing={isEditing} setIsEditing={setIsEditing}
       onNew={openNew}
       renderRow={(item, sel) => (
         <div className="flex flex-col gap-0.5">

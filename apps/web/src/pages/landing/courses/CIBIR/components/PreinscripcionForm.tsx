@@ -72,7 +72,7 @@ const PreinscripcionForm = () => {
           ¡Solicitud Enviada!
         </h3>
         <p className="text-sm max-w-xs leading-relaxed text-slate-500">
-          Nuestro equipo revisará tus datos y te contactará en breve por correo o teléfono.
+          Te hemos enviado un correo de validación a tu dirección de email. Haz clic en el enlace para confirmarlo y completar la solicitud.
         </p>
         <button
           onClick={() => setSubmitted(false)}

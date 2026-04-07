@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { api, FormField, Input, Textarea, BtnPrimary, BtnDanger, BtnSecondary, ListDetail } from '@/pages/admin/components/Cms/CmsShared'
+import { sendToPreview } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
 interface HitoItem {
   id: string | number;
@@ -15,13 +16,14 @@ export const HitosPanel = () => {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [form, setForm] = useState({ anio: '', titulo: '', descripcion: '', orden: 0 })
   const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   const load = useCallback(async () => { setLoading(true); const data = await api.get('/api/cms/hitos'); if (data.success) setItems(data.data); setLoading(false) }, [])
   useEffect(() => { load() }, [load])
-  const openEdit = (item: HitoItem) => { setSelectedId(item.id); setForm({ anio: item.anio, titulo: item.titulo, descripcion: item.descripcion, orden: item.orden }) }
-  const openNew = () => { setSelectedId('new'); setForm({ anio: '', titulo: '', descripcion: '', orden: items.length }) }
-  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/hitos', form); else await api.put(`/api/cms/hitos/${selectedId}`, form); setSaving(false); setSelectedId(null); load() }
-  const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/hitos/${id}`); setSelectedId(null); load() }
+  const openEdit = (item: HitoItem) => { setSelectedId(item.id); setForm({ anio: item.anio, titulo: item.titulo, descripcion: item.descripcion, orden: item.orden }); setIsEditing(true) }
+  const openNew = () => { setSelectedId('new'); setForm({ anio: '', titulo: '', descripcion: '', orden: items.length }); setIsEditing(true) }
+  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/hitos', form); else await api.put(`/api/cms/hitos/${selectedId}`, form); setSaving(false); setSelectedId(null); setIsEditing(false); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
+  const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/hitos/${id}`); setSelectedId(null); setIsEditing(false); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 
   const formBody = () => (
@@ -33,13 +35,15 @@ export const HitosPanel = () => {
       </div>
       <FormField label="Título"><Input value={form.titulo} onChange={f('titulo')} placeholder="Fundación..." /></FormField>
       <FormField label="Descripción"><Textarea value={form.descripcion} onChange={f('descripcion')} placeholder="Descripción del hito..." /></FormField>
-      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => setSelectedId(null)}>Cancelar</BtnSecondary></div>
+      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary></div>
     </div>
   )
 
   return (
     <ListDetail
-      items={items} loading={loading} selectedId={selectedId} setSelectedId={setSelectedId} onNew={openNew}
+      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); setIsEditing(false) }}
+      isEditing={isEditing} setIsEditing={setIsEditing}
+      onNew={openNew}
       renderRow={(item, sel) => (
         <div className="flex items-center gap-3">
           <span className="text-lg font-black text-[#00D084] flex-shrink-0 w-12">{item.anio}</span>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useAuth } from '@/context/AuthContext'
 
 interface NavItem {
   id: string
@@ -50,6 +51,13 @@ const icons = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
       <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
       <path d="M6 12v5c3 3 9 3 12 0v-5" />
+    </svg>
+  ),
+  admin_users: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
     </svg>
   ),
   settings: (
@@ -137,6 +145,7 @@ const NAV_MAIN: NavGroup[] = [
   { id: 'formacion', label: 'Formación',  icon: icons.formacion },
   { id: 'media',     label: 'Medios',     icon: icons.media },
   { id: 'users',     label: 'Afiliados',  icon: icons.users },
+  { id: 'admin_users',label: 'Administradores', icon: icons.admin_users },
   { id: 'analytics', label: 'Análisis',   icon: icons.analytics },
 ]
 
@@ -193,14 +202,17 @@ const SidebarContent = ({
   activeId,
   onNav,
   onClose,
+  onLogout,
   isMobile = false,
 }: {
   isCollapsed: boolean
   activeId: string
   onNav: (id: string) => void
   onClose?: () => void
+  onLogout?: () => void
   isMobile?: boolean
 }) => {
+  const { user } = useAuth()
   // Auto-expand CMS group if any child is active
   const cmsChildIds = CMS_CHILDREN.map(c => c.id)
   const [cmsOpen, setCmsOpen] = React.useState(cmsChildIds.includes(activeId) || activeId === 'cms')
@@ -227,7 +239,7 @@ const SidebarContent = ({
 
       {/* Main nav */}
       <nav className="flex-1 py-4 flex flex-col gap-0.5 px-2 overflow-y-auto">
-        {NAV_MAIN.map((item) => {
+        {NAV_MAIN.filter(i => i.id !== 'admin_users' || user?.rol === 'super_admin').map((item) => {
           const isCmsGroup = item.id === 'cms'
           const isGroupActive = isCmsGroup
             ? cmsChildIds.includes(activeId) || activeId === 'cms'
@@ -300,6 +312,25 @@ const SidebarContent = ({
             onClick={() => onNav(item.id)}
           />
         ))}
+        {/* Logout */}
+        <button
+          onClick={onLogout}
+          title={isCollapsed ? 'Cerrar sesión' : undefined}
+          className={[
+            'flex items-center gap-3 rounded-xl py-2.5 w-full text-left transition-all duration-150 mt-1',
+            isCollapsed ? 'justify-center px-0' : 'px-3',
+            'text-red-400 hover:bg-red-50 hover:text-red-600',
+          ].join(' ')}
+        >
+          <span className="flex-shrink-0">
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </span>
+          {!isCollapsed && <span className="text-sm font-medium">Cerrar sesión</span>}
+        </button>
       </div>
     </>
   )
@@ -315,6 +346,7 @@ const CmsAside = ({
   animating = true,
 }: CmsAsideProps) => {
   const [internalActiveId, setInternalActiveId] = useState('dashboard')
+  const { logout } = useAuth()
 
   const activeId = controlledActiveId !== undefined ? controlledActiveId : internalActiveId
 
@@ -349,6 +381,7 @@ const CmsAside = ({
           activeId={activeId}
           onNav={handleNav}
           onClose={onMobileClose}
+          onLogout={logout}
           isMobile
         />
       </aside>
@@ -365,6 +398,7 @@ const CmsAside = ({
           isCollapsed={isCollapsed}
           activeId={activeId}
           onNav={handleNav}
+          onLogout={logout}
         />
       </aside>
     </>

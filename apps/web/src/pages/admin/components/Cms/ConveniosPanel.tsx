@@ -15,12 +15,13 @@ export const ConveniosPanel = () => {
   const [selectedId, setSelectedId] = useState<string | number | null>(null)
   const [form, setForm] = useState({ nombre: '', logo_url: '', orden: 0, activo: true })
   const [saving, setSaving] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
 
   const load = useCallback(async () => { setLoading(true); const data = await api.get('/api/cms/convenios'); if (data.success) setItems(data.data); setLoading(false) }, [])
   useEffect(() => { load() }, [load])
-  const openEdit = (item: ConvenioItem) => { setSelectedId(item.id); setForm({ nombre: item.nombre, logo_url: item.logo_url, orden: item.orden, activo: item.activo === 1 }) }
-  const openNew = () => { setSelectedId('new'); setForm({ nombre: '', logo_url: '', orden: 0, activo: true }) }
-  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/convenios', form); else await api.put(`/api/cms/convenios/${selectedId}`, form); setSaving(false); setSelectedId(null); load() }
+  const openEdit = (item: ConvenioItem) => { setSelectedId(item.id); setForm({ nombre: item.nombre, logo_url: item.logo_url, orden: item.orden, activo: item.activo === 1 }); setIsEditing(true) }
+  const openNew = () => { setSelectedId('new'); setForm({ nombre: '', logo_url: '', orden: 0, activo: true }); setIsEditing(true) }
+  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/convenios', form); else await api.put(`/api/cms/convenios/${selectedId}`, form); setSaving(false); setSelectedId(null); setIsEditing(false); load() }
   const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/convenios/${id}`); setSelectedId(null); load() }
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 
@@ -31,13 +32,15 @@ export const ConveniosPanel = () => {
       <FormField label="URL del logo"><Input value={form.logo_url} onChange={f('logo_url')} placeholder="https://..." /></FormField>
       {form.logo_url && <img src={form.logo_url} alt="preview" className="h-16 w-auto object-contain rounded-lg border border-gray-100 p-2" />}
       <FormField label="Orden"><Input type="number" value={form.orden} onChange={f('orden')} /></FormField>
-      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => setSelectedId(null)}>Cancelar</BtnSecondary></div>
+      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary></div>
     </div>
   )
 
   return (
     <ListDetail
-      items={items} loading={loading} selectedId={selectedId} setSelectedId={setSelectedId} onNew={openNew}
+      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); setIsEditing(false) }}
+      isEditing={isEditing} setIsEditing={setIsEditing}
+      onNew={openNew}
       renderRow={(item, sel) => (
         <div className="flex items-center gap-3">
           <img src={item.logo_url} alt="" className="w-8 h-8 object-contain flex-shrink-0 rounded" />
