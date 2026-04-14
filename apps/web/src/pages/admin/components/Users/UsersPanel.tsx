@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { UserPlus, RefreshCw, Shield, User, ToggleLeft, ToggleRight, KeyRound, Loader2 } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { UserPlus, RefreshCw, Shield, User, ToggleLeft, ToggleRight, KeyRound, Loader2, Search } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { API_URL } from '@/config/env'
 
@@ -23,6 +23,9 @@ interface CreateForm {
 
 const EMPTY_FORM: CreateForm = { email: '', password: '', rol: 'afiliado', id_agremiado: '' }
 
+type FiltroRol    = 'todos' | 'admin' | 'afiliado'
+type FiltroActivo = 'todos' | 'activo' | 'inactivo'
+
 export default function UsersPanel() {
   const { token } = useAuth()
   const [users, setUsers]       = useState<SystemUser[]>([])
@@ -32,6 +35,11 @@ export default function UsersPanel() {
   const [saving, setSaving]     = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
   const [resetMsg, setResetMsg] = useState<Record<number, string>>({})
+
+  // ── Filtros ────────────────────────────────────────────────────────────────
+  const [search, setSearch]             = useState('')
+  const [filtroRol, setFiltroRol]       = useState<FiltroRol>('todos')
+  const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>('todos')
 
   const authHeaders = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
 
@@ -45,6 +53,24 @@ export default function UsersPanel() {
   }
 
   useEffect(() => { load() }, [])
+
+  // ── Filtrado local ─────────────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return users.filter(u => {
+      if (filtroRol !== 'todos' && u.rol !== filtroRol) return false
+      if (filtroActivo === 'activo'   && !u.activo)   return false
+      if (filtroActivo === 'inactivo' &&  u.activo)   return false
+      if (q) {
+        const hayMatch =
+          u.email.toLowerCase().includes(q) ||
+          (u.nombre_completo?.toLowerCase().includes(q) ?? false) ||
+          (u.codigo_cibir?.toLowerCase().includes(q) ?? false)
+        if (!hayMatch) return false
+      }
+      return true
+    })
+  }, [users, search, filtroRol, filtroActivo])
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,9 +114,18 @@ export default function UsersPanel() {
     })
     const d = await r.json()
     if (d.success) {
-      setResetMsg(prev => ({ ...prev, [u.id]: d.nueva_password }))
+      setResetMsg(prev => ({ ...prev, [u.id]: 'Correo de restablecimiento enviado' }))
+    } else {
+      setResetMsg(prev => ({ ...prev, [u.id]: d.message || 'Error al restablecer' }))
     }
   }
+
+  const filterBtnCls = (active: boolean) =>
+    `px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
+      active
+        ? 'bg-slate-800 border-slate-800 text-white'
+        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+    }`
 
   return (
     <div className='p-6 max-w-5xl mx-auto space-y-6'>
@@ -187,14 +222,56 @@ export default function UsersPanel() {
         </form>
       )}
 
+      {/* ── Filtros ──────────────────────────────────────────────────────────── */}
+      <div className='bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center gap-3'>
+        {/* Búsqueda */}
+        <div className='relative flex-1 min-w-[180px]'>
+          <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' />
+          <input
+            type='text'
+            placeholder='Buscar por email o agremiado...'
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className='w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white transition-colors'
+          />
+        </div>
+
+        {/* Filtro Rol */}
+        <div className='flex items-center gap-1.5'>
+          <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Rol</span>
+          {(['todos', 'admin', 'afiliado'] as FiltroRol[]).map(r => (
+            <button key={r} onClick={() => setFiltroRol(r)} className={filterBtnCls(filtroRol === r)}>
+              {r === 'todos' ? 'Todos' : r === 'admin' ? '🛡 Admin' : '👤 Afiliado'}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtro Estado */}
+        <div className='flex items-center gap-1.5'>
+          <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Estado</span>
+          {(['todos', 'activo', 'inactivo'] as FiltroActivo[]).map(s => (
+            <button key={s} onClick={() => setFiltroActivo(s)} className={filterBtnCls(filtroActivo === s)}>
+              {s === 'todos' ? 'Todos' : s === 'activo' ? '✓ Activo' : '✗ Inactivo'}
+            </button>
+          ))}
+        </div>
+
+        {/* Contador */}
+        <span className='ml-auto text-[11px] text-slate-400 font-medium whitespace-nowrap'>
+          {filtered.length} de {users.length} usuario{users.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
       {/* Table */}
       <div className='bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden'>
         {loading ? (
           <div className='flex justify-center py-16'>
             <Loader2 size={24} className='animate-spin text-emerald-500' />
           </div>
-        ) : users.length === 0 ? (
-          <p className='text-center py-16 text-slate-400 text-sm'>No hay usuarios registrados aún.</p>
+        ) : filtered.length === 0 ? (
+          <p className='text-center py-16 text-slate-400 text-sm'>
+            {users.length === 0 ? 'No hay usuarios registrados aún.' : 'Ningún usuario coincide con los filtros.'}
+          </p>
         ) : (
           <table className='w-full text-sm'>
             <thead className='bg-slate-50 border-b border-slate-100'>
@@ -205,7 +282,7 @@ export default function UsersPanel() {
               </tr>
             </thead>
             <tbody className='divide-y divide-slate-50'>
-              {users.map(u => (
+              {filtered.map(u => (
                 <tr key={u.id} className='hover:bg-slate-50 transition'>
                   <td className='px-5 py-4'>
                     <p className='font-semibold text-slate-700'>{u.email}</p>
@@ -213,8 +290,8 @@ export default function UsersPanel() {
                       {new Date(u.creado_en).toLocaleDateString('es-VE')}
                     </p>
                     {resetMsg[u.id] && (
-                      <p className='text-xs text-amber-600 font-bold mt-1 bg-amber-50 px-2 py-1 rounded-lg'>
-                        Nueva clave: {resetMsg[u.id]}
+                      <p className={`text-xs font-bold mt-1 px-2 py-1 rounded-lg ${resetMsg[u.id].includes('Error') ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50' }`}>
+                        {resetMsg[u.id]}
                       </p>
                     )}
                   </td>

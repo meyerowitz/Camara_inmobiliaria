@@ -142,8 +142,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
 /**
  * POST /api/users/:id/reset
  * Resetea la contraseña de un usuario (solo admin).
- * Devuelve la nueva contraseña genérica en texto plano.
- * TODO: Enviar por email en lugar de devolver en la respuesta.
+ * Envía un correo al usuario con un enlace para que establezca su nueva contraseña.
  */
 export const resetUserPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -151,19 +150,38 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
 
     // Verificar que el usuario existe
     const userId = Number(id)
-    const check = await db.execute({ sql: `SELECT id FROM users WHERE id = ?`, args: [userId] })
+    const check = await db.execute({ sql: `SELECT users.id, users.email, agremiados.nombre_completo FROM users LEFT JOIN agremiados ON users.id_agremiado = agremiados.id_agremiado WHERE users.id = ?`, args: [userId] })
     if (check.rows.length === 0) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
 
-    const newPassword = await resetCredenciales(Number(id))
+    const user = check.rows[0] as any
+    const nombre = user.nombre_completo || 'Usuario'
+
+    const { randomBytes } = await import('crypto')
+    const token = randomBytes(32).toString('hex')
+    const expira = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
+
+    await db.execute({
+      sql: `UPDATE users SET reset_token = ?, reset_token_expira = ? WHERE id = ?`,
+      args: [token, expira, userId],
+    })
+
+    const { enviarCorreoResetAdmin } = await import('../lib/email.js')
+    
+    try {
+      await enviarCorreoResetAdmin(nombre, user.email, token)
+    } catch (err) {
+      console.error('Error enviando correo de reset por admin:', err)
+      // Podemos informar que falló el envío pero el token fue generado, aunque lo mejor es mostrar error
+      res.status(500).json({ success: false, message: 'Se generó el enlace pero falló el envío del correo.' })
+      return
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Contraseña reseteada correctamente',
-      // TODO: eliminar `nueva_password` del response cuando se implemente email
-      nueva_password: newPassword,
+      message: 'Se ha enviado un correo al usuario para que establezca su nueva contraseña.',
     })
   } catch (error) {
     console.error('Error en resetUserPassword:', error)

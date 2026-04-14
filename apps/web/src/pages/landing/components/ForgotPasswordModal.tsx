@@ -2,60 +2,28 @@ import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { API_URL } from '@/config/env'
 
-type Step = 'email' | 'password' | 'done'
+type Step = 'email' | 'done'
 
 export default function ForgotPasswordModal({ onClose }: { onClose: () => void }) {
   const [step, setStep]         = useState<Step>('email')
   const [email, setEmail]       = useState('')
-  const [newPassword, setNew]   = useState('')
-  const [confirm, setConfirm]   = useState('')
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
-
-  const handleCheckEmail = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      // Llamada simple para comprobar que el correo existe (el backend responde siempre 200 por seguridad)
-      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword: 'check_only_placeholder' }),
-      })
-      // El servidor responde 200 siempre — simplemente avanzamos al paso de contraseña
-      setStep('password')
-    } catch {
-      setError('Error de red. Intenta de nuevo.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-
-    if (newPassword.length < 6) {
-      setError('La contraseña debe tener mínimo 6 caracteres.')
-      return
-    }
-    if (newPassword !== confirm) {
-      setError('Las contraseñas no coinciden.')
-      return
-    }
-
     setLoading(true)
     try {
       const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword }),
+        body: JSON.stringify({ email }),
       })
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.message || 'Error al actualizar la contraseña.')
+        setError(data.message || 'Error al procesar la solicitud.')
         return
       }
 
@@ -88,9 +56,9 @@ export default function ForgotPasswordModal({ onClose }: { onClose: () => void }
               </svg>
             </div>
             <h2 className='text-2xl font-black text-slate-800 mb-2'>¿Olvidaste tu contraseña?</h2>
-            <p className='text-slate-400 text-sm mb-8'>Ingresa tu correo y te permitiremos actualizarla de inmediato.</p>
+            <p className='text-slate-400 text-sm mb-8'>Ingresa tu correo y te enviaremos un enlace para restablecerla.</p>
 
-            <form className='space-y-4' onSubmit={handleCheckEmail}>
+            <form className='space-y-4' onSubmit={handleReset}>
               <input
                 type='email'
                 placeholder='tu@correo.com'
@@ -105,64 +73,13 @@ export default function ForgotPasswordModal({ onClose }: { onClose: () => void }
                 disabled={loading}
                 className='w-full px-6 py-3 bg-emerald-500 text-white rounded-full font-bold text-sm hover:bg-emerald-600 transition-all disabled:opacity-50'
               >
-                {loading ? 'Verificando...' : 'Continuar →'}
+                {loading ? 'Enviando...' : 'Enviar enlace'}
               </button>
             </form>
           </>
         )}
 
-        {/* ── PASO 2: Nueva contraseña ──────────────────────────── */}
-        {step === 'password' && (
-          <>
-            <div className='w-14 h-14 mx-auto mb-5 rounded-full bg-blue-50 flex items-center justify-center'>
-              <svg className='w-7 h-7 text-blue-500' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
-              </svg>
-            </div>
-            <h2 className='text-2xl font-black text-slate-800 mb-2'>Nueva contraseña</h2>
-            <p className='text-slate-400 text-sm mb-8'>
-              Escribe tu nueva contraseña para <span className='font-bold text-slate-600'>{email}</span>.
-            </p>
-
-            <form className='space-y-4' onSubmit={handleReset}>
-              <input
-                type='password'
-                placeholder='Nueva contraseña (mín. 6 caracteres)'
-                value={newPassword}
-                onChange={e => setNew(e.target.value)}
-                required
-                className='w-full px-6 py-4 border border-gray-300 rounded-full text-gray-700 focus:outline-none focus:border-blue-400 transition-colors text-sm'
-              />
-              <input
-                type='password'
-                placeholder='Confirmar contraseña'
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                required
-                className='w-full px-6 py-4 border border-gray-300 rounded-full text-gray-700 focus:outline-none focus:border-blue-400 transition-colors text-sm'
-              />
-              {error && <p className='text-red-500 text-sm bg-red-50 px-4 py-2 rounded-xl'>{error}</p>}
-              <div className='flex gap-3'>
-                <button
-                  type='button'
-                  onClick={() => setStep('email')}
-                  className='flex-1 px-6 py-3 border border-gray-300 text-gray-500 rounded-full font-bold text-sm hover:bg-gray-50 transition-all'
-                >
-                  ← Atrás
-                </button>
-                <button
-                  type='submit'
-                  disabled={loading}
-                  className='flex-1 px-6 py-3 bg-blue-500 text-white rounded-full font-bold text-sm hover:bg-blue-600 transition-all disabled:opacity-50'
-                >
-                  {loading ? 'Guardando...' : 'Guardar'}
-                </button>
-              </div>
-            </form>
-          </>
-        )}
-
-        {/* ── PASO 3: Éxito ─────────────────────────────────────── */}
+        {/* ── PASO 2: Éxito ─────────────────────────────────────── */}
         {step === 'done' && (
           <>
             <div className='w-16 h-16 mx-auto mb-5 rounded-full bg-emerald-500 flex items-center justify-center'>
@@ -170,15 +87,15 @@ export default function ForgotPasswordModal({ onClose }: { onClose: () => void }
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2.5' d='M5 13l4 4L19 7' />
               </svg>
             </div>
-            <h2 className='text-2xl font-black text-slate-800 mb-2'>¡Contraseña actualizada!</h2>
-            <p className='text-slate-400 text-sm mb-8'>
-              Tu nueva contraseña ha sido guardada correctamente. Ya puedes iniciar sesión.
+            <h2 className='text-2xl font-black text-slate-800 mb-2'>Revisa tu correo</h2>
+            <p className='text-slate-500 text-sm mb-8 leading-relaxed'>
+              Si el correo <strong>{email}</strong> está registrado, te hemos enviado un enlace que podrás usar para crear una nueva contraseña.
             </p>
             <button
               onClick={onClose}
-              className='px-10 py-3 bg-emerald-500 text-white rounded-full font-bold hover:bg-emerald-600 transition-all'
+              className='px-10 py-3 border-2 border-emerald-500 text-emerald-600 rounded-full font-bold hover:bg-emerald-50 transition-all'
             >
-              Iniciar Sesión
+              Entendido
             </button>
           </>
         )}
@@ -188,3 +105,4 @@ export default function ForgotPasswordModal({ onClose }: { onClose: () => void }
 
   return createPortal(content, document.body)
 }
+

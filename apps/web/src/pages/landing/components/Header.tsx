@@ -1,7 +1,15 @@
 import bgBolivar from '@/pages/landing/assets/Pzo.jpg'
 import { Link } from 'react-router-dom'
+import { useCachedConfig } from '@/hooks/useCachedConfig'
+import { STATIC } from '@/pages/landing/config/staticContent'
 
-export default function Header({ darkMode, cfg = {} }: { darkMode?: boolean, cfg?: Record<string, string> }) {
+const s = STATIC.hero
+
+// Tier 1: Buttons and subtitle text are static.
+// Tier 2: Hero image and title can be override from CMS (cached).
+export default function Header({ darkMode }: { darkMode?: boolean }) {
+  const cfg = useCachedConfig()
+
   return (
     <header
       id='inicio'
@@ -31,18 +39,21 @@ export default function Header({ darkMode, cfg = {} }: { darkMode?: boolean, cfg
         className='relative z-20 space-y-6 animate-text-reveal'
         style={{ animationDelay: '0.8s', opacity: 0 }}
       >
-        <h1 className='text-white text-5xl lg:text-7xl font-bold leading-[1.1]' dangerouslySetInnerHTML={{ __html: cfg['hero_titulo'] || 'Unidos por el <span class="text-emerald-500 italic">progreso</span> inmobiliario de Bolívar' }} />
+        <h1
+          className='text-white text-5xl lg:text-7xl font-bold leading-[1.1]'
+          dangerouslySetInnerHTML={{ __html: cfg['hero_titulo'] || s.titulo }}
+        />
 
         <p className='text-gray-300 text-lg max-w-md leading-relaxed'>
-          {cfg['hero_subtitulo'] || 'Representamos y fortalecemos a los profesionales del sector en el estado, impulsando la ética y el desarrollo sostenible.'}
+          {cfg['hero_subtitulo'] || s.subtitulo}
         </p>
 
         <div className='pt-6 flex flex-wrap items-center gap-4'>
           <Link to='/cibir#formulario' className='px-8 py-3.5 bg-emerald-500 text-[#011a14] rounded-full font-bold uppercase text-sm tracking-widest hover:bg-emerald-400 hover:-translate-y-1 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]'>
-            Únete Ahora
+            {s.btnPrimario}
           </Link>
           <Link to='/cibir' className='px-8 py-3.5 bg-transparent border border-white/30 text-white rounded-full font-bold uppercase text-sm tracking-widest hover:bg-white/10 transition-all'>
-            Saber más
+            {s.btnSecundario}
           </Link>
         </div>
       </div>

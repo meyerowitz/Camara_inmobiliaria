@@ -14,6 +14,10 @@ interface ConfigKey {
 }
 
 // ─── Config Groups ────────────────────────────────────────────────────────────
+// ─── Config Groups ────────────────────────────────────────────────────────────
+// IMPORTANT: Only fields listed here are read from the CMS at runtime.
+// Content hardcoded in `staticContent.ts` must NOT appear here — it requires
+// a code change, not a CMS update.
 const CONFIG_GROUPS: Array<{
   label: string
   anchor: string
@@ -21,154 +25,29 @@ const CONFIG_GROUPS: Array<{
   keys: ConfigKey[]
 }> = [
     {
-      label: 'Hero',
-      anchor: '#hero',
-      color: '#7c3aed',
-      keys: [
-        { clave: 'hero_titulo', descripcion: 'Título principal', type: 'text' },
-        { clave: 'hero_subtitulo', descripcion: 'Subtítulo', type: 'textarea' },
-        { clave: 'hero_boton', descripcion: 'Texto del botón CTA', type: 'text' },
-        { clave: 'hero_img', descripcion: 'Imagen de fondo', type: 'url_img' },
-      ],
-    },
-    {
-      label: 'Nosotros',
-      anchor: '#nosotros',
-      color: '#059669',
-      keys: [
-        { clave: 'nosotros_titulo', descripcion: 'Título de la sección', type: 'text' },
-        { clave: 'nosotros_descripcion', descripcion: 'Descripción principal', type: 'textarea' },
-        { clave: 'nosotros_card1_titulo', descripcion: 'Tarjeta 1 — Título', type: 'text' },
-        { clave: 'nosotros_card1_desc', descripcion: 'Tarjeta 1 — Desc.', type: 'textarea' },
-        { clave: 'nosotros_card1_img', descripcion: 'Tarjeta 1 — URL imagen', type: 'url_img' },
-        { clave: 'nosotros_card2_titulo', descripcion: 'Tarjeta 2 — Título', type: 'text' },
-        { clave: 'nosotros_card2_desc', descripcion: 'Tarjeta 2 — Desc.', type: 'textarea' },
-        { clave: 'nosotros_card2_img', descripcion: 'Tarjeta 2 — URL imagen', type: 'url_img' },
-        { clave: 'nosotros_card3_titulo', descripcion: 'Tarjeta 3 — Título', type: 'text' },
-        { clave: 'nosotros_card3_desc', descripcion: 'Tarjeta 3 — Desc.', type: 'textarea' },
-        { clave: 'nosotros_card3_img', descripcion: 'Tarjeta 3 — URL imagen', type: 'url_img' },
-        { clave: 'nosotros_boton', descripcion: 'Botón de contacto', type: 'text' },
-      ],
-    },
-    {
-      label: 'Afiliados',
-      anchor: '#afiliados',
-      color: '#0284c7',
-      keys: [
-        { clave: 'afiliados_titulo', descripcion: 'Título de la sección', type: 'text' },
-        { clave: 'afiliados_descripcion', descripcion: 'Descripción', type: 'textarea' },
-        { clave: 'afiliados_contador', descripcion: 'N° de afiliados', type: 'number', placeholder: '220' },
-        { clave: 'afiliados_anos', descripcion: 'Años de historia', type: 'number', placeholder: '30' },
-        { clave: 'afiliados_respaldo', descripcion: 'Frase destacada', type: 'text' },
-        { clave: 'afiliados_beneficio1', descripcion: 'Beneficio 1', type: 'text' },
-        { clave: 'afiliados_beneficio2', descripcion: 'Beneficio 2', type: 'text' },
-        { clave: 'afiliados_beneficio3', descripcion: 'Beneficio 3', type: 'text' },
-        { clave: 'afiliados_beneficio4', descripcion: 'Beneficio 4', type: 'text' },
-      ],
-    },
-    {
-      label: 'Formación',
-      anchor: '#formacion',
-      color: '#d97706',
-      keys: [
-        { clave: 'formacion_supertitulo', descripcion: 'Supra-título', type: 'text' },
-        { clave: 'formacion_titulo', descripcion: 'Título principal', type: 'text' },
-        { clave: 'formacion_boton', descripcion: 'Botón "Ver detalles"', type: 'text' },
-      ],
-    },
-    {
-      label: 'Convenios',
-      anchor: '#convenios',
-      color: '#be185d',
-      keys: [
-        { clave: 'convenios_supertitulo', descripcion: 'Supra-título', type: 'text' },
-        { clave: 'convenios_titulo', descripcion: 'Título', type: 'text' },
-        { clave: 'convenios_descripcion', descripcion: 'Descripción', type: 'textarea' },
-        { clave: 'convenios_link', descripcion: 'Enlace a formación', type: 'text' },
-      ],
-    },
-    {
-      label: 'Noticias',
-      anchor: '#noticias',
-      color: '#475569',
-      keys: [
-        { clave: 'noticias_titulo', descripcion: 'Título de la sección', type: 'text' },
-        { clave: 'noticias_subtitulo', descripcion: 'Subtítulo', type: 'text' },
-        { clave: 'noticias_boton', descripcion: 'Botón "Ver todas"', type: 'text' },
-      ],
-    },
-    {
-      label: 'Junta Directiva',
-      anchor: '#directiva',
-      color: '#b45309',
-      keys: [
-        { clave: 'directiva_supertitulo', descripcion: 'Supra-título', type: 'text' },
-        { clave: 'directiva_titulo', descripcion: 'Título', type: 'text' },
-        { clave: 'directiva_boton', descripcion: 'Botón de acceso', type: 'text' },
-        { clave: 'directiva_cta', descripcion: 'CTA sobre imagen', type: 'text' },
-      ],
-    },
-    {
-      label: 'Footer & Redes',
+      label: 'Redes Sociales',
       anchor: '#footer',
       color: '#1d4ed8',
       keys: [
-        { clave: 'footer_descripcion', descripcion: 'Descripción del footer', type: 'textarea' },
-        { clave: 'footer_direccion', descripcion: 'Dirección física', type: 'textarea' },
-        { clave: 'footer_copyright', descripcion: 'Texto de copyright', type: 'text' },
         { clave: 'redes_instagram', descripcion: 'URL Instagram', type: 'social', placeholder: 'https://instagram.com/...' },
         { clave: 'redes_facebook', descripcion: 'URL Facebook', type: 'social', placeholder: 'https://facebook.com/...' },
         { clave: 'redes_linkedin', descripcion: 'URL LinkedIn', type: 'social', placeholder: 'https://linkedin.com/...' },
+        { clave: 'redes_twitter', descripcion: 'URL Twitter / X', type: 'social', placeholder: 'https://x.com/...' },
+        { clave: 'redes_whatsapp', descripcion: 'Número WhatsApp (con código de país)', type: 'text', placeholder: '+58 412 ...' },
       ],
     },
     {
-      label: 'Institucional',
+      label: 'Contacto Institucional',
       anchor: '#nosotros',
-      color: '#6d28d9',
+      color: '#0284c7',
       keys: [
-        { clave: 'mision', descripcion: 'Misión', type: 'textarea' },
-        { clave: 'vision', descripcion: 'Visión', type: 'textarea' },
-        { clave: 'proposito', descripcion: 'Propósito', type: 'textarea' },
-        { clave: 'contacto_email', descripcion: 'Email de contacto', type: 'url', placeholder: 'correo@camara.com' },
+        { clave: 'contacto_email', descripcion: 'Email de contacto principal', type: 'url', placeholder: 'correo@ciebo.org.ve' },
         { clave: 'contacto_telefono', descripcion: 'Teléfono de contacto', type: 'text', placeholder: '+58 ...' },
         { clave: 'rif', descripcion: 'RIF de la cámara', type: 'text', placeholder: 'J-...' },
       ],
     },
-    {
-      label: 'Navegación (navbar)',
-      anchor: '#inicio',
-      color: '#0d9488',
-      keys: [
-        {
-          clave: 'nav_menu',
-          descripcion: 'Menú principal (JSON: array de { title, Tpath, items })',
-          type: 'textarea',
-          rows: 14,
-          placeholder: '[{"title":"Nosotros","Tpath":"","items":[{"label":"...","path":"..."}]}]',
-        },
-        { clave: 'nav_label_inicio', descripcion: 'Etiqueta «Inicio»', type: 'text' },
-        { clave: 'nav_label_login', descripcion: 'Etiqueta «Login»', type: 'text' },
-        { clave: 'nav_label_registro', descripcion: 'Etiqueta «Registro»', type: 'text' },
-        { clave: 'nav_label_salir', descripcion: 'Etiqueta «Salir»', type: 'text' },
-      ],
-    },
-    {
-      label: 'Landing — textos adicionales',
-      anchor: '#formacion',
-      color: '#64748b',
-      keys: [
-        { clave: 'convenios_marquee_titulo', descripcion: 'Título grande (marquee convenios)', type: 'text' },
-        { clave: 'historia_supertitulo', descripcion: 'Supra-título bloque Historia', type: 'text' },
-        { clave: 'historia_titulo', descripcion: 'Título bloque Historia', type: 'text' },
-        { clave: 'historia_link_text', descripcion: 'Texto enlace a cronología completa', type: 'text' },
-        { clave: 'afiliados_label_afiliados', descripcion: 'Etiqueta contador afiliados', type: 'text' },
-        { clave: 'afiliados_label_anos', descripcion: 'Etiqueta contador años', type: 'text' },
-        { clave: 'noticias_leer_mas', descripcion: 'Texto «Leer más» en tarjetas', type: 'text' },
-        { clave: 'noticias_card_meta', descripcion: 'Línea meta bajo imagen en noticias', type: 'text' },
-        { clave: 'directiva_ver_todos', descripcion: 'Botón «ver todos los miembros»', type: 'text' },
-      ],
-    },
   ]
+
 
 const ALL_CONFIG_KEYS = CONFIG_GROUPS.flatMap(g => g.keys)
 
@@ -364,18 +243,18 @@ export const ConfigPanel = () => {
   const [leftWidth, setLeftWidth] = useState(650)
   const [dividerDragging, setDividerDragging] = useState(false)
 
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const isDragging    = useRef(false)
-  const startX        = useRef(0)
-  const startWidth    = useRef(650)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(650)
 
   const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true
-    startX.current     = e.clientX
+    startX.current = e.clientX
     startWidth.current = leftWidth
     e.preventDefault()
     setDividerDragging(true)
-    document.body.style.cursor     = 'col-resize'
+    document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }, [leftWidth])
 
@@ -384,21 +263,21 @@ export const ConfigPanel = () => {
       if (!isDragging.current || !containerRef.current) return
       const containerW = containerRef.current.getBoundingClientRect().width
       const delta = e.clientX - startX.current
-      const next  = startWidth.current + delta
+      const next = startWidth.current + delta
       setLeftWidth(Math.max(280, Math.min(next, containerW - 260)))
     }
     const onMouseUp = () => {
       if (!isDragging.current) return
       isDragging.current = false
       setDividerDragging(false)
-      document.body.style.cursor     = ''
+      document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
     window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup',   onMouseUp)
+    window.addEventListener('mouseup', onMouseUp)
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup',   onMouseUp)
+      window.removeEventListener('mouseup', onMouseUp)
     }
   }, [])
 
@@ -460,7 +339,7 @@ export const ConfigPanel = () => {
         className="flex flex-col flex-shrink-0 bg-gray-50 overflow-hidden max-lg:!w-full max-lg:!flex-1"
         style={{
           width: previewVisible ? leftWidth : undefined,
-          flex:  previewVisible ? 'none' : '1 1 0%',
+          flex: previewVisible ? 'none' : '1 1 0%',
           transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -468,11 +347,11 @@ export const ConfigPanel = () => {
         <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-3 space-y-3">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-slate-800">Configuración General</h3>
+              <h3 className="text-sm font-bold text-slate-800">Configuración Dinámica</h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
                 {totalDirty > 0
                   ? <span className="text-amber-500 font-semibold">{totalDirty} campo{totalDirty !== 1 ? 's' : ''} modificado{totalDirty !== 1 ? 's' : ''}</span>
-                  : 'Todos los textos e imágenes de la landing'
+                  : 'Imagen del hero, redes sociales y contacto'
                 }
               </p>
             </div>
@@ -515,6 +394,15 @@ export const ConfigPanel = () => {
                 ✕
               </button>
             )}
+          </div>
+
+          {/* Static content notice */}
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+            <svg className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+            <p className="text-[10px] text-blue-600 leading-relaxed">
+              Los textos de secciones (Nosotros, Afiliados, Formación, etc.) son <strong>contenido estático</strong> y no aparecen aquí. Para modificarlos, edite el archivo <code className="bg-blue-100 px-1 rounded">staticContent.ts</code>.
+              Los módulos de <strong>Noticias, Cursos y Directiva</strong> se gestionan en sus propias secciones del menú lateral.
+            </p>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { login, getMe, logout, forgotPassword, setupInitialPassword } from '../controllers/auth.controller.js'
+import { login, getMe, logout, forgotPassword, setupInitialPassword, resetPasswordWithToken } from '../controllers/auth.controller.js'
 import { requireAuth } from '../middlewares/auth.middleware.js'
 
 const router = Router()
@@ -18,5 +18,8 @@ router.post('/forgot-password', forgotPassword)
 
 // POST /api/auth/setup-initial-password — público
 router.post('/setup-initial-password', setupInitialPassword)
+
+// POST /api/auth/reset-password — público
+router.post('/reset-password', resetPasswordWithToken)
 
 export { router as authRoutes }

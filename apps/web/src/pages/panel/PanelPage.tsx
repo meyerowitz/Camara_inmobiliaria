@@ -55,10 +55,8 @@ const NAV_ADMIN_CORE = [
 
 const NAV_CMS = [
   { icon: Newspaper, label: 'CMS · Noticias' },
-  { icon: GraduationCap, label: 'CMS · Cursos' },
   { icon: Handshake, label: 'CMS · Convenios' },
   { icon: Users, label: 'CMS · Directiva' },
-  { icon: Award, label: 'CMS · Historia' },
   { icon: Settings, label: 'CMS · Configuración' },
 ];
 
@@ -154,7 +152,7 @@ const PanelPage = () => {
     }
     if (activeTab === 'Mi Expediente') return <Section label="Mi Expediente" />;
     if (activeTab === 'Estado de Cuenta y Solvencias') return <Section label="Estado de Cuenta" />;
-    if (activeTab === 'Catálogo Académico') return <Section label="Catálogo Académico" />;
+    if (activeTab === 'Catálogo Académico') return <div className="col-span-1 lg:col-span-3"><WidgetAcademico limit={0} /></div>;
     if (activeTab === 'Mis Certificados') return <Section label="Mis Certificados" />;
     if (activeTab === 'Sistema de Denuncias') return <Section label="Sistema de Denuncias" />;
 
@@ -170,10 +168,8 @@ const PanelPage = () => {
     if (activeTab.startsWith('CMS ·')) {
       const tabMap: Record<string, CmsTab> = {
         'CMS · Noticias': 'noticias',
-        'CMS · Cursos': 'cursos',
         'CMS · Convenios': 'convenios',
         'CMS · Directiva': 'directiva',
-        'CMS · Historia': 'hitos',
         'CMS · Configuración': 'config',
       };
       const externalTab = tabMap[activeTab] ?? 'config';

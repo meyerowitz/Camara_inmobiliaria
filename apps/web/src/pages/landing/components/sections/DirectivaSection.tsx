@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '@/config/env'
+import { STATIC } from '@/pages/landing/config/staticContent'
 import Mision_img from '@/pages/landing/assets/Mision.jpeg'
 
-export default function DirectivaSection({ cfg = {} }: { cfg?: Record<string, string> }) {
+const s = STATIC.directiva
+
+// Tier 3: Directiva members fetched on mount.
+// Tier 1: All UI labels come from staticContent.
+export default function DirectivaSection() {
   const [directivaMembers, setDirectivaMembers] = useState<any[]>([])
 
   useEffect(() => {
@@ -19,10 +24,10 @@ export default function DirectivaSection({ cfg = {} }: { cfg?: Record<string, st
         <div className='flex flex-col md:flex-row md:items-end justify-between gap-6'>
           <div className='space-y-4'>
             <p className='text-emerald-600 font-black uppercase tracking-[0.3em] text-xs'>
-              Nuestro Equipo
+              {s.subtitulo}
             </p>
             <h2 className='text-5xl lg:text-7xl font-black text-[#022c22] tracking-tighter'>
-              Junta Directiva
+              {s.titulo}
             </h2>
           </div>
         </div>
@@ -52,7 +57,7 @@ export default function DirectivaSection({ cfg = {} }: { cfg?: Record<string, st
               </div>
               <div className='bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm'>
                 <span className='font-black text-emerald-700 uppercase tracking-widest text-sm group-hover:scale-105 transition-transform'>
-                  {cfg['directiva_cta'] || 'Conozca a la Junta Directiva'}
+                  {s.cta}
                 </span>
               </div>
             </Link>
@@ -62,7 +67,7 @@ export default function DirectivaSection({ cfg = {} }: { cfg?: Record<string, st
         {directivaMembers.length > 0 && (
           <div className="flex justify-center pt-8">
             <Link to="/junta_directiva" className="px-10 py-3 border-2 border-emerald-500 text-emerald-600 rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
-              {cfg['directiva_ver_todos'] || 'Ver todos los miembros'}
+              {s.verTodos}
             </Link>
           </div>
         )}

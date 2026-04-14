@@ -1,14 +1,15 @@
 import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '@/context/AuthContext'
+import logo from '@/pages/landing/assets/Logo.png'
 import ForgotPasswordModal from '@/pages/landing/components/ForgotPasswordModal'
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const { login } = useAuth()
-  const [email, setEmail]       = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,9 +18,9 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
     setLoading(true)
     try {
       await login(email, password)
-      onClose()          // cerrar modal tras login exitoso
+      onClose()
     } catch (err: any) {
-      setError(err.message || 'Credenciales incorrectas')
+      setError(err.message || 'Credenciales no autorizadas')
     } finally {
       setLoading(false)
     }
@@ -27,84 +28,107 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
 
   const modalContent = (
     <div className='fixed inset-0 z-[100] flex items-center justify-center p-4'>
-      <div
-        className='absolute inset-0 bg-black/60 backdrop-blur-sm'
-        onClick={onClose}
-      />
-      <div className='relative bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center'>
-        {/* Botón cerrar */}
+      {/* Fondo con desenfoque profundo */}
+      <div className='absolute inset-0 bg-[#011a14]/60 backdrop-blur-md' onClick={onClose} />
+
+      {/* Contenedor del Modal */}
+      <div className='relative bg-white w-full max-w-[420px] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden'>
+
+        {/* Botón Cerrar Minimalista */}
         <button
           onClick={onClose}
-          className='absolute top-6 right-6 text-gray-400 hover:text-emerald-600 transition'
-          type='button'
+          className='absolute top-6 right-6 text-slate-300 hover:text-slate-900 transition-colors'
         >
           <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='2' d='M6 18L18 6M6 6l12 12' />
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='1.5' d='M6 18L18 6M6 6l12 12' />
           </svg>
         </button>
 
-        <h2 className='text-gray-600 text-lg mb-10 leading-snug'>
-          Ingresa tus datos aquí.
-        </h2>
+        <div className='p-10 sm:p-12'>
+          {/* Título e Icono Sutil */}
+          <div className='mb-10 flex flex-col items-center text-center'>
+            <div className='w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mb-6 overflow-hidden'>
+              <img
+                src={logo}
+                alt="Logo"
+                className='h-12 w-auto object-contain 
+                filter brightness-0 
+                [filter:invert(48%)_sepia(79%)_saturate(2476%)_hue-rotate(134deg)_brightness(94%)_contrast(92%)]'
+              />
+            </div>
+            <h2 className='text-3xl font-black text-slate-900 tracking-tight'>
+              Bienvenido
+            </h2>
+            <p className='text-slate-500 text-sm mt-2'>
+              Inicie sesión para gestionar su cuenta institucional.
+            </p>
+          </div>
 
-        <form className='space-y-6' onSubmit={handleSubmit}>
-          {/* Email */}
-          <div className='text-left'>
-            <div className='relative'>
+          <form className='space-y-6' onSubmit={handleSubmit}>
+            {/* Campo Email */}
+            <div className='space-y-2'>
               <input
-                id='login-email'
                 type='email'
-                placeholder='Correo:'
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className='w-full px-6 py-4 border border-gray-400 rounded-full text-gray-700 focus:outline-none focus:border-emerald-500 transition-colors'
+                className='w-full px-0 py-3 border-b-2 border-slate-100 focus:border-emerald-500 transition-colors bg-transparent outline-none text-slate-800 placeholder-slate-300 font-medium'
+                placeholder="Correo electrónico"
               />
             </div>
-          </div>
 
-          {/* Contraseña */}
-          <div className='text-left'>
-            <div className='relative'>
-              <input
-                id='login-password'
-                type='password'
-                placeholder='Contraseña:'
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                className='w-full px-6 py-4 border border-gray-400 rounded-full text-gray-700 focus:outline-none focus:border-emerald-500 transition-colors'
-              />
+            {/* Campo Password */}
+            <div className='space-y-2'>
+              <div className='flex justify-between items-center'>
+                <input
+                  type='password'
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  className='w-full px-0 py-3 border-b-2 border-slate-100 focus:border-emerald-500 transition-colors bg-transparent outline-none text-slate-800 placeholder-slate-300 font-medium'
+                  placeholder="Contraseña"
+                />
+              </div>
+              <div className='flex justify-end'>
+                <button
+                  type='button'
+                  onClick={() => setShowForgot(true)}
+                  className='text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors mt-2'
+                >
+                  ¿Olvidó su contraseña?
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Mensaje de error */}
-          {error && (
-            <p className='text-red-500 text-sm font-medium bg-red-50 px-4 py-2 rounded-xl'>
-              {error}
+            {/* Error */}
+            {error && (
+              <div className='text-red-500 text-xs font-bold flex items-center gap-2 bg-red-50 p-3 rounded-lg'>
+                <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
+                  <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            {/* Botón Submit */}
+            <div className='pt-4'>
+              <button
+                type='submit'
+                disabled={loading}
+                className='w-full py-4 bg-[#022c22] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-900 transition-all active:scale-[0.98] disabled:opacity-50'
+              >
+                {loading ? 'Verificando...' : 'Acceder'}
+              </button>
+            </div>
+          </form>
+
+          {/* Footer del Modal */}
+          <div className='mt-10 text-center'>
+            <p className='text-slate-400 text-[11px] font-medium'>
+              CÁMARA INMOBILIARIA DEL ESTADO BOLÍVAR
             </p>
-          )}
-
-          <div className='pt-2'>
-            <button
-              type='button'
-              onClick={() => setShowForgot(true)}
-              className='text-blue-700 hover:underline text-sm font-medium'
-            >
-              Olvidé mi contraseña
-            </button>
           </div>
-
-          <div className='pt-6'>
-            <button
-               type='submit'
-               disabled={loading}
-               className='px-10 py-3 border-2 border-emerald-400 text-emerald-500 rounded-full font-bold hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed'
-            >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   )
@@ -112,9 +136,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       {createPortal(modalContent, document.body)}
-      {showForgot && (
-        <ForgotPasswordModal onClose={() => setShowForgot(false)} />
-      )}
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
     </>
   )
 }

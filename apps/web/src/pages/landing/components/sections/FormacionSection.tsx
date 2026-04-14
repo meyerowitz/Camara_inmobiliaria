@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
+import { STATIC } from '@/pages/landing/config/staticContent'
+import { API_URL } from '@/config/env'
+
+const s = STATIC.formacion
 
 const FALLBACK_CURSOS = [
   { id: 'PREANI', codigo: 'PREANI', link: '/preani', titulo: 'Programa de Estudios Académicos', subtitulo: 'Inmobiliarios Nivel Inicial', imagen_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200' },
   { id: 'CIBIR', codigo: 'CIBIR', link: '/cibir', titulo: 'Curso Intensivo de Bienes Raíces', subtitulo: 'Capacitación Técnica Avanzada', imagen_url: 'https://observatorio.tec.mx/wp-content/uploads/2020/04/CC3B3mohacerunaclaseenvivoefectivaysincomplicaciones.jpg' },
   { id: 'PEGI', codigo: 'PEGI', link: '/pegi', titulo: 'Programa Ejecutivo', subtitulo: 'Gestión Inmobiliaria Estratégica', imagen_url: 'https://static.studyusa.com/article/aws_bEqqGGmAziTXnqDcljdFyWoFhYcnEMGI_sm_2x.jpg?format=webp' },
   { id: 'PADI', codigo: 'PADI', link: '/padi', titulo: 'Programa Avanzado en Desarrollo Inmobiliario', subtitulo: 'Gestión Integral de Proyectos', imagen_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200' },
-  { id: 'PREANI-2', codigo: 'PREANI-2', link: '/preani', titulo: 'Programa de Estudios Académicos', subtitulo: 'Inmobiliarios Nivel Inicial', imagen_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=1200' }
 ]
 
-export default function FormacionSection({ cfg = {} }: { cfg?: Record<string, string> }) {
+export default function FormacionSection() {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0)
   const [cursos, setCursos] = useState(FALLBACK_CURSOS)
@@ -20,7 +22,7 @@ export default function FormacionSection({ cfg = {} }: { cfg?: Record<string, st
   const revealPanels = useScrollReveal()
 
   const getVisibleCards = () => typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : window.innerWidth < 1024 ? 2 : 4;
-  const maxIndex = Math.max(0, cursos.length - getVisibleCards());
+  const maxIndex = Math.max(0, cursos.length - getVisibleCards())
 
   const nextSlide = () => setCurrentIndex(prev => (prev >= maxIndex ? 0 : prev + 1))
   const prevSlide = () => setCurrentIndex(prev => (prev <= 0 ? maxIndex : prev - 1))
@@ -44,8 +46,8 @@ export default function FormacionSection({ cfg = {} }: { cfg?: Record<string, st
     <section id='formacion' className='bg-[#022c22] py-24 px-6 lg:px-12 overflow-hidden relative'>
       <div className='mb-12'>
         <div ref={revealTitle} className='reveal-on-scroll text-center md:text-left'>
-          <p className='text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4'>Potencia tu carrera</p>
-          <h2 className='text-5xl lg:text-7xl font-black text-white tracking-tighter'>Formación</h2>
+          <p className='text-emerald-500 font-black uppercase tracking-[0.3em] text-xs mb-4'>{s.subtitulo}</p>
+          <h2 className='text-5xl lg:text-7xl font-black text-white tracking-tighter'>{s.titulo}</h2>
         </div>
       </div>
 
@@ -68,24 +70,17 @@ export default function FormacionSection({ cfg = {} }: { cfg?: Record<string, st
                     <div className='absolute inset-0 bg-gradient-to-t from-[#022c22] via-[#022c22]/50 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500' />
                   </div>
                   <div className='relative z-10 h-full flex flex-col justify-end p-6 md:p-8 space-y-4'>
-                    <div className='flex justify-between items-start'>
-                      <span className='bg-emerald-500 backdrop-blur-md text-white px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg'>
-                        {curso.id.split('-')[0]}
-                      </span>
-                    </div>
                     <div>
                       <h3 className='text-xl lg:text-2xl font-black text-white leading-tight mb-2'>{curso.titulo}</h3>
                       <p className='text-emerald-50/80 text-xs font-medium leading-relaxed'>{curso.subtitulo}</p>
                     </div>
                     <div className='pt-2'>
-                      <div className='pt-2'>
-                        <button
-                          onClick={() => navigate(curso.link || '#')}
-                          className='block w-full text-center py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl text-white font-bold text-[10px] uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22] shadow-xl'
-                        >
-                          Ver detalles
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => navigate(curso.link || '#')}
+                        className='block w-full text-center py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl text-white font-bold text-[10px] uppercase tracking-widest transition-all hover:bg-emerald-500 hover:border-emerald-500 hover:text-[#022c22] shadow-xl'
+                      >
+                        {s.boton}
+                      </button>
                     </div>
                   </div>
                 </div>

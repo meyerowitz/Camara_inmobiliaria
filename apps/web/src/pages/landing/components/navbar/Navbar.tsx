@@ -9,9 +9,11 @@ import { NAV_ITEMS } from './navData'
 interface NavbarProps {
   darkMode: boolean;
   setDarkMode: (val: boolean) => void;
+  setIsSesionModalOpen?: (val: boolean) => void;
+  setIsRegisterModalOpen?: (val: boolean) => void;
 }
 
-export default function Navbar({ darkMode, setDarkMode }: NavbarProps) {
+export default function Navbar({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModalOpen }: NavbarProps) {
   const { user, logout } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
 

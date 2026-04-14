@@ -1,6 +1,7 @@
 import React from 'react'
 
-export default function OrigenesSection({ cfg = {} }: { cfg?: Record<string, string> }) {
+// Tier 1: Fully static — no API needed. Dates are permanent historical facts.
+export default function OrigenesSection() {
   return (
     <section id="origenes" className="bg-[#022c22] py-24 px-6 lg:px-20 overflow-hidden relative">
       <div className="max-w-7xl mx-auto">

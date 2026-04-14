@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { API_URL } from '@/config/env'
+import { STATIC } from '@/pages/landing/config/staticContent'
+
+const s = STATIC.noticias
 
 const FALLBACK_NOTICIAS = [
   { id: 1, titulo: 'Nuevas tasas de registro 2026', extracto: 'Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.', imagen_url: 'https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg', tag: 'Legal' },
@@ -8,7 +11,9 @@ const FALLBACK_NOTICIAS = [
   { id: 4, titulo: 'Innovación Inmobiliaria', extracto: 'Nuevas tecnologías aplicadas al sector de bienes raíces en la región.', imagen_url: 'https://www.elnuevoherald.com/public/ultimas-noticias/5hl2um/picture314557289/alternates/LANDSCAPE_1140/CONDO11.jpg', tag: 'Tecnología' }
 ]
 
-export default function NoticiasSection({ cfg = {} }: { cfg?: Record<string, string> }) {
+// Tier 3: News fetched only when section mounts.
+// Tier 1: All UI labels from staticContent.
+export default function NoticiasSection() {
   const [noticiasBase, setNoticiasBase] = useState(FALLBACK_NOTICIAS)
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -45,14 +50,14 @@ export default function NoticiasSection({ cfg = {} }: { cfg?: Record<string, str
       <div className='max-w-8xl mx-auto flex justify-between items-end mb-12'>
         <div>
           <h2 className='text-4xl lg:text-5xl font-bold text-[#022c22] tracking-tighter'>
-            {cfg['noticias_titulo'] || 'Actualidad y Noticias'}
+            {s.titulo}
           </h2>
           <p className='text-slate-500 mt-2 font-medium'>
-            {cfg['noticias_subtitulo'] || 'Mantente informado sobre el mercado inmobiliario.'}
+            {s.subtitulo}
           </p>
         </div>
         <button className='hidden md:flex text-emerald-600 font-bold hover:text-emerald-800 transition-colors items-center gap-2'>
-          {cfg['noticias_boton'] || 'Ver todas'} <span className='text-xl'>→</span>
+          {s.boton} <span className='text-xl'>→</span>
         </button>
       </div>
 
@@ -66,14 +71,14 @@ export default function NoticiasSection({ cfg = {} }: { cfg?: Record<string, str
             <div key={i} className='min-w-full md:min-w-[calc(50%-20px)] lg:min-w-[calc(33.333%-27px)] snap-start group/card cursor-pointer'>
               <div className='relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5'>
                 <div className='absolute inset-0 bg-emerald-900/20 opacity-0 group-hover/card:opacity-100 transition-opacity z-10 duration-500' />
-                <img src={news.imagen_url || news.img} alt={news.t} className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' />
+                <img src={news.imagen_url || news.img} alt={news.titulo} className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' />
                 <span className='absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-sm text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg'>
                   {news.tag}
                 </span>
               </div>
               <div className='space-y-3 px-2'>
                 <p className='text-[10px] text-emerald-600 font-black uppercase tracking-[0.2em]'>
-                  {cfg['noticias_card_meta'] || 'Bolívar • Actualidad'}
+                  {s.cardMeta}
                 </p>
                 <h4 className='text-2xl font-bold leading-tight text-[#022c22] group-hover/card:text-emerald-600 transition-colors'>
                   {news.titulo || news.t}
@@ -83,7 +88,7 @@ export default function NoticiasSection({ cfg = {} }: { cfg?: Record<string, str
                 </p>
                 <div className='pt-2'>
                   <span className='text-xs font-bold text-slate-400 group-hover/card:text-emerald-500 transition-colors italic'>
-                    {cfg['noticias_leer_mas'] || 'Leer más...'}
+                    {s.leerMas}
                   </span>
                 </div>
               </div>

@@ -1,8 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { API_URL } from '@/config/env'
+import React, { useState } from 'react'
 
-// Importación de Componentes
+// Components
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import Header from '@/pages/landing/components/Header'
 import NosotrosSection from '@/pages/landing/components/sections/NosotrosSection'
@@ -10,59 +8,54 @@ import OrigenesSection from '@/pages/landing/components/sections/OrigenesSection
 import AfiliadosSection from '@/pages/landing/components/sections/AfiliadosSection'
 import FormacionSection from '@/pages/landing/components/sections/FormacionSection'
 import DirectivaSection from '@/pages/landing/components/sections/DirectivaSection'
-import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
-import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
 import Footer from '@/pages/landing/components/Footer'
 import LoginModal from '@/pages/landing/components/LoginModal'
 import RegisterModal from '@/pages/landing/components/RegisterModal'
+
+// ConveniosSection and NoticiasSection are temporarily disabled
+// import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
+// import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
 
 export default function LandingPage() {
   const [isModalSesionOpen, setIsSesionModalOpen] = useState(false)
   const [isModalRegisterOpen, setIsRegisterModalOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  const [cfg, setCfg] = useState<Record<string, string>>({})
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/cms/config`)
-      .then(r => r.json())
-      .then(data => { if (data.success) setCfg(data.config || {}) })
-      .catch(() => { })
-  }, [])
+  // ── Config is now handled per-component ──────────────────────────────────────
+  // Tier 1 (static): NosotrosSection, OrigenesSection, AfiliadosSection
+  // Tier 2 (cached): Header, Footer — use useCachedConfig() internally
+  // Tier 3 (on-mount API): FormacionSection, DirectivaSection, NoticiasSection
 
   return (
-    <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
-      <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-slate-50'} min-h-screen transition-colors duration-300`}>
+    <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-slate-50'} min-h-screen transition-colors duration-300`}>
 
-        <Navbar
-          darkMode={darkMode}
-          setDarkMode={setDarkMode}
-          setIsSesionModalOpen={setIsSesionModalOpen}
-          setIsRegisterModalOpen={setIsRegisterModalOpen}
-          cfg={cfg}
-        />
+      <Navbar
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        setIsSesionModalOpen={setIsSesionModalOpen}
+        setIsRegisterModalOpen={setIsRegisterModalOpen}
+      />
 
-        <Header darkMode={darkMode} cfg={cfg} />
+      <div className='bg-[#022c22]'>
+        <Header darkMode={darkMode} />
       </div>
 
-      <NosotrosSection cfg={cfg} />
+      <NosotrosSection />
 
-      <OrigenesSection cfg={cfg} />
+      <OrigenesSection />
 
-      <AfiliadosSection cfg={cfg} />
+      <AfiliadosSection />
 
-      <FormacionSection cfg={cfg} />
+      <FormacionSection />
 
-      <DirectivaSection cfg={cfg} />
+      <DirectivaSection />
 
-      {/* <ConveniosSection cfg={cfg} /> */}
+      {/* <ConveniosSection /> */}
+      {/* <NoticiasSection /> */}
 
-      {/* <NoticiasSection scrollRef={scrollRef} cfg={cfg} /> */}
+      <Footer />
 
-      <Footer cfg={cfg} />
-
-      {/* MODALES */}
+      {/* MODALS */}
       {isModalSesionOpen && <LoginModal onClose={() => setIsSesionModalOpen(false)} />}
       {isModalRegisterOpen && <RegisterModal onClose={() => setIsRegisterModalOpen(false)} />}
     </div>

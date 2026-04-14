@@ -1,28 +1,24 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { NoticiasPanel }  from '@/pages/admin/components/Cms/NoticiasPanel'
-import { CursosPanel }    from '@/pages/admin/components/Cms/CursosPanel'
+import { NoticiasPanel } from '@/pages/admin/components/Cms/NoticiasPanel'
 import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { DirectivaPanel } from '@/pages/admin/components/Cms/DirectivaPanel'
-import { HitosPanel }     from '@/pages/admin/components/Cms/HitosPanel'
-import { ConfigPanel }    from '@/pages/admin/components/Cms/ConfigPanel'
+import { ConfigPanel } from '@/pages/admin/components/Cms/ConfigPanel'
 import { PaginasPanel } from '@/pages/admin/components/Cms/PaginasPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
-export type CmsTab = 'noticias' | 'cursos' | 'convenios' | 'directiva' | 'hitos' | 'config' | 'paginas'
+export type CmsTab = 'noticias' | 'convenios' | 'directiva' | 'config' | 'paginas'
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
-  noticias:  '#noticias',
-  cursos:    '#formacion',
+  noticias: '#noticias',
   convenios: '#convenios',
   directiva: '#directiva',
-  hitos:     '#nosotros',
-  config:    '',
-  paginas:   '',
+  config: '',
+  paginas: '',
 }
 
-const MIN_LEFT   = 360   // px
-const MIN_RIGHT  = 260   // px
+const MIN_LEFT = 360   // px
+const MIN_RIGHT = 260   // px
 const DEFAULT_LEFT = 650 // content column wider, preview narrower by default
 
 export default function CmsArticlesPanel({ externalTab = 'config' }: { externalTab?: CmsTab }) {
@@ -31,19 +27,19 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   const [dividerDragging, setDividerDragging] = useState(false)
   const [detailName, setDetailName] = useState<string | null>(null)
 
-  const containerRef  = useRef<HTMLDivElement>(null)
-  const isDragging    = useRef(false)
-  const startX        = useRef(0)
-  const startWidth    = useRef(DEFAULT_LEFT)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(DEFAULT_LEFT)
 
   // ── Resize divider handlers ────────────────────────────────────────────────
   const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true
-    startX.current     = e.clientX
+    startX.current = e.clientX
     startWidth.current = leftWidth
     e.preventDefault()
     setDividerDragging(true)
-    document.body.style.cursor     = 'col-resize'
+    document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }, [leftWidth])
 
@@ -52,22 +48,22 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
       if (!isDragging.current || !containerRef.current) return
       const containerW = containerRef.current.getBoundingClientRect().width
       const delta = e.clientX - startX.current
-      const next  = startWidth.current + delta
+      const next = startWidth.current + delta
       setLeftWidth(Math.max(MIN_LEFT, Math.min(next, containerW - MIN_RIGHT)))
     }
     const onMouseUp = () => {
       if (!isDragging.current) return
       isDragging.current = false
       setDividerDragging(false)
-      document.body.style.cursor     = ''
+      document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
 
     window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup',   onMouseUp)
+    window.addEventListener('mouseup', onMouseUp)
     return () => {
       window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup',   onMouseUp)
+      window.removeEventListener('mouseup', onMouseUp)
     }
   }, [])
 
@@ -104,7 +100,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
         className="flex flex-col overflow-hidden flex-shrink-0 max-lg:!w-full max-lg:!flex-1"
         style={{
           width: previewVisible ? leftWidth : undefined,
-          flex:  previewVisible ? 'none' : '1 1 0%',
+          flex: previewVisible ? 'none' : '1 1 0%',
           transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -146,11 +142,9 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
 
         {/* Tab content — key forces remount+animation on every tab switch */}
         <div key={externalTab} className="flex-1 overflow-hidden relative cms-fade-up">
-          {externalTab === 'noticias'  && <NoticiasPanel />}
-          {externalTab === 'cursos'    && <CursosPanel />}
+          {externalTab === 'noticias' && <NoticiasPanel />}
           {externalTab === 'convenios' && <ConveniosPanel />}
           {externalTab === 'directiva' && <DirectivaPanel />}
-          {externalTab === 'hitos'     && <HitosPanel />}
         </div>
       </div>
 

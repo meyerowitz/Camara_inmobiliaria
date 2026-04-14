@@ -4,44 +4,42 @@ import CmsAside from '@/pages/admin/components/CmsAside'
 import CmsContent from '@/pages/admin/components/CmsContent'
 
 const NAV_META: Record<string, { title: string; subtitle: string }> = {
-  dashboard:     { title: 'Dashboard',                  subtitle: 'Resumen financiero y actividad reciente' },
-  articles:      { title: 'Artículos',                  subtitle: 'Gestionar el contenido del sitio' },
-  formacion:     { title: 'Formación',                  subtitle: 'Cursos, talleres y programa CIBIR' },
-  cms:           { title: 'Contenido',                  subtitle: 'Todas las secciones de la Landing' },
-  cms_noticias:  { title: 'Noticias',                   subtitle: 'Últimas novedades y artículos' },
-  cms_cursos:    { title: 'Cursos',                     subtitle: 'Programas de formación académica' },
-  cms_convenios: { title: 'Convenios',                  subtitle: 'Alianzas y beneficios para afiliados' },
-  cms_directiva: { title: 'Directiva',                  subtitle: 'Miembros de la Junta Directiva' },
-  cms_hitos:     { title: 'Historia',                   subtitle: 'Hitos históricos de la Cámara' },
-  cms_paginas:   { title: 'Páginas públicas',           subtitle: 'Contenido JSON de rutas /beneficios, /pegi, etc.' },
-  cms_config:    { title: 'Configuración de Contenido', subtitle: 'Textos fijos e imágenes de la Landing' },
-  media:         { title: 'Medios',                     subtitle: 'Gestionar archivos e imágenes' },
-  afiliados:     { title: 'Afiliados',                  subtitle: 'Gestión de candidatos y agremiados CIBIR' },
-  estudiantes:   { title: 'Estudiantes',                subtitle: 'Estudiantes regulares, preinscripciones e inscripciones' },
-  users:         { title: 'Usuarios',                   subtitle: 'Cuentas de acceso al sistema' },
-  analytics:     { title: 'Análisis',                   subtitle: 'Métricas y rendimiento general' },
-  settings:      { title: 'Configuración del Sistema',  subtitle: 'Ajustes del sistema y preferencias' },
+  dashboard: { title: 'Dashboard', subtitle: 'Resumen financiero y actividad reciente' },
+  articles: { title: 'Artículos', subtitle: 'Gestionar el contenido del sitio' },
+  formacion: { title: 'Formación', subtitle: 'Cursos, talleres y programa CIBIR' },
+  cms: { title: 'Contenido', subtitle: 'Todas las secciones de la Landing' },
+  cms_noticias: { title: 'Noticias', subtitle: 'Últimas novedades y artículos' },
+  cms_convenios: { title: 'Convenios', subtitle: 'Alianzas y beneficios para afiliados' },
+  cms_directiva: { title: 'Directiva', subtitle: 'Miembros de la Junta Directiva' },
+  cms_paginas: { title: 'Páginas públicas', subtitle: 'Contenido JSON de rutas /beneficios, /pegi, etc.' },
+  cms_config: { title: 'Configuración de Contenido', subtitle: 'Textos fijos e imágenes de la Landing' },
+  media: { title: 'Medios', subtitle: 'Gestionar archivos e imágenes' },
+  afiliados: { title: 'Afiliados', subtitle: 'Gestión de candidatos y agremiados CIBIR' },
+  estudiantes: { title: 'Estudiantes', subtitle: 'Estudiantes regulares, preinscripciones e inscripciones' },
+  users: { title: 'Usuarios', subtitle: 'Cuentas de acceso al sistema' },
+  analytics: { title: 'Análisis', subtitle: 'Métricas y rendimiento general' },
+  settings: { title: 'Configuración del Sistema', subtitle: 'Ajustes del sistema y preferencias' },
 }
 
 const SIDEBAR_COLLAPSED = 72    // icon-only width
-const SIDEBAR_MIN_DRAG  = 100   // minimum width while dragging before snapping to icon mode
-const SIDEBAR_MAX       = 340
-const SIDEBAR_DEFAULT   = 220
+const SIDEBAR_MIN_DRAG = 100   // minimum width while dragging before snapping to icon mode
+const SIDEBAR_MAX = 340
+const SIDEBAR_DEFAULT = 220
 
 const AdminPage = () => {
-  const [activeId, setActiveId]           = useState('dashboard')
+  const [activeId, setActiveId] = useState('dashboard')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [sidebarWidth, setSidebarWidth]     = useState(SIDEBAR_DEFAULT)
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
   const [sidebarDragging, setSidebarDragging] = useState(false)
 
-  const containerRef      = useRef<HTMLDivElement>(null)
-  const isDragging        = useRef(false)
-  const startX            = useRef(0)
-  const startWidth        = useRef(SIDEBAR_DEFAULT)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(SIDEBAR_DEFAULT)
   /** Remembers the last expanded width so toggle can restore it */
   const prevExpandedWidth = useRef(SIDEBAR_DEFAULT)
 
-  const meta        = NAV_META[activeId] ?? NAV_META['dashboard']
+  const meta = NAV_META[activeId] ?? NAV_META['dashboard']
   const isCollapsed = sidebarWidth <= SIDEBAR_COLLAPSED
 
   // ── Toggle: icon-only ↔ last expanded width ──────────────────────────────
@@ -58,19 +56,19 @@ const AdminPage = () => {
   const onSidebarDividerDown = useCallback((e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return // ignore button clicks
     isDragging.current = true
-    startX.current     = e.clientX
+    startX.current = e.clientX
     startWidth.current = sidebarWidth
     e.preventDefault()
     setSidebarDragging(true)
-    document.body.style.cursor     = 'col-resize'
+    document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }, [sidebarWidth])
 
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!isDragging.current) return
-      const delta   = e.clientX - startX.current
-      const next    = startWidth.current + delta
+      const delta = e.clientX - startX.current
+      const next = startWidth.current + delta
       // Snap to icon-only if dragged below min
       const clamped = next < SIDEBAR_MIN_DRAG
         ? SIDEBAR_COLLAPSED
@@ -82,14 +80,14 @@ const AdminPage = () => {
       if (!isDragging.current) return
       isDragging.current = false
       setSidebarDragging(false)
-      document.body.style.cursor     = ''
+      document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
     window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup',   onUp)
+    window.addEventListener('mouseup', onUp)
     return () => {
       window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup',   onUp)
+      window.removeEventListener('mouseup', onUp)
     }
   }, [])
 

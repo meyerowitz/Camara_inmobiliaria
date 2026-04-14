@@ -111,6 +111,7 @@ const statements = [
     id_instructor       INTEGER     NOT NULL,
     nombre              TEXT        NOT NULL,
     descripcion         TEXT,
+    imagen_url          TEXT,
     nivel_academico     TEXT,
     cupos_totales       INTEGER     NOT NULL CHECK (cupos_totales > 0),
     cupos_disponibles   INTEGER     NOT NULL CHECK (cupos_disponibles >= 0),

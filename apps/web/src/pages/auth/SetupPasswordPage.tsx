@@ -7,6 +7,7 @@ export default function SetupPasswordPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
+  const modo = searchParams.get('modo'); // si es 'reset', usamos endpoint de reset
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,10 +20,18 @@ export default function SetupPasswordPage() {
   const isMatch = password === confirmPassword && password.length >= 8;
   const hasMinLength = password.length >= 8;
 
+  const isReset = modo === 'reset';
+  const title = isReset ? 'Restablece tu contraseña' : 'Configura tu acceso';
+  const subtitle = isReset ? 'Crea una nueva contraseña para tu cuenta.' : 'Establece una contraseña segura para activar tu cuenta de afiliado.';
+  const btnText = isReset ? 'Guardar Contraseña' : 'Activar mi Cuenta';
+  const successMsg = isReset 
+    ? '¡Tu contraseña ha sido actualizada correctamente! Ya puedes iniciar sesión.'
+    : '¡Tu cuenta ha sido activada! Ya puedes iniciar sesión con tu nueva contraseña.';
+
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('El enlace de configuración no es válido o ha expirado.');
+      setMessage('El enlace no es válido o ha expirado.');
     }
   }, [token]);
 
@@ -33,8 +42,10 @@ export default function SetupPasswordPage() {
     setLoading(true);
     setStatus('idle');
 
+    const endpoint = isReset ? '/api/auth/reset-password' : '/api/auth/setup-initial-password';
+
     try {
-      const res = await fetch(`${API_URL}/api/auth/setup-initial-password`, {
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
@@ -44,11 +55,10 @@ export default function SetupPasswordPage() {
 
       if (data.success) {
         setStatus('success');
-        setMessage('¡Tu cuenta ha sido activada! Ya puedes iniciar sesión con tu nueva contraseña.');
-        // Opcional: auto-login o redirigir tras un delay
+        setMessage(successMsg);
       } else {
         setStatus('error');
-        setMessage(data.message || 'Error al establecer la contraseña.');
+        setMessage(data.message || 'Error al procesar la solicitud.');
       }
     } catch (err) {
       setStatus('error');
@@ -95,8 +105,8 @@ export default function SetupPasswordPage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 opacity-50" />
         
         <div className="relative">
-          <h1 className="text-2xl font-black text-slate-800 mb-2">Configura tu acceso</h1>
-          <p className="text-slate-400 text-sm mb-8">Establece una contraseña segura para activar tu cuenta de afiliado.</p>
+          <h1 className="text-2xl font-black text-slate-800 mb-2">{title}</h1>
+          <p className="text-slate-400 text-sm mb-8">{subtitle}</p>
 
           {status === 'error' && (
             <div className="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-2xl flex items-start gap-3 mb-6 text-sm">
@@ -167,7 +177,7 @@ export default function SetupPasswordPage() {
               disabled={loading || !isMatch || status === 'error'}
               className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
             >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : 'Activar mi Cuenta'}
+              {loading ? <Loader2 className="animate-spin" size={20} /> : btnText}
             </button>
           </form>
         </div>

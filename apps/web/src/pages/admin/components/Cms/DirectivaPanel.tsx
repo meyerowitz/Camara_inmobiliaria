@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail } from '@/pages/admin/components/Cms/CmsShared'
 import { sendToPreview } from '@/pages/admin/components/Cms/LandingPreviewPane'
+import { invalidateDirectivaCache } from '@/pages/landing/junta-directiva/JuntaDirectivaPage'
 
 interface DirectivaItem {
   id: string | number;
@@ -9,6 +10,12 @@ interface DirectivaItem {
   foto_url?: string;
   orden: number;
   activo: number | boolean;
+}
+
+/** Invalida caché local y emite evento para que la landing recargue si está abierta en la misma pestaña */
+function purgeCache() {
+  invalidateDirectivaCache()
+  window.dispatchEvent(new CustomEvent('directiva-cache-invalidated'))
 }
 
 export const DirectivaPanel = () => {
@@ -20,11 +27,12 @@ export const DirectivaPanel = () => {
   const [isEditing, setIsEditing] = useState(false)
 
   const load = useCallback(async () => { setLoading(true); const data = await api.get('/api/cms/directiva'); if (data.success) setItems(data.data); setLoading(false) }, [])
+
   useEffect(() => { load() }, [load])
   const openEdit = (item: DirectivaItem) => { setSelectedId(item.id); setForm({ nombre: item.nombre, cargo: item.cargo, foto_url: item.foto_url || '', orden: item.orden, activo: item.activo === 1 }); setIsEditing(true) }
   const openNew = () => { setSelectedId('new'); setForm({ nombre: '', cargo: '', foto_url: '', orden: 0, activo: true }); setIsEditing(true) }
-  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/directiva', form); else await api.put(`/api/cms/directiva/${selectedId}`, form); setSaving(false); setSelectedId(null); setIsEditing(false); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
-  const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/directiva/${id}`); setSelectedId(null); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
+  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/directiva', form); else await api.put(`/api/cms/directiva/${selectedId}`, form); setSaving(false); setSelectedId(null); setIsEditing(false); load(); purgeCache(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
+  const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/directiva/${id}`); setSelectedId(null); load(); purgeCache(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(p => ({ ...p, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 
   const formBody = () => (
