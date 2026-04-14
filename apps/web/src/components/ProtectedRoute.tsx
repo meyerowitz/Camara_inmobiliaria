@@ -1,0 +1,49 @@
+import React from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth, type UserRole } from '@/context/AuthContext'
+
+interface ProtectedRouteProps {
+  /** Si se especifica, el usuario debe tener al menos uno de estos roles */
+  requiredRoles?: UserRole[]
+}
+
+/**
+ * Protege rutas según el estado de autenticación y los roles requeridos.
+ * - Si está cargando: muestra spinner.
+ * - Si no hay usuario autenticado: redirige a `/`.
+ * - Si los roles no coinciden: redirige a `/panel` (vista unificada).
+ * - Si todo OK: renderiza los hijos con <Outlet />.
+ */
+export default function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
+  const { user, isLoading, hasRole } = useAuth()
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+          <span className="text-sm text-slate-400 font-medium">Verificando sesión...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Navigate to="/" replace />
+  }
+
+  // Si hay roles requeridos, verificar que el usuario tenga al menos uno
+  if (requiredRoles && requiredRoles.length > 0) {
+    // super_admin tiene acceso a todo lo que requiera admin
+    const effectiveRoles: UserRole[] = requiredRoles.includes('admin')
+      ? [...requiredRoles, 'super_admin']
+      : requiredRoles
+
+    const hasAccess = effectiveRoles.some(r => hasRole(r))
+    if (!hasAccess) {
+      return <Navigate to="/panel" replace />
+    }
+  }
+
+  return <Outlet />
+}

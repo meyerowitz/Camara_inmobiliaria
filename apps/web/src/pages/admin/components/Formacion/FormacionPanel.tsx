@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-
+import React, { useState, useEffect } from 'react'
+import { API_URL } from '@/config/env'
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CibirStatus = 'Pendiente' | 'Aprobado' | 'Rechazado'
 type CursoNivel = 'Principiante' | 'Intermedio' | 'Avanzado'
@@ -28,15 +28,7 @@ interface Curso {
   status: 'Activo' | 'Próximamente' | 'Finalizado'
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
-const SOLICITUDES: Solicitud[] = [
-  { id: '1', nombre: 'Carlos Medina', cedula: 'V-18.342.110', email: 'cmedina@gmail.com', telefono: '0424-7123456', empresa: 'Inmobiliaria Orinoco', fechaSolicitud: 'Mar 01, 2026', status: 'Pendiente' },
-  { id: '2', nombre: 'Daniela Rojas', cedula: 'V-22.001.887', email: 'drojas@outlook.com', telefono: '0412-6543210', empresa: 'Independiente', fechaSolicitud: 'Feb 28, 2026', status: 'Aprobado', nota: 'Documentación completa.' },
-  { id: '3', nombre: 'Luis Torrealba', cedula: 'V-15.990.452', email: 'ltorrealba@ciebo.com', telefono: '0416-8881234', empresa: 'Constructora Guayana', fechaSolicitud: 'Feb 27, 2026', status: 'Pendiente' },
-  { id: '4', nombre: 'María Bermúdez', cedula: 'V-20.445.003', email: 'mbermudez@mail.com', telefono: '0426-3340099', empresa: 'Grupo Inmobiliario Norte', fechaSolicitud: 'Feb 25, 2026', status: 'Rechazado', nota: 'Documentación incompleta. Reenviar acta de registro.' },
-  { id: '5', nombre: 'Andrés Páez', cedula: 'V-19.123.777', email: 'apaez@gmail.com', telefono: '0414-5551122', empresa: 'Bienes Raíces Bolívar', fechaSolicitud: 'Feb 24, 2026', status: 'Aprobado' },
-  { id: '6', nombre: 'Génesis Salazar', cedula: 'V-24.780.331', email: 'gsalazar@corp.ve', telefono: '0412-1234567', empresa: 'Inmobiliaria Premium', fechaSolicitud: 'Feb 22, 2026', status: 'Pendiente' },
-]
+// --- Eliminado el mock SOLICITUDES ya que ahora se obtiene desde la BD ---
 
 const CURSOS: Curso[] = [
   { id: '1', titulo: 'Diplomado en Derecho Inmobiliario', instructor: 'Abog. Luis Martínez', nivel: 'Avanzado', inscritos: 18, cupos: 25, fecha: 'Mar 15, 2026', precio: '$45.00', status: 'Activo' },
@@ -154,38 +146,84 @@ const CibirDetail = ({
         </div>
       </div>
     )}
-
-    {selected.status !== 'Pendiente' && (
-      <button
-        onClick={() => onUpdate(selected.id, 'Pendiente')}
-        className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors self-start"
-      >
-        ↩ Devolver a Pendiente
-      </button>
-    )}
   </div>
 )
 
 // ─── CIBIR PANEL ─────────────────────────────────────────────────────────────
-const CibirPanel = () => {
-  const [solicitudes, setSolicitudes] = useState<Solicitud[]>(SOLICITUDES)
+const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) => void }) => {
+  const [solicitudes, setSolicitudes] = useState<Solicitud[]>([])
   const [filter, setFilter] = useState<CibirStatus | 'Todos'>('Todos')
   const [selected, setSelected] = useState<Solicitud | null>(null)
   const [nota, setNota] = useState('')
+  const [counts, setCounts] = useState({ Todos: 0, Pendiente: 0, Aprobado: 0, Rechazado: 0 })
+  const [loading, setLoading] = useState(true)
 
-  const filtered = solicitudes.filter(s => filter === 'Todos' || s.status === filter)
-  const counts = {
-    Todos: solicitudes.length,
-    Pendiente: solicitudes.filter(s => s.status === 'Pendiente').length,
-    Aprobado: solicitudes.filter(s => s.status === 'Aprobado').length,
-    Rechazado: solicitudes.filter(s => s.status === 'Rechazado').length,
+  const fetchSolicitudes = async () => {
+    setLoading(true)
+    try {
+      const tabParam = filter.toLowerCase();
+      const res = await fetch(`${API_URL}/api/afiliados/cibir/solicitudes?tab=${tabParam}`)
+      const json = await res.json()
+
+      if (json.success) {
+        const nuevosCuentas = {
+          Todos: json.meta.counts.todos || 0,
+          Pendiente: json.meta.counts.pendiente || 0,
+          Aprobado: json.meta.counts.aprobado || 0,
+          Rechazado: json.meta.counts.rechazado || 0,
+        }
+        setCounts(nuevosCuentas)
+        if (onCountsUpdate) onCountsUpdate(nuevosCuentas.Pendiente)
+
+        const mapped: Solicitud[] = json.data.map((item: { id_agremiado: string | number; nombre_completo: string; cedula_rif: string; email: string; telefono: string; estatus: string; fecha_registro: string }) => {
+          let status: CibirStatus = 'Pendiente'
+          if (item.estatus === 'CIBIR') status = 'Aprobado'
+          if (item.estatus === 'Rechazado' || item.estatus === 'Suspendido') status = 'Rechazado'
+
+          return {
+            id: String(item.id_agremiado),
+            nombre: item.nombre_completo,
+            cedula: item.cedula_rif,
+            email: item.email,
+            telefono: item.telefono || 'No indicado',
+            empresa: 'Por definir',
+            fechaSolicitud: new Date(item.fecha_registro).toLocaleDateString('es-ES', { month: 'short', day: '2-digit', year: 'numeric' }),
+            status,
+          }
+        })
+        setSolicitudes(mapped)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const updateStatus = (id: string, status: CibirStatus) => {
-    setSolicitudes(prev => prev.map(s => s.id === id ? { ...s, status, nota: nota || s.nota } : s))
-    setSelected(prev => prev ? { ...prev, status, nota: nota || prev.nota } : null)
-    setNota('')
+  useEffect(() => {
+    fetchSolicitudes()
+    setSelected(null)
+  }, [filter])
+
+  const updateStatus = async (id: string, status: CibirStatus) => {
+    try {
+      if (status === 'Aprobado') {
+        await fetch(`${API_URL}/api/afiliados/${id}/aprobar`, { method: 'PATCH' })
+      } else if (status === 'Rechazado') {
+        await fetch(`${API_URL}/api/afiliados/${id}/rechazar`, { method: 'PATCH' })
+      }
+      // Re-descargar información de servidor 
+      if (selected && String(selected.id) === String(id)) {
+        setSelected({ ...selected, status });
+      }
+      setNota('')
+      fetchSolicitudes()
+    } catch (error) {
+      console.error('Error actualizando estado:', error)
+    }
   }
+
+  const filtered = solicitudes;
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -217,7 +255,9 @@ const CibirPanel = () => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-          {filtered.map(s => (
+          {loading ? (
+            <div className="p-4 text-center text-xs text-slate-400 font-semibold uppercase tracking-widest mt-10">Cargando...</div>
+          ) : filtered.map(s => (
             <button
               key={s.id}
               onClick={() => { setSelected(s); setNota('') }}
@@ -237,6 +277,9 @@ const CibirPanel = () => {
               <span className="text-[10px] text-slate-300">{s.fechaSolicitud}</span>
             </button>
           ))}
+          {!loading && filtered.length === 0 && (
+            <div className="p-4 text-center text-xs text-slate-400 mt-10">No hay solicitudes en esta vista.</div>
+          )}
         </div>
       </div>
 
@@ -362,12 +405,25 @@ type SubTab = 'cursos' | 'cibir'
 
 const FormacionPanel = () => {
   const [activeTab, setActiveTab] = useState<SubTab>('cursos')
+  const [pendientesCount, setPendientesCount] = useState(0)
 
-  const pendientes = SOLICITUDES.filter(s => s.status === 'Pendiente').length
+  // Cargar contadores globales al inicio para el badge del tab CIBIR
+  useEffect(() => {
+    const fetchGlobalCounts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/afiliados/cibir/solicitudes?tab=todos`)
+        const json = await res.json()
+        if (json.success) setPendientesCount(json.meta.counts.pendiente || 0)
+      } catch (e) {
+        console.error('Error fetching global counts', e)
+      }
+    }
+    fetchGlobalCounts()
+  }, [])
 
   const tabs: { id: SubTab; label: string; badge?: number }[] = [
     { id: 'cursos', label: 'Cursos & Talleres' },
-    { id: 'cibir', label: 'CIBIR', badge: pendientes },
+    { id: 'cibir', label: 'CIBIR', badge: pendientesCount },
   ]
 
   return (
@@ -404,7 +460,7 @@ const FormacionPanel = () => {
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'cursos' && <CursosAdminPanel />}
-        {activeTab === 'cibir' && <CibirPanel />}
+        {activeTab === 'cibir' && <CibirPanel onCountsUpdate={setPendientesCount} />}
       </div>
     </div>
   )

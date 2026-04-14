@@ -52,7 +52,7 @@ const CreditScoreWidget = ({
 
   // Colour: green for high score, amber for mid, red for low
   const fillColor =
-    pct >= 0.7 ? '#00D084' : pct >= 0.4 ? '#F59E0B' : '#F87171'
+    pct >= 0.7 ? 'var(--color-admin-accent)' : pct >= 0.4 ? 'var(--color-warning)' : 'var(--color-danger)'
 
   return (
     <div className="bg-white rounded-2xl p-5 border border-gray-100 flex flex-col gap-3">

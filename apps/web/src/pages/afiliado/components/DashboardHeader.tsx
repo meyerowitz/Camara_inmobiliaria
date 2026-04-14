@@ -1,0 +1,80 @@
+import React from 'react';
+import { Bell, HelpCircle, Menu, Search, User } from 'lucide-react';
+
+interface DashboardHeaderProps {
+  onMenuOpen: () => void;
+  userName?: string;
+  userCode?: string;
+  searchPlaceholder?: string;
+}
+
+const DashboardHeader = ({
+  onMenuOpen,
+  userName = 'Juan Pérez',
+  userCode = 'CIBIR-2026-001',
+  searchPlaceholder = 'Buscar trámites, cursos o solvencias...',
+}: DashboardHeaderProps) => (
+  <header
+    className="sticky top-0 z-40 px-4 sm:px-8 py-3 h-18 flex items-center justify-between gap-4 shadow-sm border-b"
+    style={{
+      backgroundColor: 'var(--color-bg-surface)',
+      borderColor: 'var(--color-border-accent)',
+    }}
+  >
+    {/* Left: Hamburger + Search */}
+    <div className="flex items-center gap-3 flex-grow max-w-xl">
+      <button
+        onClick={onMenuOpen}
+        className="md:hidden p-2 rounded-lg transition-colors flex-shrink-0"
+        style={{ color: 'var(--color-text-muted)' }}
+        aria-label="Abrir menú"
+      >
+        <Menu size={20} />
+      </button>
+
+      <div className="relative w-full">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-faint)' }} />
+        <input
+          type="text"
+          placeholder={searchPlaceholder}
+          className="w-full rounded-full py-2.5 pl-10 pr-4 text-sm outline-none transition-all"
+          style={{
+            backgroundColor: 'var(--color-bg-subtle)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-base)',
+          }}
+          onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--color-accent)')}
+          onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--color-border)')}
+        />
+      </div>
+    </div>
+
+    {/* Right: Notifications + Profile */}
+    <div className="flex items-center gap-4 flex-shrink-0">
+      <div className="flex items-center gap-1 pr-4" style={{ borderRight: '1px solid var(--color-border)' }}>
+        <button className="relative p-2 rounded-full transition-colors">
+          <Bell size={20} style={{ color: 'var(--color-text-muted)' }} />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 border-2 border-white rounded-full" style={{ backgroundColor: 'var(--color-danger)' }} />
+        </button>
+        <button className="p-2 rounded-full transition-colors">
+          <HelpCircle size={20} style={{ color: 'var(--color-text-muted)' }} />
+        </button>
+      </div>
+
+      <div className="flex items-center gap-3 cursor-pointer group">
+        <div className="hidden sm:flex flex-col text-right leading-tight">
+          <span className="font-bold text-sm" style={{ color: 'var(--color-text-base)' }}>{userName}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--color-accent-hover)' }}>{userCode}</span>
+        </div>
+        <div
+          className="w-9 h-9 rounded-full border-2 border-white shadow-sm flex items-center justify-center overflow-hidden transition-all"
+          style={{ backgroundColor: 'var(--color-accent-muted)' }}
+        >
+          <User size={18} style={{ color: 'var(--color-accent-hover)' }} />
+        </div>
+      </div>
+    </div>
+  </header>
+);
+
+export default DashboardHeader;

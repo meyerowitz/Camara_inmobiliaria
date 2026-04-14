@@ -1,0 +1,546 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { api, Input, Textarea, BtnPrimary, Loading } from '@/pages/admin/components/Cms/CmsShared'
+import { LandingPreviewPane, sendToPreview } from '@/pages/admin/components/Cms/LandingPreviewPane'
+
+// ─── Field Types ─────────────────────────────────────────────────────────────
+type FieldType = 'text' | 'textarea' | 'url_img' | 'number' | 'url' | 'social'
+
+interface ConfigKey {
+  clave: string
+  descripcion: string
+  type?: FieldType
+  placeholder?: string
+}
+
+// ─── Config Groups ────────────────────────────────────────────────────────────
+const CONFIG_GROUPS: Array<{
+  label: string
+  anchor: string
+  color: string
+  keys: ConfigKey[]
+}> = [
+    {
+      label: 'Hero',
+      anchor: '#hero',
+      color: '#7c3aed',
+      keys: [
+        { clave: 'hero_titulo', descripcion: 'Título principal', type: 'text' },
+        { clave: 'hero_subtitulo', descripcion: 'Subtítulo', type: 'textarea' },
+        { clave: 'hero_boton', descripcion: 'Texto del botón CTA', type: 'text' },
+        { clave: 'hero_img', descripcion: 'Imagen de fondo', type: 'url_img' },
+      ],
+    },
+    {
+      label: 'Nosotros',
+      anchor: '#nosotros',
+      color: '#059669',
+      keys: [
+        { clave: 'nosotros_titulo', descripcion: 'Título de la sección', type: 'text' },
+        { clave: 'nosotros_descripcion', descripcion: 'Descripción principal', type: 'textarea' },
+        { clave: 'nosotros_card1_titulo', descripcion: 'Tarjeta 1 — Título', type: 'text' },
+        { clave: 'nosotros_card1_desc', descripcion: 'Tarjeta 1 — Desc.', type: 'textarea' },
+        { clave: 'nosotros_card1_img', descripcion: 'Tarjeta 1 — URL imagen', type: 'url_img' },
+        { clave: 'nosotros_card2_titulo', descripcion: 'Tarjeta 2 — Título', type: 'text' },
+        { clave: 'nosotros_card2_desc', descripcion: 'Tarjeta 2 — Desc.', type: 'textarea' },
+        { clave: 'nosotros_card2_img', descripcion: 'Tarjeta 2 — URL imagen', type: 'url_img' },
+        { clave: 'nosotros_card3_titulo', descripcion: 'Tarjeta 3 — Título', type: 'text' },
+        { clave: 'nosotros_card3_desc', descripcion: 'Tarjeta 3 — Desc.', type: 'textarea' },
+        { clave: 'nosotros_card3_img', descripcion: 'Tarjeta 3 — URL imagen', type: 'url_img' },
+        { clave: 'nosotros_boton', descripcion: 'Botón de contacto', type: 'text' },
+      ],
+    },
+    {
+      label: 'Afiliados',
+      anchor: '#afiliados',
+      color: '#0284c7',
+      keys: [
+        { clave: 'afiliados_titulo', descripcion: 'Título de la sección', type: 'text' },
+        { clave: 'afiliados_descripcion', descripcion: 'Descripción', type: 'textarea' },
+        { clave: 'afiliados_contador', descripcion: 'N° de afiliados', type: 'number', placeholder: '220' },
+        { clave: 'afiliados_anos', descripcion: 'Años de historia', type: 'number', placeholder: '30' },
+        { clave: 'afiliados_respaldo', descripcion: 'Frase destacada', type: 'text' },
+        { clave: 'afiliados_beneficio1', descripcion: 'Beneficio 1', type: 'text' },
+        { clave: 'afiliados_beneficio2', descripcion: 'Beneficio 2', type: 'text' },
+        { clave: 'afiliados_beneficio3', descripcion: 'Beneficio 3', type: 'text' },
+        { clave: 'afiliados_beneficio4', descripcion: 'Beneficio 4', type: 'text' },
+      ],
+    },
+    {
+      label: 'Formación',
+      anchor: '#formacion',
+      color: '#d97706',
+      keys: [
+        { clave: 'formacion_supertitulo', descripcion: 'Supra-título', type: 'text' },
+        { clave: 'formacion_titulo', descripcion: 'Título principal', type: 'text' },
+        { clave: 'formacion_boton', descripcion: 'Botón "Ver detalles"', type: 'text' },
+      ],
+    },
+    {
+      label: 'Convenios',
+      anchor: '#convenios',
+      color: '#be185d',
+      keys: [
+        { clave: 'convenios_supertitulo', descripcion: 'Supra-título', type: 'text' },
+        { clave: 'convenios_titulo', descripcion: 'Título', type: 'text' },
+        { clave: 'convenios_descripcion', descripcion: 'Descripción', type: 'textarea' },
+        { clave: 'convenios_link', descripcion: 'Enlace a formación', type: 'text' },
+      ],
+    },
+    {
+      label: 'Noticias',
+      anchor: '#noticias',
+      color: '#475569',
+      keys: [
+        { clave: 'noticias_titulo', descripcion: 'Título de la sección', type: 'text' },
+        { clave: 'noticias_subtitulo', descripcion: 'Subtítulo', type: 'text' },
+        { clave: 'noticias_boton', descripcion: 'Botón "Ver todas"', type: 'text' },
+      ],
+    },
+    {
+      label: 'Junta Directiva',
+      anchor: '#directiva',
+      color: '#b45309',
+      keys: [
+        { clave: 'directiva_supertitulo', descripcion: 'Supra-título', type: 'text' },
+        { clave: 'directiva_titulo', descripcion: 'Título', type: 'text' },
+        { clave: 'directiva_boton', descripcion: 'Botón de acceso', type: 'text' },
+        { clave: 'directiva_cta', descripcion: 'CTA sobre imagen', type: 'text' },
+      ],
+    },
+    {
+      label: 'Footer & Redes',
+      anchor: '#footer',
+      color: '#1d4ed8',
+      keys: [
+        { clave: 'footer_descripcion', descripcion: 'Descripción del footer', type: 'textarea' },
+        { clave: 'footer_direccion', descripcion: 'Dirección física', type: 'textarea' },
+        { clave: 'footer_copyright', descripcion: 'Texto de copyright', type: 'text' },
+        { clave: 'redes_instagram', descripcion: 'URL Instagram', type: 'social', placeholder: 'https://instagram.com/...' },
+        { clave: 'redes_facebook', descripcion: 'URL Facebook', type: 'social', placeholder: 'https://facebook.com/...' },
+        { clave: 'redes_linkedin', descripcion: 'URL LinkedIn', type: 'social', placeholder: 'https://linkedin.com/...' },
+      ],
+    },
+    {
+      label: 'Institucional',
+      anchor: '#nosotros',
+      color: '#6d28d9',
+      keys: [
+        { clave: 'mision', descripcion: 'Misión', type: 'textarea' },
+        { clave: 'vision', descripcion: 'Visión', type: 'textarea' },
+        { clave: 'proposito', descripcion: 'Propósito', type: 'textarea' },
+        { clave: 'contacto_email', descripcion: 'Email de contacto', type: 'url', placeholder: 'correo@camara.com' },
+        { clave: 'contacto_telefono', descripcion: 'Teléfono de contacto', type: 'text', placeholder: '+58 ...' },
+        { clave: 'rif', descripcion: 'RIF de la cámara', type: 'text', placeholder: 'J-...' },
+      ],
+    },
+  ]
+
+const ALL_CONFIG_KEYS = CONFIG_GROUPS.flatMap(g => g.keys)
+
+// ─── Field renderer ───────────────────────────────────────────────────────────
+const FieldInput = ({
+  field,
+  value,
+  onChange,
+}: {
+  field: ConfigKey
+  value: string
+  onChange: (v: string) => void
+}) => {
+  const base = 'w-full text-sm rounded-xl border px-3 py-2 text-slate-700 placeholder-slate-300 transition-all focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084]'
+
+  if (field.type === 'textarea') {
+    return (
+      <Textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={field.placeholder ?? field.descripcion}
+        rows={3}
+      />
+    )
+  }
+
+  if (field.type === 'url_img') {
+    return (
+      <div className="flex flex-col gap-2">
+        <Input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="https://..."
+          type="url"
+        />
+        {value && (
+          <div className="relative group overflow-hidden rounded-xl border border-gray-100">
+            <img
+              src={value}
+              alt="preview"
+              className="w-full h-32 object-cover"
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-white text-xs font-bold">Preview</span>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (field.type === 'number') {
+    return (
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={field.placeholder ?? field.descripcion}
+        className={`${base} border-gray-200`}
+      />
+    )
+  }
+
+  if (field.type === 'social') {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-slate-400 text-sm">🔗</span>
+        <input
+          type="url"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={field.placeholder ?? 'https://...'}
+          className={`${base} border-gray-200 flex-1`}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <Input
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={field.placeholder ?? field.descripcion}
+    />
+  )
+}
+
+// ─── Accordion Group ──────────────────────────────────────────────────────────
+const AccordionGroup = ({
+  group,
+  localForms,
+  savedForms,
+  onChange,
+  onSectionClick,
+  searchQuery,
+}: {
+  group: (typeof CONFIG_GROUPS)[number]
+  localForms: Record<string, string>
+  savedForms: Record<string, string>
+  onChange: (clave: string, value: string) => void
+  onSectionClick: (anchor: string) => void
+  searchQuery: string
+}) => {
+  const [open, setOpen] = useState(true)
+
+  const filteredKeys = searchQuery
+    ? group.keys.filter(
+      k =>
+        k.descripcion.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        k.clave.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : group.keys
+
+  const isDirty = group.keys.some(k => (localForms[k.clave] ?? '') !== (savedForms[k.clave] ?? ''))
+
+  if (searchQuery && filteredKeys.length === 0) return null
+
+  return (
+    <div
+      className="bg-white rounded-2xl border border-gray-100 overflow-hidden transition-shadow hover:shadow-md"
+      style={{ borderLeft: `4px solid ${group.color}` }}
+    >
+      {/* Header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-slate-700">{group.label}</span>
+          {isDirty && (
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: group.color }}
+              title="Cambios sin guardar"
+            />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Jump to section button */}
+          <button
+            onClick={e => { e.stopPropagation(); onSectionClick(group.anchor) }}
+            title="Ver en preview"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all text-xs"
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+          <span className="text-slate-400 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
+          </span>
+        </div>
+      </button>
+
+      {/* Accordion body — smooth height animation via CSS grid trick */}
+      <div className={`cms-accordion-body ${open ? '' : 'closed'}`}>
+        <div className="px-4 pb-4 pt-1 flex flex-col gap-4 border-t border-gray-50">
+          {filteredKeys.map(k => (
+            <div key={k.clave} className="flex flex-col gap-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                  {k.descripcion}
+                </label>
+                {(localForms[k.clave] ?? '') !== (savedForms[k.clave] ?? '') && (
+                  <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: group.color }}>
+                    modificado
+                  </span>
+                )}
+              </div>
+              <FieldInput
+                field={k}
+                value={localForms[k.clave] ?? ''}
+                onChange={v => onChange(k.clave, v)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export const ConfigPanel = () => {
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [localForms, setLocalForms] = useState<Record<string, string>>({})
+  const [savedForms, setSavedForms] = useState<Record<string, string>>({})
+  const [searchQuery, setSearchQuery] = useState('')
+  const [previewVisible, setPreviewVisible] = useState(true)
+  const [leftWidth, setLeftWidth] = useState(650)
+  const [dividerDragging, setDividerDragging] = useState(false)
+
+  const containerRef  = useRef<HTMLDivElement>(null)
+  const isDragging    = useRef(false)
+  const startX        = useRef(0)
+  const startWidth    = useRef(650)
+
+  const onDividerMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true
+    startX.current     = e.clientX
+    startWidth.current = leftWidth
+    e.preventDefault()
+    setDividerDragging(true)
+    document.body.style.cursor     = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [leftWidth])
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current || !containerRef.current) return
+      const containerW = containerRef.current.getBoundingClientRect().width
+      const delta = e.clientX - startX.current
+      const next  = startWidth.current + delta
+      setLeftWidth(Math.max(280, Math.min(next, containerW - 260)))
+    }
+    const onMouseUp = () => {
+      if (!isDragging.current) return
+      isDragging.current = false
+      setDividerDragging(false)
+      document.body.style.cursor     = ''
+      document.body.style.userSelect = ''
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup',   onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup',   onMouseUp)
+    }
+  }, [])
+
+  // ── Load config ──────────────────────────────────────────────────────────
+  const load = useCallback(async () => {
+    setLoading(true)
+    const data = await api.get('/api/cms/config')
+    if (data.success) {
+      const initial: Record<string, string> = {}
+      ALL_CONFIG_KEYS.forEach(k => { initial[k.clave] = data.config?.[k.clave] ?? '' })
+      setLocalForms(initial)
+      setSavedForms(initial)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  // ── Live preview: push every change to the shared iframe ─────────────────
+  useEffect(() => {
+    sendToPreview({ type: 'preview_cfg', cfg: localForms })
+  }, [localForms])
+
+  // ── Save all ─────────────────────────────────────────────────────────────
+  const saveAll = async () => {
+    setSaving(true)
+    const entries = ALL_CONFIG_KEYS.map(k => ({
+      clave: k.clave,
+      valor: localForms[k.clave] || '',
+      descripcion: k.descripcion,
+    }))
+    await api.post('/api/cms/config/batch', entries)
+    setSavedForms({ ...localForms })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  // ── Field change ─────────────────────────────────────────────────────────
+  const handleChange = useCallback((clave: string, value: string) => {
+    setLocalForms(prev => ({ ...prev, [clave]: value }))
+  }, [])
+
+  // ── Scroll iframe to section ──────────────────────────────────────────────
+  const scrollToSection = (anchor: string) => {
+    sendToPreview({ type: 'scroll_to', anchor })
+  }
+
+  const totalDirty = ALL_CONFIG_KEYS.filter(
+    k => (localForms[k.clave] ?? '') !== (savedForms[k.clave] ?? '')
+  ).length
+
+  if (loading) return <Loading />
+
+  return (
+    <div ref={containerRef} className="flex w-full h-full overflow-hidden select-none">
+      {/* ── LEFT PANEL (form) */}
+      <div
+        className="flex flex-col flex-shrink-0 bg-gray-50 overflow-hidden max-lg:!w-full max-lg:!flex-1"
+        style={{
+          width: previewVisible ? leftWidth : undefined,
+          flex:  previewVisible ? 'none' : '1 1 0%',
+          transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        {/* Sticky header */}
+        <div className="flex-shrink-0 bg-white border-b border-gray-100 px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Configuración General</h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {totalDirty > 0
+                  ? <span className="text-amber-500 font-semibold">{totalDirty} campo{totalDirty !== 1 ? 's' : ''} modificado{totalDirty !== 1 ? 's' : ''}</span>
+                  : 'Todos los textos e imágenes de la landing'
+                }
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Toggle preview */}
+              <button
+                onClick={() => setPreviewVisible(v => !v)}
+                title={previewVisible ? 'Ocultar preview' : 'Mostrar preview'}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              >
+                <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  {previewVisible
+                    ? <polyline points="15 18 9 12 15 6" />
+                    : <polyline points="9 18 15 12 9 6" />
+                  }
+                </svg>
+                {previewVisible ? 'Ocultar' : 'Preview'}
+              </button>
+              <BtnPrimary onClick={saveAll} disabled={saving || totalDirty === 0}>
+                {saving ? '...' : saved ? '✓ Guardado' : `Guardar${totalDirty > 0 ? ` (${totalDirty})` : ''}`}
+              </BtnPrimary>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+            <input
+              type="text"
+              placeholder="Buscar campo..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-2 text-sm rounded-xl border border-gray-200 text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] transition-all bg-gray-50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Scrollable groups */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {CONFIG_GROUPS.map(group => (
+            <AccordionGroup
+              key={group.label}
+              group={group}
+              localForms={localForms}
+              savedForms={savedForms}
+              onChange={handleChange}
+              onSectionClick={scrollToSection}
+              searchQuery={searchQuery}
+            />
+          ))}
+
+          {/* Bottom save */}
+          <div className="pt-2 pb-4 flex justify-end">
+            <BtnPrimary onClick={saveAll} disabled={saving || totalDirty === 0}>
+              {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar todo'}
+            </BtnPrimary>
+          </div>
+        </div>
+      </div>
+
+      {/* ── DIVIDER (drag handle) */}
+      {previewVisible && (
+        <div
+          onMouseDown={onDividerMouseDown}
+          className="hidden lg:flex flex-shrink-0 w-1.5 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-[#00D084] transition-colors duration-150 z-10"
+          title="Arrastrar para redimensionar"
+        >
+          <div className="w-0.5 h-10 rounded-full bg-gray-400" />
+        </div>
+      )}
+
+      {/* ── RIGHT PANEL: shared reusable preview */}
+      <div className={`hidden lg:flex flex-col overflow-hidden ${previewVisible ? 'flex-1' : 'w-0'}`}>
+        <LandingPreviewPane
+          visible={previewVisible}
+          onToggle={() => setPreviewVisible(v => !v)}
+        />
+      </div>
+
+      {/* Mobile floating button */}
+      <div className="lg:hidden fixed bottom-4 right-4 z-50">
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#00D084] text-white text-xs font-bold rounded-full shadow-lg shadow-emerald-500/30 hover:bg-[#00B870] transition-colors"
+        >
+          Ver landing
+        </a>
+      </div>
+
+      {/* ── DRAG OVERLAY: captura eventos sobre el iframe durante el resize ─────── */}
+      {dividerDragging && (
+        <div className="fixed inset-0 z-[9999] cursor-col-resize" />
+      )}
+    </div>
+  )
+}
