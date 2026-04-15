@@ -37,10 +37,10 @@ export default function Proposito() {
       >
         <div className="relative z-10 text-center space-y-4">
           <p
-            className="text-emerald-500 font-black uppercase tracking-[0.3em] text-xs animate-header-text"
+            className="text-emerald-500 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs animate-header-text"
             style={{ animationDelay: "0.2s", opacity: 0 }}
           >
-            Ciudad Guayana, 7 de febrero 2026
+            Valores y Compromiso Ético
           </p>
           <h1
             className="text-5xl lg:text-8xl font-black tracking-tighter animate-header-text"
@@ -49,10 +49,10 @@ export default function Proposito() {
             Nuestro <span className="text-emerald-500 italic">Propósito</span>
           </h1>
           <p
-            className="text-emerald-100/60 max-w-2xl mx-auto font-medium animate-header-text uppercase tracking-widest text-sm"
+            className="text-emerald-100/60 max-w-2xl mx-auto font-medium animate-header-text uppercase tracking-widest text-[10px] sm:text-sm"
             style={{ animationDelay: "0.6s", opacity: 0 }}
           >
-            Convocatoria Gremial • Gestión 2025-2027
+            Pilares fundamentales para el desarrollo del gremio
           </p>
         </div>
       </header>
