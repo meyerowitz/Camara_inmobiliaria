@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 
-// Components
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import Header from '@/pages/landing/components/Header'
 import NosotrosSection from '@/pages/landing/components/sections/NosotrosSection'
@@ -12,24 +11,20 @@ import Footer from '@/pages/landing/components/Footer'
 import LoginModal from '@/pages/landing/components/LoginModal'
 import RegisterModal from '@/pages/landing/components/RegisterModal'
 
-// ConveniosSection and NoticiasSection are temporarily disabled
-// import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
-// import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
+import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
+import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
 
 export default function LandingPage() {
   const [isModalSesionOpen, setIsSesionModalOpen] = useState(false)
   const [isModalRegisterOpen, setIsRegisterModalOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
 
-  // ── Config is now handled per-component ──────────────────────────────────────
-  // Tier 1 (static): NosotrosSection, OrigenesSection, AfiliadosSection
-  // Tier 2 (cached): Header, Footer — use useCachedConfig() internally
-  // Tier 3 (on-mount API): FormacionSection, DirectivaSection, NoticiasSection
-
   return (
     <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-slate-50'} min-h-screen transition-colors duration-300`}>
 
       <Navbar
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
         setIsSesionModalOpen={setIsSesionModalOpen}
         setIsRegisterModalOpen={setIsRegisterModalOpen}
       />
@@ -40,6 +35,7 @@ export default function LandingPage() {
 
       <NosotrosSection />
 
+      <OrigenesSection />
 
       <AfiliadosSection />
 
@@ -47,8 +43,8 @@ export default function LandingPage() {
 
       <DirectivaSection />
 
-      {/* <ConveniosSection /> */}
-      {/* <NoticiasSection /> */}
+      <ConveniosSection />
+      <NoticiasSection /> 
 
       <Footer />
 

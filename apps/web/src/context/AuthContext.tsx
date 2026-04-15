@@ -4,7 +4,7 @@ import { API_URL } from '@/config/env'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'admin' | 'afiliado' | 'super_admin'
+export type UserRole = 'admin' | 'afiliado' | 'super_admin' | 'estudiante'
 
 export interface AuthUser {
   id: number
@@ -25,6 +25,7 @@ interface AuthContextValue {
   isAdmin: boolean
   isSuperAdmin: boolean
   isAfiliado: boolean
+  isEstudiante: boolean
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -95,9 +96,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(data.token)
     setUser(newUser)
 
-    // Selector de perfiles ("Netflix") solo si tiene múltiples roles
+    // Selector general si tiene múltiples roles al panel unificado
     if (newUser.roles.length > 1) {
-      navigate('/lobby')
+      navigate('/panel')
       return
     }
 
@@ -106,6 +107,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       navigate('/admin')
       return
     }
+
+    if (newUser.rol === 'estudiante') {
+      navigate('/panel?tab=formacion')
+      return
+    }
+
     navigate('/panel')
   }, [navigate])
 
@@ -125,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdminVal      = (user?.roles?.includes('admin') || user?.roles?.includes('super_admin')) ?? false
   const isSuperAdminVal = user?.roles?.includes('super_admin') ?? false
   const isAfiliadoVal   = user?.roles?.includes('afiliado') ?? false
+  const isEstudianteVal = user?.roles?.includes('estudiante') ?? false
 
   return (
     <AuthContext.Provider value={{
@@ -133,6 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin: isAdminVal,
       isSuperAdmin: isSuperAdminVal,
       isAfiliado: isAfiliadoVal,
+      isEstudiante: isEstudianteVal,
     }}>
       {children}
     </AuthContext.Provider>

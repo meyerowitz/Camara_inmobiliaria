@@ -1,14 +1,37 @@
 import { Request, Response } from 'express'
+import { randomUUID } from 'crypto'
 import { db } from '../lib/db.js'
 import { emitirComprobanteSiCompleto } from '../lib/certificados.js'
+import { enviarCorreoConfirmacionPreinscripcionPrograma } from '../lib/email.js'
 import { requireAuth, requireRole } from '../middlewares/auth.middleware.js'
 
 const MAIN_PROGRAM_CODES = new Set(['PADI', 'PEGI', 'PREANI', 'CIBIR'])
+const PROFESSIONAL_LEVELS = new Set(['Bachiller', 'Universitario', 'Postgrado'])
 
 function normalizeProgramaCodigo(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const code = value.trim().toUpperCase()
   return MAIN_PROGRAM_CODES.has(code) ? code : null
+}
+
+function normalizeNivelProfesional(value: unknown): 'Bachiller' | 'Universitario' | 'Postgrado' | null {
+  if (typeof value !== 'string') return null
+  const cleaned = value.trim()
+  return PROFESSIONAL_LEVELS.has(cleaned) ? (cleaned as 'Bachiller' | 'Universitario' | 'Postgrado') : null
+}
+
+function normalizeEsCorredorInmobiliario(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'string') {
+    const cleaned = value.trim().toLowerCase()
+    if (['si', 'sí', 'true', '1'].includes(cleaned)) return true
+    if (['no', 'false', '0'].includes(cleaned)) return false
+  }
+  if (typeof value === 'number') {
+    if (value === 1) return true
+    if (value === 0) return false
+  }
+  return null
 }
 
 async function upsertEstudianteByEmail(params: {
@@ -17,8 +40,10 @@ async function upsertEstudianteByEmail(params: {
   email: string
   telefono?: string | null
   tipo?: 'Regular' | 'Agremiado'
+  nivelProfesional?: 'Bachiller' | 'Universitario' | 'Postgrado' | null
+  esCorredorInmobiliario?: boolean | null
 }): Promise<{ id_estudiante: number }> {
-  const { nombreCompleto, cedulaRif, email, telefono, tipo } = params
+  const { nombreCompleto, cedulaRif, email, telefono, tipo, nivelProfesional, esCorredorInmobiliario } = params
 
   const existing = await db.execute({
     sql: `SELECT id_estudiante FROM estudiantes WHERE email = ? LIMIT 1`,
@@ -32,6 +57,8 @@ async function upsertEstudianteByEmail(params: {
                 cedula_rif = COALESCE(?, cedula_rif),
                 telefono = COALESCE(?, telefono),
                 tipo = COALESCE(?, tipo),
+                nivel_profesional = COALESCE(?, nivel_profesional),
+                es_corredor_inmobiliario = COALESCE(?, es_corredor_inmobiliario),
                 actualizado_en = ?
             WHERE id_estudiante = ?`,
       args: [
@@ -39,6 +66,8 @@ async function upsertEstudianteByEmail(params: {
         cedulaRif ?? null,
         telefono ?? null,
         tipo ?? null,
+        nivelProfesional ?? null,
+        esCorredorInmobiliario == null ? null : Number(esCorredorInmobiliario),
         new Date().toISOString(),
         id,
       ],
@@ -47,11 +76,54 @@ async function upsertEstudianteByEmail(params: {
   }
 
   const inserted = await db.execute({
-    sql: `INSERT INTO estudiantes (cedula_rif, nombre_completo, email, telefono, tipo)
-          VALUES (?, ?, ?, ?, ?) RETURNING id_estudiante`,
-    args: [cedulaRif ?? null, nombreCompleto, email, telefono ?? null, tipo ?? 'Regular'],
+    sql: `INSERT INTO estudiantes
+            (cedula_rif, nombre_completo, email, telefono, tipo, nivel_profesional, es_corredor_inmobiliario)
+          VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id_estudiante`,
+    args: [
+      cedulaRif ?? null,
+      nombreCompleto,
+      email,
+      telefono ?? null,
+      tipo ?? 'Regular',
+      nivelProfesional ?? null,
+      Number(esCorredorInmobiliario ?? false),
+    ],
   })
   return { id_estudiante: inserted.rows[0].id_estudiante as number }
+}
+
+async function crearVerificacionPreinscripcionPrograma(params: {
+  nombreCompleto: string
+  cedulaRif?: string | null
+  email: string
+  telefono?: string | null
+  programaCodigo: string
+  nivelProfesional: 'Bachiller' | 'Universitario' | 'Postgrado'
+  esCorredorInmobiliario: boolean
+}): Promise<{ token: string; fechaExpiracion: string }> {
+  const { nombreCompleto, cedulaRif, email, telefono, programaCodigo, nivelProfesional, esCorredorInmobiliario } = params
+
+  // 24h
+  const expiracion = new Date()
+  expiracion.setHours(expiracion.getHours() + 24)
+  const fechaExpiracion = expiracion.toISOString()
+  const token = randomUUID()
+
+  // invalidar tokens previos de ese email+programa (evita confusión al usuario)
+  await db.execute({
+    sql: `DELETE FROM verificaciones_preinscripciones
+          WHERE lower(trim(email)) = lower(trim(?)) AND programa_codigo = ?`,
+    args: [email, programaCodigo],
+  })
+
+  await db.execute({
+    sql: `INSERT INTO verificaciones_preinscripciones
+            (token_verificacion, nombre_completo, cedula_rif, email, telefono, programa_codigo, nivel_profesional, es_corredor_inmobiliario, fecha_expiracion)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [token, nombreCompleto, cedulaRif ?? null, email, telefono ?? null, programaCodigo, nivelProfesional, Number(esCorredorInmobiliario), fechaExpiracion],
+  })
+
+  return { token, fechaExpiracion }
 }
 
 /**
@@ -68,6 +140,8 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
     const cedulaRif = typeof req.body?.cedulaRif === 'string' ? req.body.cedulaRif.trim() : null
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
     const telefono = typeof req.body?.telefono === 'string' ? req.body.telefono.trim() : null
+    const nivelProfesional = normalizeNivelProfesional(req.body?.nivelProfesional)
+    const esCorredorInmobiliario = normalizeEsCorredorInmobiliario(req.body?.esCorredorInmobiliario)
 
     if (!programaCodigo) {
       res.status(400).json({ success: false, message: 'programaCodigo inválido. Use PADI/PEGI/PREANI/CIBIR.' })
@@ -81,24 +155,33 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
       res.status(400).json({ success: false, message: 'El formato del email no es válido' })
       return
     }
+    if (!nivelProfesional) {
+      res.status(400).json({ success: false, message: 'nivelProfesional inválido. Use Bachiller/Universitario/Postgrado.' })
+      return
+    }
+    if (esCorredorInmobiliario === null) {
+      res.status(400).json({ success: false, message: 'esCorredorInmobiliario es requerido (true/false).' })
+      return
+    }
 
-    // Upsert estudiante por email
+    // Si ya existe inscripción activa (Preinscrito/Inscrito), avisar.
+    // Para esto necesitamos (o crear) el estudiante y buscar por email.
     const { id_estudiante } = await upsertEstudianteByEmail({
       nombreCompleto,
       cedulaRif,
       email,
       telefono,
       tipo: 'Regular',
+      nivelProfesional,
+      esCorredorInmobiliario,
     })
 
-    // Verificar si ya tiene una preinscripción activa para este programa
     const existing = await db.execute({
       sql: `SELECT id_inscripcion, estatus FROM inscripciones_cursos
             WHERE id_estudiante = ? AND programa_codigo = ? AND id_curso IS NULL
             LIMIT 1`,
       args: [id_estudiante, programaCodigo],
     })
-
     if (existing.rows.length > 0) {
       const prev = existing.rows[0] as any
       if (prev.estatus === 'Preinscrito') {
@@ -115,7 +198,109 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
         })
         return
       }
-      // Si está Rechazado o Cancelado, permitir volver a inscribirse
+    }
+
+    // Flujo con confirmación por email: solo se crea token aquí.
+    const { token } = await crearVerificacionPreinscripcionPrograma({
+      nombreCompleto,
+      cedulaRif,
+      email,
+      telefono,
+      programaCodigo,
+      nivelProfesional,
+      esCorredorInmobiliario,
+    })
+
+    await enviarCorreoConfirmacionPreinscripcionPrograma({
+      nombre: nombreCompleto,
+      emailOriginal: email,
+      programaCodigo,
+      token,
+    })
+
+    res.status(201).json({
+      success: true,
+      message: 'Te enviamos un correo para confirmar tu preinscripción. Revisa tu bandeja de entrada o SPAM.',
+    })
+  } catch (error) {
+    console.error('publicPreinscribirProgramaPrincipal:', error)
+    res.status(500).json({ success: false, message: 'Error al procesar la preinscripción' })
+  }
+}
+
+/**
+ * POST /api/public/preinscripciones/confirmar
+ * Confirma el email y crea la preinscripción real en `inscripciones_cursos`.
+ */
+export const publicConfirmarPreinscripcionPrograma = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const token = typeof req.body?.token === 'string' ? req.body.token.trim() : ''
+    if (!token) {
+      res.status(400).json({ success: false, message: 'Token es requerido' })
+      return
+    }
+
+    const ver = await db.execute({
+      sql: `SELECT * FROM verificaciones_preinscripciones WHERE token_verificacion = ? LIMIT 1`,
+      args: [token],
+    })
+    if (ver.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'Token inválido o no encontrado' })
+      return
+    }
+
+    const registro = ver.rows[0] as any
+    const exp = new Date(String(registro.fecha_expiracion))
+    if (exp < new Date()) {
+      await db.execute({
+        sql: `DELETE FROM verificaciones_preinscripciones WHERE token_verificacion = ?`,
+        args: [token],
+      })
+      res.status(400).json({ success: false, message: 'El token ha expirado. Debes solicitar una nueva preinscripción.' })
+      return
+    }
+
+    const programaCodigo = normalizeProgramaCodigo(registro.programa_codigo)
+    const email = String(registro.email ?? '').trim().toLowerCase()
+    const nombreCompleto = String(registro.nombre_completo ?? '').trim()
+    const cedulaRif = registro.cedula_rif ? String(registro.cedula_rif).trim() : null
+    const telefono = registro.telefono ? String(registro.telefono).trim() : null
+    const nivelProfesional = normalizeNivelProfesional(registro.nivel_profesional)
+    const esCorredorInmobiliario = normalizeEsCorredorInmobiliario(registro.es_corredor_inmobiliario)
+
+    if (!programaCodigo || !email || !nombreCompleto || !nivelProfesional || esCorredorInmobiliario === null) {
+      res.status(400).json({ success: false, message: 'Registro de verificación incompleto' })
+      return
+    }
+
+    const { id_estudiante } = await upsertEstudianteByEmail({
+      nombreCompleto,
+      cedulaRif,
+      email,
+      telefono,
+      tipo: 'Regular',
+      nivelProfesional,
+      esCorredorInmobiliario,
+    })
+
+    // Si ya existe preinscripción/inscripción, marcar como éxito idempotente.
+    const existing = await db.execute({
+      sql: `SELECT id_inscripcion, estatus FROM inscripciones_cursos
+            WHERE id_estudiante = ? AND programa_codigo = ? AND id_curso IS NULL
+            LIMIT 1`,
+      args: [id_estudiante, programaCodigo],
+    })
+    if (existing.rows.length > 0) {
+      await db.execute({
+        sql: `DELETE FROM verificaciones_preinscripciones WHERE token_verificacion = ?`,
+        args: [token],
+      })
+      res.status(200).json({
+        success: true,
+        message: 'Tu preinscripción ya había sido confirmada previamente.',
+        data: existing.rows[0],
+      })
+      return
     }
 
     const now = new Date().toISOString()
@@ -131,14 +316,19 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
       args: [id_estudiante, programaCodigo, now, now],
     })
 
+    await db.execute({
+      sql: `DELETE FROM verificaciones_preinscripciones WHERE token_verificacion = ?`,
+      args: [token],
+    })
+
     res.status(201).json({
       success: true,
-      message: 'Preinscripción registrada correctamente. Un administrador debe aprobarla para formalizar la inscripción.',
+      message: 'Preinscripción confirmada correctamente. Un administrador debe aprobarla para formalizar la inscripción.',
       data: result.rows[0],
     })
   } catch (error) {
-    console.error('publicPreinscribirProgramaPrincipal:', error)
-    res.status(500).json({ success: false, message: 'Error al procesar la preinscripción' })
+    console.error('publicConfirmarPreinscripcionPrograma:', error)
+    res.status(500).json({ success: false, message: 'Error al confirmar la preinscripción' })
   }
 }
 
@@ -535,7 +725,9 @@ export const adminListPreinscripciones = async (req: Request, res: Response): Pr
           e.nombre_completo as estudiante_nombre,
           e.email as estudiante_email,
           e.telefono as estudiante_telefono,
-          e.cedula_rif as estudiante_cedula_rif
+          e.cedula_rif as estudiante_cedula_rif,
+          e.nivel_profesional as estudiante_nivel_profesional,
+          e.es_corredor_inmobiliario as estudiante_es_corredor_inmobiliario
         FROM inscripciones_cursos ic
         JOIN estudiantes e ON e.id_estudiante = ic.id_estudiante
         WHERE ${whereParts.join(' AND ')}
@@ -567,9 +759,19 @@ export const adminAsignarEstudianteACurso = async (req: Request, res: Response):
     const cedulaRif = typeof req.body?.cedulaRif === 'string' ? req.body.cedulaRif.trim() : null
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
     const telefono = typeof req.body?.telefono === 'string' ? req.body.telefono.trim() : null
+    const nivelProfesional = normalizeNivelProfesional(req.body?.nivelProfesional)
+    const esCorredorInmobiliario = normalizeEsCorredorInmobiliario(req.body?.esCorredorInmobiliario)
 
     if (!nombreCompleto || !email) {
       res.status(400).json({ success: false, message: 'nombreCompleto y email son requeridos' })
+      return
+    }
+    if (!nivelProfesional) {
+      res.status(400).json({ success: false, message: 'nivelProfesional inválido. Use Bachiller/Universitario/Postgrado.' })
+      return
+    }
+    if (esCorredorInmobiliario === null) {
+      res.status(400).json({ success: false, message: 'esCorredorInmobiliario es requerido (true/false).' })
       return
     }
 
@@ -598,6 +800,8 @@ export const adminAsignarEstudianteACurso = async (req: Request, res: Response):
       email,
       telefono,
       tipo: 'Regular',
+      nivelProfesional,
+      esCorredorInmobiliario,
     })
 
     const now = new Date().toISOString()
@@ -605,10 +809,11 @@ export const adminAsignarEstudianteACurso = async (req: Request, res: Response):
     await db.batch(
       [
         {
-          sql: `INSERT INTO inscripciones_cursos (id_estudiante, id_curso, estatus, asignado_por, aprobado_por, creado_en, actualizado_en)
-                VALUES (?, ?, 'Inscrito', ?, ?, ?, ?)
+          sql: `INSERT INTO inscripciones_cursos (id_estudiante, id_curso, tipo_inscripcion, estatus, asignado_por, aprobado_por, creado_en, actualizado_en)
+                VALUES (?, ?, 'cohorte', 'Inscrito', ?, ?, ?, ?)
                 ON CONFLICT DO UPDATE SET
                   estatus='Inscrito',
+                  tipo_inscripcion='cohorte',
                   asignado_por=excluded.asignado_por,
                   aprobado_por=excluded.aprobado_por,
                   actualizado_en=excluded.actualizado_en`,

@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { UserPlus, RefreshCw, Shield, User, ToggleLeft, ToggleRight, KeyRound, Loader2, Search } from 'lucide-react'
+import {
+  UserPlus,
+  RefreshCw,
+  ShieldCheck,
+  UserCircle2,
+  LayoutGrid,
+  CheckCircle2,
+  XCircle,
+  KeyRound,
+  Loader2,
+  Search,
+  ListFilter,
+} from 'lucide-react'
+
+const ic = 'shrink-0 opacity-95'
+const icBtn = (active: boolean) => (active ? 'text-white' : 'text-slate-500')
 import { useAuth } from '@/context/AuthContext'
 import { API_URL } from '@/config/env'
 
@@ -121,10 +136,10 @@ export default function UsersPanel() {
   }
 
   const filterBtnCls = (active: boolean) =>
-    `px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
+    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
       active
-        ? 'bg-slate-800 border-slate-800 text-white'
-        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+        ? 'bg-slate-800 border-slate-800 text-white shadow-sm'
+        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
     }`
 
   return (
@@ -137,16 +152,18 @@ export default function UsersPanel() {
         </div>
         <div className='flex gap-3'>
           <button
+            type='button'
             onClick={load}
-            className='flex items-center gap-2 px-4 py-2 text-slate-500 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition'
+            className='flex items-center gap-2 px-4 py-2 text-slate-600 border border-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition'
           >
-            <RefreshCw size={15} /> Actualizar
+            <RefreshCw size={16} strokeWidth={2} className={ic} /> Actualizar
           </button>
           <button
+            type='button'
             onClick={() => { setShowForm(!showForm); setFeedback(null) }}
-            className='flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition'
+            className='flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition shadow-sm shadow-emerald-500/20'
           >
-            <UserPlus size={15} /> Nuevo usuario
+            <UserPlus size={16} strokeWidth={2} className={ic} /> Nuevo usuario
           </button>
         </div>
       </div>
@@ -226,7 +243,7 @@ export default function UsersPanel() {
       <div className='bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center gap-3'>
         {/* Búsqueda */}
         <div className='relative flex-1 min-w-[180px]'>
-          <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' />
+          <Search size={15} strokeWidth={2} className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none' />
           <input
             type='text'
             placeholder='Buscar por email o agremiado...'
@@ -240,8 +257,30 @@ export default function UsersPanel() {
         <div className='flex items-center gap-1.5'>
           <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Rol</span>
           {(['todos', 'admin', 'afiliado'] as FiltroRol[]).map(r => (
-            <button key={r} onClick={() => setFiltroRol(r)} className={filterBtnCls(filtroRol === r)}>
-              {r === 'todos' ? 'Todos' : r === 'admin' ? '🛡 Admin' : '👤 Afiliado'}
+            <button
+              key={r}
+              type='button'
+              onClick={() => setFiltroRol(r)}
+              className={filterBtnCls(filtroRol === r)}
+            >
+              {r === 'todos' && (
+                <>
+                  <LayoutGrid size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Todos
+                </>
+              )}
+              {r === 'admin' && (
+                <>
+                  <ShieldCheck size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Admin
+                </>
+              )}
+              {r === 'afiliado' && (
+                <>
+                  <UserCircle2 size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Afiliado
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -250,8 +289,30 @@ export default function UsersPanel() {
         <div className='flex items-center gap-1.5'>
           <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Estado</span>
           {(['todos', 'activo', 'inactivo'] as FiltroActivo[]).map(s => (
-            <button key={s} onClick={() => setFiltroActivo(s)} className={filterBtnCls(filtroActivo === s)}>
-              {s === 'todos' ? 'Todos' : s === 'activo' ? '✓ Activo' : '✗ Inactivo'}
+            <button
+              key={s}
+              type='button'
+              onClick={() => setFiltroActivo(s)}
+              className={filterBtnCls(filtroActivo === s)}
+            >
+              {s === 'todos' && (
+                <>
+                  <ListFilter size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroActivo === s)}`} />
+                  Todos
+                </>
+              )}
+              {s === 'activo' && (
+                <>
+                  <CheckCircle2 size={14} strokeWidth={2} className={`${ic} ${filtroActivo === s ? 'text-emerald-200' : 'text-emerald-600'}`} />
+                  Activo
+                </>
+              )}
+              {s === 'inactivo' && (
+                <>
+                  <XCircle size={14} strokeWidth={2} className={`${ic} ${filtroActivo === s ? 'text-rose-200' : 'text-slate-500'}`} />
+                  Inactivo
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -296,10 +357,16 @@ export default function UsersPanel() {
                     )}
                   </td>
                   <td className='px-5 py-4'>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                      u.rol === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                      u.rol === 'admin'
+                        ? 'bg-violet-50 text-violet-800 border-violet-200/80'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
                     }`}>
-                      {u.rol === 'admin' ? <Shield size={11} /> : <User size={11} />}
+                      {u.rol === 'admin' ? (
+                        <ShieldCheck size={14} strokeWidth={2} className='shrink-0 text-violet-600' />
+                      ) : (
+                        <UserCircle2 size={14} strokeWidth={2} className='shrink-0 text-emerald-600' />
+                      )}
                       {u.rol === 'admin' ? 'Admin' : 'Afiliado'}
                     </span>
                   </td>
@@ -313,22 +380,31 @@ export default function UsersPanel() {
                     }
                   </td>
                   <td className='px-5 py-4'>
-                    <button onClick={() => toggleActive(u)} className='flex items-center gap-1.5'>
-                      {u.activo
-                        ? <ToggleRight size={22} className='text-emerald-500' />
-                        : <ToggleLeft  size={22} className='text-slate-300' />
-                      }
-                      <span className={`text-xs font-medium ${u.activo ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    <button
+                      type='button'
+                      onClick={() => toggleActive(u)}
+                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition hover:bg-slate-50 ${
+                        u.activo ? 'border-emerald-200/80 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/80'
+                      }`}
+                    >
+                      {u.activo ? (
+                        <CheckCircle2 size={18} strokeWidth={2} className='shrink-0 text-emerald-600' />
+                      ) : (
+                        <XCircle size={18} strokeWidth={2} className='shrink-0 text-slate-400' />
+                      )}
+                      <span className={`text-xs font-semibold ${u.activo ? 'text-emerald-800' : 'text-slate-500'}`}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </button>
                   </td>
                   <td className='px-5 py-4 text-right'>
                     <button
+                      type='button'
                       onClick={() => handleReset(u)}
-                      className='inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 text-slate-500 rounded-lg text-xs hover:bg-slate-100 transition'
+                      className='inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 hover:border-slate-300 transition'
                     >
-                      <KeyRound size={12} /> Reset
+                      <KeyRound size={14} strokeWidth={2} className='shrink-0 text-slate-500' />
+                      Reset
                     </button>
                   </td>
                 </tr>

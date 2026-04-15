@@ -8,10 +8,13 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "initdb": "tsx src/config/initdb.ts",
+    "initdb:reset": "tsx src/config/initdb.ts --reset"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
+    "@supabase/supabase-js": "^2.103.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/jsonwebtoken": "^9.0.10",
     "axios": "^1.7.9",

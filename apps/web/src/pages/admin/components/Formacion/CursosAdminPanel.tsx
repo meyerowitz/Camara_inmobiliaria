@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '@/config/env';
 import { useAuth } from '@/context/AuthContext';
 import Swal from 'sweetalert2';
+import { uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared';
 
 interface CursoDB {
   id_curso: number;
@@ -45,6 +46,19 @@ const CursosAdminPanel = () => {
   // States for Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const uploadImage = async (file: File) => {
+    setUploading(true);
+    try {
+      const publicUrl = await uploadFileSupabase(file, 'cursos_admin');
+      setFormData((p) => ({ ...p, imagen_url: publicUrl }));
+    } catch (e) {
+      Swal.fire('Error', e instanceof Error ? e.message : 'Error al subir archivo', 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
   
   // Form State
   const [formData, setFormData] = useState({
@@ -314,12 +328,21 @@ const CursosAdminPanel = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">URL de Imagen</label>
-                  <input type="url"
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Imagen de portada (Subida directa)</label>
+                  <input
+                    type="file"
+                    accept="image/*,.svg,.png,.jpg,.jpeg,.webp"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadImage(file);
+                    }}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-slate-700 focus:outline-[#00D084]"
-                    value={formData.imagen_url} onChange={e => setFormData({...formData, imagen_url: e.target.value})} 
-                    placeholder="https://images.unsplash.com/..."
                   />
+                  {formData.imagen_url && (
+                    <img src={formData.imagen_url} alt="preview" className="mt-2 h-20 w-auto object-cover rounded-lg border border-gray-100 p-1" />
+                  )}
+                  {uploading && <p className="text-xs text-[#00D084] mt-1 font-semibold">Subiendo imagen...</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                    <div>
@@ -374,8 +397,8 @@ const CursosAdminPanel = () => {
                   <button type="button" onClick={handleCloseModal} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                     Cancelar
                   </button>
-                  <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-[#00D084] hover:bg-[#00B870] rounded-xl transition-colors shadow-[0_4px_12px_rgba(0,208,132,0.25)]">
-                    {editingId ? 'Actualizar' : 'Guardar Curso'}
+                  <button type="submit" disabled={uploading} className="px-4 py-2 text-sm font-semibold text-white bg-[#00D084] hover:bg-[#00B870] rounded-xl transition-colors shadow-[0_4px_12px_rgba(0,208,132,0.25)] disabled:opacity-50">
+                    {uploading ? 'Subiendo...' : editingId ? 'Actualizar' : 'Guardar Curso'}
                   </button>
                 </div>
               </form>

@@ -4,14 +4,16 @@ import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { DirectivaPanel } from '@/pages/admin/components/Cms/DirectivaPanel'
 import { ConfigPanel } from '@/pages/admin/components/Cms/ConfigPanel'
 import { PaginasPanel } from '@/pages/admin/components/Cms/PaginasPanel'
+import { NormativasPanel } from '@/pages/admin/components/Cms/NormativasPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
-export type CmsTab = 'noticias' | 'convenios' | 'directiva' | 'config' | 'paginas'
+export type CmsTab = 'noticias' | 'convenios' | 'normativas' | 'directiva' | 'config' | 'paginas'
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
   noticias: '#noticias',
   convenios: '#convenios',
+  normativas: '',
   directiva: '#directiva',
   config: '',
   paginas: '',
@@ -91,6 +93,10 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   }
 
   const sectionAnchor = SECTION_ANCHORS[externalTab]
+  const previewIframeSrc = externalTab === 'normativas' ? '/normativas' : '/'
+  const previewOpenTabHref = externalTab === 'normativas' ? '/normativas' : undefined
+  const mobileLandingHref =
+    externalTab === 'normativas' ? '/normativas' : sectionAnchor ? `/${sectionAnchor}` : '/'
 
   return (
     <div ref={containerRef} className="flex w-full h-full overflow-hidden bg-white select-none">
@@ -144,6 +150,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
         <div key={externalTab} className="flex-1 overflow-hidden relative cms-fade-up">
           {externalTab === 'noticias' && <NoticiasPanel />}
           {externalTab === 'convenios' && <ConveniosPanel />}
+          {externalTab === 'normativas' && <NormativasPanel />}
           {externalTab === 'directiva' && <DirectivaPanel />}
         </div>
       </div>
@@ -165,13 +172,15 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
           visible={previewVisible}
           onToggle={() => setPreviewVisible(v => !v)}
           sectionAnchor={sectionAnchor}
+          iframeSrc={previewIframeSrc}
+          openInTabHref={previewOpenTabHref}
         />
       </div>
 
       {/* Mobile: open in new tab */}
       <div className="lg:hidden fixed bottom-4 right-4 z-50">
         <a
-          href={`/${sectionAnchor}`}
+          href={mobileLandingHref}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2.5 bg-[#00D084] text-white text-xs font-bold rounded-full shadow-lg shadow-emerald-500/30 hover:bg-[#00B870] transition-colors"

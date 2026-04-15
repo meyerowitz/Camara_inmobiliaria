@@ -13,6 +13,10 @@
  *
  * Uso:
  *   pnpm tsx src/config/initdb.ts
+ *
+ * Reinicio completo (borra todas las tablas de usuario y recrea el esquema):
+ *   INITDB_RESET=1 pnpm tsx src/config/initdb.ts
+ *   pnpm tsx src/config/initdb.ts --reset
  */
 
 import { db } from '../lib/db.js'
@@ -52,6 +56,10 @@ const statements = [
     nombre_completo   TEXT        NOT NULL,
     email             TEXT        NOT NULL,
     telefono          TEXT,
+    nivel_profesional TEXT
+                    CHECK (nivel_profesional IN ('Bachiller','Universitario','Postgrado')),
+    es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0
+                    CHECK (es_corredor_inmobiliario IN (0, 1)),
     tipo              TEXT        NOT NULL DEFAULT 'Regular'
                       CHECK (tipo IN ('Regular','Agremiado')),
     creado_en         TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
@@ -75,6 +83,26 @@ const statements = [
     fecha_expiracion    TEXT NOT NULL,
     creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
+
+  // ── Verificación de preinscripción (programas principales) ──────────────────
+  `CREATE TABLE IF NOT EXISTS verificaciones_preinscripciones (
+    token_verificacion  TEXT PRIMARY KEY,
+    nombre_completo     TEXT NOT NULL,
+    cedula_rif          TEXT,
+    email               TEXT NOT NULL,
+    telefono            TEXT,
+    programa_codigo     TEXT NOT NULL
+                      CHECK (programa_codigo IN ('PADI','PEGI','PREANI','CIBIR')),
+    nivel_profesional   TEXT NOT NULL
+                      CHECK (nivel_profesional IN ('Bachiller','Universitario','Postgrado')),
+    es_corredor_inmobiliario INTEGER NOT NULL
+                      CHECK (es_corredor_inmobiliario IN (0, 1)),
+    fecha_expiracion    TEXT NOT NULL,
+    creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_verif_preinsc_email_programa
+    ON verificaciones_preinscripciones(email, programa_codigo)`,
 
   // ── Tabla de autenticación (usuarios del sistema) ───────────────────────────
   `CREATE TABLE IF NOT EXISTS users (
@@ -153,6 +181,8 @@ const statements = [
     id_estudiante      INTEGER     NOT NULL,
     id_curso           INTEGER, -- si todavía es solo preinscripción por programa, puede ser NULL
     programa_codigo    TEXT,    -- 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' (catálogo público)
+    tipo_inscripcion   TEXT      NOT NULL DEFAULT 'cohorte'
+                      CHECK (tipo_inscripcion IN ('programa','cohorte')),
     estatus            TEXT      NOT NULL DEFAULT 'Preinscrito'
                       CHECK (estatus IN ('Preinscrito','Inscrito','Rechazado','Cancelado')),
     nota_admin         TEXT,
@@ -386,6 +416,21 @@ const statements = [
     orden         INTEGER  NOT NULL DEFAULT 0
   )`,
 
+  `CREATE TABLE IF NOT EXISTS cms_normativas (
+    id               INTEGER  PRIMARY KEY,
+    titulo           TEXT     NOT NULL,
+    descripcion      TEXT,
+    url_documento    TEXT     NOT NULL,
+    categoria        TEXT,
+    orden            INTEGER  NOT NULL DEFAULT 0,
+    activo           INTEGER  NOT NULL DEFAULT 1
+                     CHECK (activo IN (0, 1)),
+    creado_en        TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    actualizado_en   TEXT
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_cms_normativas_activo ON cms_normativas(activo)`,
+
   `CREATE TABLE IF NOT EXISTS cms_configuracion (
     clave         TEXT     PRIMARY KEY,
     valor         TEXT     NOT NULL,
@@ -401,8 +446,147 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS idx_cms_paginas_actualizado ON cms_paginas(actualizado_en)`
 ]
 
+const RESET_SCHEMA =
+  process.env.INITDB_RESET === '1' ||
+  process.argv.includes('--reset') ||
+  process.argv.includes('reset')
+
+/** Orden: hijas primero (FK), para que DROP funcione aunque foreign_keys esté mal soportado en remoto. */
+const DROP_TABLE_ORDER = [
+  'certificados',
+  'evidencias_legales',
+  'transacciones_pagos',
+  'inscripciones_cursos',
+  'denuncias',
+  'inscripciones_academicas',
+  'cuotas_contables',
+  'solvencias',
+  'planes_gestion',
+  'estudiantes',
+  'users',
+  'verificaciones_email',
+  'verificaciones_preinscripciones',
+  'cursos',
+  'cms_noticias',
+  'cms_cursos',
+  'cms_convenios',
+  'cms_directiva',
+  'cms_hitos',
+  'cms_normativas',
+  'cms_configuracion',
+  'cms_paginas',
+  'actas_y_convocatorias',
+  'agremiados',
+  'instructores',
+] as const
+
+async function dropAllUserTables(): Promise<void> {
+  console.log('INITDB_RESET: eliminando tablas existentes (PRAGMA foreign_keys=OFF)...\n')
+  await db.execute('PRAGMA foreign_keys = OFF')
+  for (const name of DROP_TABLE_ORDER) {
+    const safe = name.replace(/"/g, '""')
+    await db.execute({ sql: `DROP TABLE IF EXISTS "${safe}"`, args: [] })
+    console.log(`  · dropped ${name}`)
+  }
+  // Cualquier tabla huérfana que no esté en la lista (p. ej. migraciones futuras)
+  const { rows } = await db.execute({
+    sql: `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`,
+    args: [],
+  })
+  for (const row of rows) {
+    const name = String((row as unknown as { name: unknown }).name)
+    if (DROP_TABLE_ORDER.includes(name as (typeof DROP_TABLE_ORDER)[number])) continue
+    const safe = name.replace(/"/g, '""')
+    await db.execute({ sql: `DROP TABLE IF EXISTS "${safe}"`, args: [] })
+    console.log(`  · dropped ${name} (extra)`)
+  }
+  await db.execute('PRAGMA foreign_keys = ON')
+  console.log('')
+}
+
+async function tableColumnNames(table: string): Promise<Set<string>> {
+  const { rows } = await db.execute({ sql: `PRAGMA table_info(${table})`, args: [] })
+  return new Set(
+    rows.map((r: Record<string, unknown>) => String(r.name))
+  )
+}
+
+async function tableExists(name: string): Promise<boolean> {
+  const { rows } = await db.execute({
+    sql: `SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`,
+    args: [name],
+  })
+  return rows.length > 0
+}
+
+/**
+ * Ajusta BDs creadas antes de nuevas columnas (CREATE IF NOT EXISTS no altera tablas viejas).
+ */
+async function migrateLegacyColumns(): Promise<void> {
+  if (await tableExists('estudiantes')) {
+    const cols = await tableColumnNames('estudiantes')
+    if (!cols.has('nivel_profesional')) {
+      await db.execute(`ALTER TABLE estudiantes ADD COLUMN nivel_profesional TEXT`)
+      console.log('  · migrate: estudiantes.nivel_profesional')
+    }
+    if (!cols.has('es_corredor_inmobiliario')) {
+      await db.execute(
+        `ALTER TABLE estudiantes ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
+      )
+      console.log('  · migrate: estudiantes.es_corredor_inmobiliario')
+    }
+  }
+
+  if (await tableExists('verificaciones_preinscripciones')) {
+    const cols = await tableColumnNames('verificaciones_preinscripciones')
+    if (!cols.has('nivel_profesional')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN nivel_profesional TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.nivel_profesional')
+    }
+    if (!cols.has('es_corredor_inmobiliario')) {
+      await db.execute(
+        `ALTER TABLE verificaciones_preinscripciones ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
+      )
+      console.log('  · migrate: verificaciones_preinscripciones.es_corredor_inmobiliario')
+    }
+  }
+
+  if (await tableExists('inscripciones_cursos')) {
+    const cols = await tableColumnNames('inscripciones_cursos')
+    if (!cols.has('tipo_inscripcion')) {
+      await db.execute(
+        `ALTER TABLE inscripciones_cursos ADD COLUMN tipo_inscripcion TEXT NOT NULL DEFAULT 'cohorte'`
+      )
+      console.log('  · migrate: inscripciones_cursos.tipo_inscripcion')
+    }
+  }
+
+  if (!(await tableExists('cms_normativas'))) {
+    await db.execute(`
+      CREATE TABLE cms_normativas (
+        id               INTEGER  PRIMARY KEY,
+        titulo           TEXT     NOT NULL,
+        descripcion      TEXT,
+        url_documento    TEXT     NOT NULL,
+        categoria        TEXT,
+        orden            INTEGER  NOT NULL DEFAULT 0,
+        activo           INTEGER  NOT NULL DEFAULT 1
+                         CHECK (activo IN (0, 1)),
+        creado_en        TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+        actualizado_en   TEXT
+      )
+    `)
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_cms_normativas_activo ON cms_normativas(activo)`)
+    console.log('  · migrate: tabla cms_normativas creada')
+  }
+}
+
 async function initDb(): Promise<void> {
   console.log('Iniciando creación del esquema en Turso...\n')
+
+  if (RESET_SCHEMA) {
+    await dropAllUserTables()
+  }
 
   await db.execute('PRAGMA foreign_keys = ON')
 
@@ -411,6 +595,9 @@ async function initDb(): Promise<void> {
     .map(sql => ({ sql, args: [] as [] }))
 
   await db.batch(schemaBatch, 'write')
+
+  console.log('Aplicando migraciones incrementales (si la BD ya existía)...\n')
+  await migrateLegacyColumns()
 
   console.log('Esquema creado correctamente.\n')
   console.log('Tablas disponibles:')

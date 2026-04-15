@@ -43,30 +43,3 @@
 .read-the-docs {
   color: #888;
 }
-/* Estilos para el Reveal */
-.reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: all 1.0s ease-out;
-  pointer-events: none; /* Evita interferencias hasta que aparezca */
-}
-
-.reveal-on-scroll.active {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto;
-}
-
-/* Variación para las imágenes laterales (Watermarks) */
-.reveal-on-scroll.translate-x-left {
-  transform: translateX(-50px);
-}
-
-.reveal-on-scroll.translate-x-right {
-  transform: translateX(50px);
-}
-
-.reveal-on-scroll.active.translate-x-left,
-.reveal-on-scroll.active.translate-x-right {
-  transform: translateX(0) !important;
-}

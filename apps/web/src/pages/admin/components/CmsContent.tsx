@@ -71,6 +71,7 @@ const PANELS: Record<string, React.ReactNode> = {
   cms_noticias: <CmsArticlesPanel externalTab="noticias" />,
   cms_cursos: <CmsArticlesPanel externalTab="cursos" />,
   cms_convenios: <CmsArticlesPanel externalTab="convenios" />,
+  cms_normativas: <CmsArticlesPanel externalTab="normativas" />,
   cms_directiva: <CmsArticlesPanel externalTab="directiva" />,
   cms_hitos: <CmsArticlesPanel externalTab="hitos" />,
   cms_paginas: <CmsArticlesPanel externalTab="paginas" />,

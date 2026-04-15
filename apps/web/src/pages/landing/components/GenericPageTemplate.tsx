@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/pages/landing/components/navbar/Navbar';
 import { Link } from 'react-router-dom';
-import { Leaf } from 'lucide-react';
+import { Leaf, Award, BookOpen, Building2, Camera, FileCheck, FileText, Gavel, Globe2, Handshake, MessagesSquare, Users, Briefcase } from 'lucide-react';
 import { contentMap } from '../data/chamberContent';
 import { API_URL } from '@/config/env';
-import { getCmsIcon } from '@/pages/landing/cms/cmsIcons';
+import type { LucideIcon } from 'lucide-react';
 
 interface GenericPageProps {
   pageKey: string;
@@ -20,6 +20,27 @@ interface CmsPageJson {
   footerBrand?: string;
   footerLinks?: Array<{ label: string; to: string }>;
   footerCopyright?: string;
+}
+
+const CMS_ICON_MAP: Record<string, LucideIcon> = {
+  Award,
+  BookOpen,
+  Building2,
+  Camera,
+  FileCheck,
+  FileText,
+  Gavel,
+  Globe2,
+  Handshake,
+  MessagesSquare,
+  Users,
+  Briefcase,
+  Leaf,
+}
+
+function getCmsIcon(iconName?: string): LucideIcon {
+  if (!iconName) return Leaf
+  return CMS_ICON_MAP[iconName] ?? Leaf
 }
 
 const GenericPageTemplate = ({ pageKey }: GenericPageProps) => {

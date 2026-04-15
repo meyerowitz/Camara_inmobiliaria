@@ -172,9 +172,17 @@ const AccordionGroup = ({
       style={{ borderLeft: `4px solid ${group.color}` }}
     >
       {/* Header */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setOpen(o => !o)
+          }
+        }}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-slate-700">{group.label}</span>
@@ -201,7 +209,7 @@ const AccordionGroup = ({
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
           </span>
         </div>
-      </button>
+      </div>
 
       {/* Accordion body — smooth height animation via CSS grid trick */}
       <div className={`cms-accordion-body ${open ? '' : 'closed'}`}>

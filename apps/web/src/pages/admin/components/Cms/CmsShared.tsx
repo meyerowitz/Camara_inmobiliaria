@@ -10,6 +10,39 @@ export const api = {
   delete: (path: string) => fetch(`${API}${path}`, { method: 'DELETE' }).then(r => r.json()),
 }
 
+export const uploadFileSupabase = async (file: File, folder: string): Promise<string> => {
+  const token = localStorage.getItem('ciebo_token')
+  if (!token) throw new Error('No hay sesión activa (token). Inicia sesión nuevamente.')
+
+  const presignRes = await fetch(`${API_URL}/api/cms/uploads/presign`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      folder,
+    }),
+  })
+  const presignJson = await presignRes.json()
+  if (!presignRes.ok || !presignJson?.success) throw new Error(presignJson?.message || 'No se pudo generar URL de subida')
+
+  const { signedUploadUrl, publicUrl } = presignJson.data as { signedUploadUrl: string; publicUrl: string }
+  const putRes = await fetch(signedUploadUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      'x-upsert': 'false',
+    },
+    body: file,
+  })
+  if (!putRes.ok) throw new Error('No se pudo subir el archivo a Supabase Storage')
+
+  return publicUrl
+}
+
 export const FormField = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex flex-col gap-1">
     <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</label>

@@ -1,10 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import LandingPage from '@/pages/landing/LandingPage'
 
 // Pages
-import FormacionPage       from '@/pages/landing/formacion/FormacionPage'
+import CursosCatalogPage   from '@/pages/landing/courses/CursosCatalogPage'
 import MisionVisionPage    from '@/pages/landing/mision-vision/MisionVisionPage'
 import JuntaDirectivaPage  from '@/pages/landing/junta-directiva/JuntaDirectivaPage'
 import HistoriaPage        from '@/pages/landing/historia/HistoriaPage'
@@ -16,14 +16,22 @@ import PanelPage           from '@/pages/panel/PanelPage'
 import CibirPage           from '@/pages/landing/courses/CIBIR/CibirPage'
 import VerificarEmailPage  from '@/pages/landing/courses/CIBIR/VerificarEmailPage'
 import DirectorioPage      from '@/pages/landing/directorio/DirectorioPage'
-import GenericPageTemplate from '@/pages/landing/components/GenericPageTemplate'
-import PreaniPage          from '@/pages/landing/formacion/PreaniPage'
-import PegiPage            from '@/pages/landing/formacion/PegiPage'
-import PadiPage            from '@/pages/landing/formacion/PadiPage'
+import PreaniPage          from '@/pages/landing/courses/PREANI/PreaniPage'
+import PegiPage            from '@/pages/landing/courses/PEGI/PegiPage'
+import PadiPage            from '@/pages/landing/courses/PADI/PadiPage'
+import VerificarPreinscripcionProgramaPage from '@/pages/landing/courses/VerificarPreinscripcionProgramaPage'
 import SetupPasswordPage    from '@/pages/auth/SetupPasswordPage'
 import LobbyPage           from '@/pages/lobby/LobbyPage'
 import ComprobantePublicoPage from '@/pages/comprobante/ComprobantePublicoPage'
 import ScrollToHash        from '@/components/ScrollToHash'
+import Convenios from '@/pages/landing/marco-legal/convenios/comerciales'
+import NormativasPage from '@/pages/landing/marco-legal/NormativasPage'
+
+function PreservingQueryNavigate({ to }: { to: string }) {
+  const [searchParams] = useSearchParams()
+  const q = searchParams.toString()
+  return <Navigate to={q ? `${to}?${q}` : to} replace />
+}
 
 export default function App() {
   return (
@@ -33,8 +41,8 @@ export default function App() {
         <Routes>
           {/* Rutas públicas */}
           <Route path='/'              element={<LandingPage />} />
-          <Route path='/cursos'        element={<FormacionPage />} />
-          <Route path='/talleres'      element={<FormacionPage />} />
+          <Route path='/cursos'        element={<CursosCatalogPage />} />
+          <Route path='/talleres'      element={<CursosCatalogPage />} />
           <Route path='/mision_vision' element={<MisionVisionPage />} />
           <Route path='/junta_directiva' element={<JuntaDirectivaPage />} />
           <Route path='/historia'      element={<HistoriaPage />} />
@@ -43,6 +51,10 @@ export default function App() {
           <Route path='/proposito'     element={<PropositoPage />} />
           <Route path='/cibir'         element={<CibirPage />} />
           <Route path='/cibir/verificar' element={<VerificarEmailPage />} />
+          <Route path='/cursos/verificar' element={<VerificarPreinscripcionProgramaPage />} />
+          <Route path='/formacion/verificar' element={<PreservingQueryNavigate to='/cursos/verificar' />} />
+          <Route path='/convenios' element={<Convenios />} />
+          <Route path='/normativas' element={<NormativasPage />} />
           <Route path='/directorio'    element={<DirectorioPage />} />
           <Route path='/comprobante/:codigo' element={<ComprobantePublicoPage />} />
           <Route path='/establecer-contrasena' element={<SetupPasswordPage />} />
@@ -51,17 +63,7 @@ export default function App() {
           <Route path='/preani' element={<PreaniPage />} />
           <Route path='/pegi'   element={<PegiPage />} />
           <Route path='/padi'   element={<PadiPage />} />
-          <Route path='/beneficios' element={<GenericPageTemplate pageKey="beneficios" />} />
-          <Route path='/requisitos' element={<GenericPageTemplate pageKey="requisitos" />} />
-          <Route path='/convenios-institucionales' element={<GenericPageTemplate pageKey="convenios-institucionales" />} />
-          <Route path='/convenios-comerciales' element={<GenericPageTemplate pageKey="convenios-comerciales" />} />
-          <Route path='/convenios-internacionales' element={<GenericPageTemplate pageKey="convenios-internacionales" />} />
-          <Route path='/normativas' element={<GenericPageTemplate pageKey="normativas" />} />
-          <Route path='/eventos' element={<GenericPageTemplate pageKey="eventos" />} />
-          <Route path='/galeria' element={<GenericPageTemplate pageKey="galeria" />} />
-          <Route path='/comunicados' element={<GenericPageTemplate pageKey="comunicados" />} />
-          <Route path='/contacto' element={<GenericPageTemplate pageKey="contacto" />} />
-
+          
           {/* ── Panel Unificado (afiliado + admin en una sola vista) ── */}
           <Route element={<ProtectedRoute />}>
             <Route path='/panel' element={<PanelPage />} />

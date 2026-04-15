@@ -142,7 +142,10 @@ export const getConvenios = async (_req: Request, res: Response) => {
 export const createConvenio = async (req: Request, res: Response) => {
   try {
     const { nombre, logo_url, orden, activo } = req.body;
-    if (!nombre || !logo_url) return res.status(400).json({ success: false, message: 'nombre y logo_url son requeridos' });
+    if (!nombre || !logo_url) return res.status(400).json({ success: false, message: 'nombre y documento_url son requeridos' });
+    if (!isValidDocumentUrl(String(logo_url))) {
+      return res.status(400).json({ success: false, message: 'documento_url debe ser una URL http(s) válida.' });
+    }
     const result = await db.execute({
       sql: `INSERT INTO cms_convenios (nombre, logo_url, orden, activo) VALUES (?, ?, ?, ?) RETURNING *`,
       args: [nombre, logo_url, orden ?? 0, activo !== undefined ? (activo ? 1 : 0) : 1]
@@ -158,6 +161,10 @@ export const updateConvenio = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { nombre, logo_url, orden, activo } = req.body;
+    if (!nombre || !logo_url) return res.status(400).json({ success: false, message: 'nombre y documento_url son requeridos' });
+    if (!isValidDocumentUrl(String(logo_url))) {
+      return res.status(400).json({ success: false, message: 'documento_url debe ser una URL http(s) válida.' });
+    }
     const result = await db.execute({
       sql: `UPDATE cms_convenios SET nombre=?, logo_url=?, orden=?, activo=? WHERE id=? RETURNING *`,
       args: [nombre, logo_url, orden ?? 0, activo ? 1 : 0, id]
@@ -430,3 +437,125 @@ export const deletePagina = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Error al eliminar página CMS' });
   }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NORMATIVAS (enlaces a PDF/documentos en R2, Cloudflare, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function isValidDocumentUrl(url: string): boolean {
+  try {
+    const u = new URL(url.trim())
+    return u.protocol === 'http:' || u.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/** GET /api/public/normativas — solo publicados y activos */
+export const publicListNormativas = async (_req: Request, res: Response) => {
+  try {
+    const result = await db.execute({
+      sql: `SELECT id, titulo, descripcion, url_documento, categoria, orden
+            FROM cms_normativas
+            WHERE activo = 1
+            ORDER BY orden ASC, id ASC`,
+      args: [],
+    })
+    return res.json({ success: true, data: result.rows })
+  } catch (error) {
+    console.error('publicListNormativas:', error)
+    return res.status(500).json({ success: false, message: 'Error al obtener normativas' })
+  }
+}
+
+export const getNormativas = async (req: Request, res: Response) => {
+  try {
+    const soloActivos = req.query?.activos === '1' || req.query?.activos === 'true'
+    const sql = soloActivos
+      ? 'SELECT * FROM cms_normativas WHERE activo = 1 ORDER BY orden ASC, id ASC'
+      : 'SELECT * FROM cms_normativas ORDER BY orden ASC, id ASC'
+    const result = await db.execute({ sql, args: [] })
+    return res.json({ success: true, data: result.rows })
+  } catch (error) {
+    console.error('getNormativas:', error)
+    return res.status(500).json({ success: false, message: 'Error al obtener normativas' })
+  }
+}
+
+export const createNormativa = async (req: Request, res: Response) => {
+  try {
+    const { titulo, descripcion, url_documento, categoria, orden, activo } = req.body as Record<string, unknown>
+    const t = typeof titulo === 'string' ? titulo.trim() : ''
+    const u = typeof url_documento === 'string' ? url_documento.trim() : ''
+    if (!t || !u) {
+      return res.status(400).json({ success: false, message: 'titulo y url_documento son requeridos' })
+    }
+    if (!isValidDocumentUrl(u)) {
+      return res.status(400).json({ success: false, message: 'url_documento debe ser una URL http(s) válida (p. ej. enlace público de R2 o Cloudflare).' })
+    }
+    const now = new Date().toISOString()
+    const result = await db.execute({
+      sql: `INSERT INTO cms_normativas (titulo, descripcion, url_documento, categoria, orden, activo, actualizado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+      args: [
+        t,
+        typeof descripcion === 'string' ? descripcion.trim() || null : null,
+        u,
+        typeof categoria === 'string' ? categoria.trim() || null : null,
+        typeof orden === 'number' && Number.isFinite(orden) ? orden : 0,
+        activo !== undefined ? (activo ? 1 : 0) : 1,
+        now,
+      ],
+    })
+    return res.status(201).json({ success: true, data: result.rows[0] })
+  } catch (error) {
+    console.error('createNormativa:', error)
+    return res.status(500).json({ success: false, message: 'Error al crear normativa' })
+  }
+}
+
+export const updateNormativa = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id ?? '').trim()
+    const { titulo, descripcion, url_documento, categoria, orden, activo } = req.body as Record<string, unknown>
+    const t = typeof titulo === 'string' ? titulo.trim() : ''
+    const u = typeof url_documento === 'string' ? url_documento.trim() : ''
+    if (!t || !u) {
+      return res.status(400).json({ success: false, message: 'titulo y url_documento son requeridos' })
+    }
+    if (!isValidDocumentUrl(u)) {
+      return res.status(400).json({ success: false, message: 'url_documento debe ser una URL http(s) válida.' })
+    }
+    const now = new Date().toISOString()
+    const result = await db.execute({
+      sql: `UPDATE cms_normativas
+            SET titulo=?, descripcion=?, url_documento=?, categoria=?, orden=?, activo=?, actualizado_en=?
+            WHERE id=? RETURNING *`,
+      args: [
+        t,
+        typeof descripcion === 'string' ? descripcion.trim() || null : null,
+        u,
+        typeof categoria === 'string' ? categoria.trim() || null : null,
+        typeof orden === 'number' && Number.isFinite(orden) ? orden : 0,
+        activo ? 1 : 0,
+        now,
+        id,
+      ],
+    })
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Normativa no encontrada' })
+    return res.json({ success: true, data: result.rows[0] })
+  } catch (error) {
+    console.error('updateNormativa:', error)
+    return res.status(500).json({ success: false, message: 'Error al actualizar normativa' })
+  }
+}
+
+export const deleteNormativa = async (req: Request, res: Response) => {
+  try {
+    await db.execute({ sql: 'DELETE FROM cms_normativas WHERE id=?', args: [String(req.params.id)] })
+    return res.json({ success: true, message: 'Normativa eliminada' })
+  } catch (error) {
+    console.error('deleteNormativa:', error)
+    return res.status(500).json({ success: false, message: 'Error al eliminar normativa' })
+  }
+}

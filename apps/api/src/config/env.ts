@@ -33,7 +33,15 @@ const envSchema = z.object({
    */
   CORS_ORIGINS: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
-  RESEND_API_KEY: z.string().min(1)
+  RESEND_API_KEY: z.string().min(1),
+
+  // ── Supabase Storage ───────────────────────────────────────────────────────
+  SUPABASE_URL: z.string().url().optional(),
+  // Compatibilidad con nombre antiguo en .env
+  SUPABASE_BASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  /** Bucket público para documentos del CMS (ej: public-docs). */
+  SUPABASE_STORAGE_PUBLIC_BUCKET: z.string().optional(),
 })
 
 const parsed = envSchema.parse(process.env)
@@ -46,5 +54,6 @@ const corsList = corsRaw
 
 export const env = {
   ...parsed,
+  SUPABASE_URL: parsed.SUPABASE_URL ?? parsed.SUPABASE_BASE_URL,
   CORS_ORIGINS: corsList,
 }

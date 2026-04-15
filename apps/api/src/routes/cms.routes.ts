@@ -7,6 +7,7 @@ import {
   getHitos, createHito, updateHito, deleteHito,
   getConfig, upsertConfig, upsertConfigBatch, deleteConfig,
   getPaginasList, getPaginaBySlug, upsertPagina, deletePagina,
+  getNormativas, createNormativa, updateNormativa, deleteNormativa,
 } from '../controllers/cms.controller.js';
 
 const router = Router();
@@ -28,6 +29,12 @@ router.get('/convenios', getConvenios);
 router.post('/convenios', createConvenio);
 router.put('/convenios/:id', updateConvenio);
 router.delete('/convenios/:id', deleteConvenio);
+
+// ── Normativas (enlaces a documentos) ───────────────────
+router.get('/normativas', getNormativas);
+router.post('/normativas', createNormativa);
+router.put('/normativas/:id', updateNormativa);
+router.delete('/normativas/:id', deleteNormativa);
 
 // ── Directiva ─────────────────────────────────────────
 router.get('/directiva', getDirectiva);

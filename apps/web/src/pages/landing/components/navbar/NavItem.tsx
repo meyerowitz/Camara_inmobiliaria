@@ -37,7 +37,7 @@ export default function NavItem({ item }: NavItemProps) {
       </Link>
 
       {hasOptions && isOpen && (
-        <div className='absolute top-full left-0 w-48 bg-white  text-slate-800  shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]'>
+        <div className='absolute top-full left-0 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]'>
           {item.items!.map((opt, idx) => (
             <Link
               key={idx}

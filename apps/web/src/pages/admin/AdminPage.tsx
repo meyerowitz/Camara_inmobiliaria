@@ -10,6 +10,7 @@ const NAV_META: Record<string, { title: string; subtitle: string }> = {
   cms: { title: 'Contenido', subtitle: 'Todas las secciones de la Landing' },
   cms_noticias: { title: 'Noticias', subtitle: 'Últimas novedades y artículos' },
   cms_convenios: { title: 'Convenios', subtitle: 'Alianzas y beneficios para afiliados' },
+  cms_normativas: { title: 'Normativas', subtitle: 'Enlaces a documentos oficiales (PDF u otros)' },
   cms_directiva: { title: 'Directiva', subtitle: 'Miembros de la Junta Directiva' },
   cms_paginas: { title: 'Páginas públicas', subtitle: 'Contenido JSON de rutas /beneficios, /pegi, etc.' },
   cms_config: { title: 'Configuración de Contenido', subtitle: 'Textos fijos e imágenes de la Landing' },

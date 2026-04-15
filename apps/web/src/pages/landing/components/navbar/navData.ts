@@ -11,7 +11,7 @@ export const NAV_ITEMS = [
     ],
     Tpath: '',
   },
-  { title: 'Eventos', items: null, Tpath: '/eventos' },
+  // { title: 'Eventos', items: null, Tpath: '/eventos' },
   {
     title: 'Afiliados',
     items: [
@@ -32,14 +32,13 @@ export const NAV_ITEMS = [
     Tpath: '',
   },
   {
-    title: 'Convenios',
+    title: 'Marco Legal',
     items: [
-      { label: 'Institucionales', path: '/convenios-institucionales' },
-      { label: 'Comerciales', path: '/convenios-comerciales' },
+      { label: 'Convenios', path: '/convenios' },
+      { label: 'Normativas', path: '/normativas' },
     ],
     Tpath: '',
-  },
-  { title: 'Normativas', items: null, Tpath: '/normativas' },
+  }
   // {
   //   title: 'Prensa',
   //   items: [

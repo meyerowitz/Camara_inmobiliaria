@@ -22,12 +22,14 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
     cedulaRif: '',
     email: '',
     telefono: '',
+    nivelProfesional: '',
+    esCorredorInmobiliario: '',
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
   }
@@ -46,6 +48,8 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
           cedulaRif: formData.cedulaRif,
           email: formData.email,
           telefono: formData.telefono,
+          nivelProfesional: formData.nivelProfesional,
+          esCorredorInmobiliario: formData.esCorredorInmobiliario === 'si',
         }),
       })
       const json = await res.json()
@@ -67,13 +71,13 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
         <div className="w-16 h-16 rounded-full flex items-center justify-center bg-emerald-50">
           <CheckCircle2 size={34} className="text-emerald-500" />
         </div>
-        <h3 className="text-2xl font-black text-slate-900">¡Preinscripción enviada!</h3>
-        <p className="text-sm max-w-md leading-relaxed text-slate-500">
-          Tu solicitud quedó con estatus <span className="font-bold">Preinscrito</span>. Un administrador debe aprobarla para formalizar la inscripción.
+        <h3 className="text-2xl font-black text-white">¡Revisa tu correo!</h3>
+        <p className="text-sm max-w-md leading-relaxed text-emerald-100/85">
+          Te enviamos un enlace de confirmación para validar tu email y completar la preinscripción al programa <span className="font-bold">{programaCodigo}</span>.
         </p>
         <button
           onClick={() => setSubmitted(false)}
-          className="text-sm font-bold underline transition-colors text-emerald-600 hover:text-emerald-500"
+          className="text-sm font-bold underline transition-colors text-emerald-300 hover:text-emerald-200"
         >
           Enviar otra solicitud
         </button>
@@ -86,7 +90,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {FIELDS.map(({ name, label, type, placeholder, icon: Icon }) => (
           <div key={name} className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-400">
+            <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/90">
               {label}
             </label>
             <div className="relative">
@@ -105,6 +109,69 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
         ))}
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/90">
+            Nivel Profesional
+          </label>
+          <div className="relative">
+            <select
+              name="nivelProfesional"
+              required
+              value={formData.nivelProfesional}
+              onChange={handleChange}
+              className="w-full px-5 py-4 bg-white rounded-xl outline-none transition-all font-medium text-sm border border-slate-200 text-slate-800 focus:border-emerald-500 appearance-none"
+            >
+              <option value="" disabled>
+                Selecciona una opción
+              </option>
+              <option value="Bachiller">Bachiller</option>
+              <option value="Universitario">Universitario</option>
+              <option value="Postgrado">Postgrado</option>
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▼</span>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/90">
+            ¿Ya eres corredor inmobiliario?
+          </label>
+          <div className="rounded-xl border border-slate-200 bg-white p-1">
+            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label="¿Ya eres corredor inmobiliario?">
+              {[
+                { value: 'si', label: 'Sí' },
+                { value: 'no', label: 'No' },
+              ].map(option => {
+                const selected = formData.esCorredorInmobiliario === option.value
+                return (
+                  <label
+                    key={option.value}
+                    className={[
+                      'h-[50px] rounded-lg cursor-pointer text-sm font-semibold flex items-center justify-center transition-all',
+                      selected
+                        ? 'bg-emerald-600 text-white shadow-sm'
+                        : 'text-slate-600 hover:bg-slate-50',
+                    ].join(' ')}
+                  >
+                    <input
+                      type="radio"
+                      name="esCorredorInmobiliario"
+                      value={option.value}
+                      checked={selected}
+                      onChange={handleChange}
+                      required
+                      className="sr-only"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <button
         type="submit"
         disabled={loading}
@@ -114,13 +181,13 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel }:
       </button>
 
       {errorMsg && (
-        <div className="flex items-center gap-2 text-red-500 bg-red-50 p-3 rounded-xl text-xs font-bold justify-center">
+        <div className="flex items-center gap-2 text-red-100 bg-red-500/20 border border-red-400/40 p-3 rounded-xl text-xs font-bold justify-center">
           <AlertCircle size={14} />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      <p className="text-[10px] text-center uppercase tracking-[0.15em] font-bold text-slate-400">
+      <p className="text-[10px] text-center uppercase tracking-[0.15em] font-bold text-emerald-100/80">
         Esta solicitud no habilita módulos de estudio; solo registra la preinscripción y la futura certificación.
       </p>
     </form>

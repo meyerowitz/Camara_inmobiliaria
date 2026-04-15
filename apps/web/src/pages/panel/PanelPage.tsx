@@ -16,7 +16,8 @@ import {
   BarChart,
   BookOpen,
   Image as ImageIcon,
-  UserCog
+  UserCog,
+  FileText,
 } from 'lucide-react';
 import DashboardSidebar from '@/pages/afiliado/components/DashboardSidebar';
 import DashboardHeader from '@/pages/afiliado/components/DashboardHeader';
@@ -33,6 +34,7 @@ import AnalyticsPanel from '@/pages/admin/components/Analytics/AnalyticsPanel';
 import FormacionPanel from '@/pages/admin/components/Formacion/FormacionPanel';
 import CmsDashboard from '@/pages/admin/components/dashboard/CmsDashboard';
 import CmsArticlesPanel, { type CmsTab } from '@/pages/admin/components/Cms/CmsArticlesPanel';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/config/env';
@@ -57,6 +59,7 @@ const NAV_ADMIN_CORE = [
 const NAV_CMS = [
   { icon: Newspaper, label: 'CMS · Noticias' },
   { icon: Handshake, label: 'CMS · Convenios' },
+  { icon: FileText, label: 'CMS · Normativas' },
   { icon: Users, label: 'CMS · Directiva' },
   { icon: Settings, label: 'CMS · Configuración' },
 ];
@@ -81,8 +84,9 @@ const Section = ({ label }: { label: string }) => (
 // ─── Panel unificado principal ────────────────────────────────────────────────
 
 const PanelPage = () => {
-  const { user, token, logout, isAdmin, isSuperAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState('Resumen / Inicio');
+  const { user, token, logout, isAdmin, isSuperAdmin, isEstudiante } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'formacion' ? 'Catálogo Académico' : 'Resumen / Inicio');
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [agremiado, setAgremiado] = useState<{
@@ -112,9 +116,21 @@ const PanelPage = () => {
 
   // Construir nav items dinámicamente según roles
   const buildNavItems = () => {
-    const affItems = isLimited
-      ? [{ icon: LayoutDashboard, label: 'Resumen / Inicio' }, { icon: FolderSearch, label: 'Mi Expediente' }]
-      : [...NAV_AFILIADO];
+    let baseItems: any[] = [];
+    
+    // Base de navegación pública o afiliada
+    if (user?.roles.includes('afiliado')) {
+      baseItems = isLimited
+        ? [{ icon: LayoutDashboard, label: 'Resumen / Inicio' }, { icon: FolderSearch, label: 'Mi Expediente' }]
+        : [...NAV_AFILIADO];
+    } else if (isEstudiante && user?.roles.length === 1) {
+      // Exclusivo estudiante
+      baseItems = [
+        { icon: LayoutDashboard, label: 'Resumen / Inicio' },
+        { icon: GraduationCap, label: 'Catálogo Académico' },
+        { icon: Award, label: 'Mis Certificados' },
+      ];
+    }
 
     if (isAdmin) {
       let adminItems = [
@@ -129,9 +145,9 @@ const PanelPage = () => {
         NAV_DIVIDER_CMS as any,
         ...NAV_CMS
       ];
-      return [...affItems, ...adminItems];
+      return [...baseItems, ...adminItems];
     }
-    return affItems;
+    return baseItems;
   };
 
   const navItems = buildNavItems();
@@ -142,7 +158,18 @@ const PanelPage = () => {
     // 1. Sección de Afiliado
     if (activeTab === 'Resumen / Inicio') {
       if (isAdmin) return <div className="col-span-1 lg:col-span-3 -m-4 sm:-m-6 lg:-m-8"><CmsDashboard /></div>;
-      if (isLimited) return <div className="col-span-1 lg:col-span-3"><WidgetFormalizarInscripcion onSuccess={fetchAgremiado} /></div>;
+      if (isLimited && user?.roles.includes('afiliado')) return <div className="col-span-1 lg:col-span-3"><WidgetFormalizarInscripcion onSuccess={fetchAgremiado} /></div>;
+      
+      // Si es solo estudiante
+      if (isEstudiante && user?.roles.length === 1) {
+        return (
+          <>
+            <div className="lg:col-span-3"><WidgetAcademico /></div>
+          </>
+        )
+      }
+
+      // Afiliado standard
       return (
         <>
           <div className="lg:col-span-2"><WidgetFinanciero /></div>
@@ -176,6 +203,7 @@ const PanelPage = () => {
       const tabMap: Record<string, CmsTab> = {
         'CMS · Noticias': 'noticias',
         'CMS · Convenios': 'convenios',
+        'CMS · Normativas': 'normativas',
         'CMS · Directiva': 'directiva',
         'CMS · Configuración': 'config',
       };
@@ -235,6 +263,7 @@ const PanelPage = () => {
                   <CheckCircle size={11} />
                   {role === 'super_admin' ? 'Super Admin'
                     : role === 'admin' ? 'Administrador'
+                      : role === 'estudiante' ? 'Estudiante'
                       : isLimited ? 'CIBIR Restringido'
                         : isActivo ? 'CIBIR Activo'
                           : agremiado ? `Estatus: ${agremiado.estatus}` : 'Afiliado'}

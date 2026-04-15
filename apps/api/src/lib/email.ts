@@ -32,6 +32,40 @@ export const enviarCorreoVerificacion = async (nombre: string, emailOriginal: st
   return data
 }
 
+/** Confirmación de preinscripción a programas principales (PADI/PEGI/PREANI/CIBIR) */
+export const enviarCorreoConfirmacionPreinscripcionPrograma = async (params: {
+  nombre: string
+  emailOriginal: string
+  programaCodigo: string
+  token: string
+}) => {
+  const { nombre, emailOriginal, programaCodigo, token } = params
+  const enlace = `${env.APP_URL.replace(/\/$/, '')}/cursos/verificar?token=${token}`
+  const { data, error } = await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to: EMAIL_DEST,
+    subject: `Confirma tu preinscripción — ${programaCodigo}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#333;">
+        <h2 style="color:#166534;">¡Hola, ${nombre}!</h2>
+        <p>Has solicitado preinscribirte al programa <strong>${programaCodigo}</strong> de la Cámara Inmobiliaria del Estado Bolívar.</p>
+        <p>Para confirmar tu correo electrónico (<em>${emailOriginal}</em>) y completar la solicitud, haz clic aquí:</p>
+        <div style="text-align:center;margin:30px 0;">
+          <a href="${enlace}" style="background-color:#16a34a;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block;">Confirmar mi preinscripción</a>
+        </div>
+        <p style="font-size:14px;color:#666;">O copia: ${enlace}</p>
+        <hr style="border:none;border-top:1px solid #ddd;margin-top:30px;"/>
+        <p style="font-size:12px;color:#999;">Si no fuiste tú, ignora este correo.</p>
+      </div>
+    `,
+  })
+  if (error) {
+    console.error('enviarCorreoConfirmacionPreinscripcionPrograma:', error)
+    throw error
+  }
+  return data
+}
+
 /** Correo de bienvenida + enlace para establecer contraseña inicial (afiliado aprobado) */
 export const enviarCorreoAprobacion = async (nombre: string, emailOriginal: string, token: string) => {
   const enlaceSetup = `${env.APP_URL}/establecer-contrasena?token=${token}`

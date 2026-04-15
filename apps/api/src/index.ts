@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { env } from './config/env.js'
-import { afiliadosRoutes, publicRoutes, cmsRoutes, authRoutes, usersRoutes, academiaRoutes } from './routes/index.js'
+import { afiliadosRoutes, publicRoutes, cmsRoutes, uploadsRoutes, authRoutes, usersRoutes, academiaRoutes } from './routes/index.js'
 
 
 const app = express()
@@ -27,6 +27,7 @@ app.use('/api/users',     usersRoutes)
 app.use('/api/afiliados', afiliadosRoutes)
 app.use('/api/public',    publicRoutes)
 app.use('/api/cms',       cmsRoutes)
+app.use('/api/cms/uploads', uploadsRoutes)
 app.use('/api/academia',  academiaRoutes)
 
 // Rutas base
