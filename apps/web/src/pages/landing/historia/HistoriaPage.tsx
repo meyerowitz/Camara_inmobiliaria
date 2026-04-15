@@ -37,12 +37,7 @@ const HitoHistoria = ({ año, titulo, descripcion, index }: { año: string, titu
 export default function Historia() {
   const [darkMode, setDarkMode] = useState(false)
   const navigate = useNavigate()
-  const [hitos, setHitos] = useState([
-    { año: '1994', titulo: 'Fundación', descripcion: 'Nace la Cámara Inmobiliaria del Estado Bolívar con la visión de profesionalizar el sector en la región.' },
-    { año: '2005', titulo: 'Crecimiento Gremial', descripcion: 'Se alcanzan los primeros 100 afiliados activos, fortaleciendo la presencia en Puerto Ordaz y Ciudad Bolívar.' },
-    { año: '2015', titulo: 'Innovación Digital', descripcion: 'Implementación de los primeros sistemas de formación online para corredores inmobiliarios de la zona.' },
-    { año: '2024', titulo: 'Nueva Gestión', descripcion: 'Inicio del periodo 2024-2026 enfocado en la vanguardia, sostenibilidad y alianzas estratégicas.' }
-  ])
+  const [hitos, setHitos] = useState<{ año: string, titulo: string, descripcion: string }[]>([])
 
   useEffect(() => {
     fetch(`${API_URL}/api/cms/hitos`)
@@ -56,7 +51,7 @@ export default function Historia() {
   }, [])
   return (
     <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
-      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Navbar  />
       <header
         className='relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[45vh] bg-cover animate-header-bg'
         style={{ backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.88), rgba(2, 44, 34, 0.88)), url(${bgBolivar})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
