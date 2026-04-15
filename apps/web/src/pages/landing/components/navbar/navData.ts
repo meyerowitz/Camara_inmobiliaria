@@ -8,6 +8,7 @@ export const NAV_ITEMS = [
       { label: 'Misión y Visión', path: '/mision_vision' },
       { label: 'Propósito', path: '/proposito' },
       { label: 'Junta Directiva', path: '/junta_directiva' },
+      { label: 'Historia' , path: '/historia'}
     ],
     Tpath: '',
   },

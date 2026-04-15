@@ -24,7 +24,7 @@ export default function Navbar({ setIsSesionModalOpen, setIsRegisterModalOpen }:
       } flex items-center justify-center px-6 py-5 lg:px-20 backdrop-blur-xl sticky top-0 z-50 border-b transition-all duration-300`}
     >
       {/* 1. LOGO: Recuperamos la altura h-23 que tenías en el original */}
-      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity flex-shrink-0">
+      <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity shrink-0">
         <img
           src={Logo}
           alt="Logo Cámara"
