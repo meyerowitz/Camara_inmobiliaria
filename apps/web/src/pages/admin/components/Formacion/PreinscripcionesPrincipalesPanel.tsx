@@ -3,7 +3,7 @@ import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
 
 type ProgramaCodigo = 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' | 'AFILIACION'
-type Estatus = 'Preinscrito' | 'Inscrito' | 'Rechazado' | 'Cancelado'
+type Estatus = 'Preinscrito' | 'Entrevista' | 'Inscrito' | 'Rechazado' | 'Cancelado'
 
 type Row = {
   id_inscripcion: number
@@ -14,6 +14,9 @@ type Row = {
   estudiante_email: string
   estudiante_telefono: string | null
   estudiante_cedula_rif: string | null
+  entrevista_fecha?: string
+  entrevista_hora?: string
+  entrevista_lugar?: string
 }
 
 export default function PreinscripcionesPrincipalesPanel({
@@ -23,11 +26,11 @@ export default function PreinscripcionesPrincipalesPanel({
 }) {
   const { token } = useAuth()
   const [programa, setPrograma] = useState<ProgramaCodigo | 'Todos'>(initialPrograma)
-  type UiEstatus = 'Todos' | 'Pendiente' | 'Aprobado' | 'Rechazado'
+  type UiEstatus = 'Todos' | 'Pendiente' | 'Entrevista' | 'Aprobado' | 'Rechazado'
   const [uiEstatus, setUiEstatus] = useState<UiEstatus>('Pendiente')
   const [search, setSearch] = useState('')
   const [rows, setRows] = useState<Row[]>([])
-  const [counts, setCounts] = useState({ Todos: 0, Pendiente: 0, Aprobado: 0, Rechazado: 0 })
+  const [counts, setCounts] = useState({ Todos: 0, Pendiente: 0, Entrevista: 0, Aprobado: 0, Rechazado: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<Row | null>(null)
@@ -38,14 +41,23 @@ export default function PreinscripcionesPrincipalesPanel({
     return h
   }, [token])
 
+  const [showModalAgendar, setShowModalAgendar] = useState(false)
+  const [showModalFinalizar, setShowModalFinalizar] = useState(false)
+  const [entrevista, setEntrevista] = useState({ fecha: '', hora: '', lugar: 'Sede Cámara Inmobiliaria' })
+  const [finalizarData, setFinalizarData] = useState<{ resultado: 'Aprobado' | 'Parcial' | 'Rechazado', modulos: number[], nota: string }>({
+    resultado: 'Aprobado',
+    modulos: [1, 2, 3, 4, 5],
+    nota: ''
+  })
+
   const fetchData = async () => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams()
-      // Map UI estatus to DB estatus
       if (uiEstatus === 'Todos') qs.set('estatus', 'Todos')
       else if (uiEstatus === 'Pendiente') qs.set('estatus', 'Preinscrito')
+      else if (uiEstatus === 'Entrevista') qs.set('estatus', 'Entrevista')
       else if (uiEstatus === 'Aprobado') qs.set('estatus', 'Inscrito')
       else if (uiEstatus === 'Rechazado') qs.set('estatus', 'Rechazado')
 
@@ -56,16 +68,28 @@ export default function PreinscripcionesPrincipalesPanel({
       })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.message || 'Error cargando preinscripciones')
-      setRows(json.data as Row[])
+
+      const data = json.data as Row[]
+      setRows(data)
+
       if (json.meta && json.meta.counts) {
         setCounts({
           Todos: json.meta.counts.Todos || 0,
           Pendiente: json.meta.counts.Pendiente || 0,
+          Entrevista: json.meta.counts.Entrevista || 0,
           Aprobado: json.meta.counts.Aprobado || 0,
           Rechazado: json.meta.counts.Rechazado || 0,
         })
       }
-      setSelected(null)
+
+      const urlParams = new URLSearchParams(window.location.search)
+      const idFromUrl = urlParams.get('id')
+      if (idFromUrl) {
+        const found = data.find(r => r.id_inscripcion === Number(idFromUrl))
+        if (found) setSelected(found)
+      } else {
+        setSelected(null)
+      }
     } catch (e: unknown) {
       const err = e as Error
       setError(err.message || 'Error inesperado')
@@ -78,19 +102,60 @@ export default function PreinscripcionesPrincipalesPanel({
     fetchData()
   }, [programa, uiEstatus, token])
 
-  const procesar = async (id: number, action: 'aprobar' | 'rechazar') => {
+  const agendarEntrevista = async () => {
+    if (!selected) return
     try {
-      const res = await fetch(`${API_URL}/api/academia/inscripciones/${id}/${action}`, {
+      const res = await fetch(`${API_URL}/api/academia/inscripciones/${selected.id_inscripcion}/agendar-entrevista`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: action === 'rechazar' ? JSON.stringify({ notaAdmin: '' }) : undefined,
+        body: JSON.stringify({
+          entrevistaFecha: entrevista.fecha,
+          entrevistaHora: entrevista.hora,
+          entrevistaLugar: entrevista.lugar
+        }),
       })
       const json = await res.json()
-      if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo procesar')
+      if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo agendar')
+      setShowModalAgendar(false)
       await fetchData()
-    } catch (e: unknown) {
-      const err = e as Error
-      setError(err.message || 'Error inesperado')
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  const finalizarEntrevista = async () => {
+    if (!selected) return
+    try {
+      const res = await fetch(`${API_URL}/api/academia/inscripciones/${selected.id_inscripcion}/finalizar-entrevista`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({
+          resultado: finalizarData.resultado,
+          modulosConvalidados: finalizarData.modulos,
+          notaAdmin: finalizarData.nota
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo finalizar')
+      setShowModalFinalizar(false)
+      await fetchData()
+    } catch (e: any) {
+      setError(e.message)
+    }
+  }
+
+  const rechazar = async (id: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/academia/inscripciones/${id}/rechazar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
+        body: JSON.stringify({ notaAdmin: '' }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo rechazar')
+      await fetchData()
+    } catch (e: any) {
+      setError(e.message)
     }
   }
 
@@ -111,13 +176,14 @@ export default function PreinscripcionesPrincipalesPanel({
   }
   const getStatusStyles = (s: Estatus) => {
     if (s === 'Preinscrito') return 'bg-amber-50 text-amber-600'
+    if (s === 'Entrevista') return 'bg-[#E6FBF3] text-[#00D084]'
     if (s === 'Inscrito') return 'bg-emerald-50 text-emerald-600'
     if (s === 'Rechazado') return 'bg-red-50 text-red-500'
     return 'bg-slate-100 text-slate-500'
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full overflow-hidden relative">
       {/* List */}
       <div className={['flex flex-col bg-white border-r border-gray-100 overflow-hidden w-full sm:w-[340px] flex-shrink-0', selected ? 'hidden sm:flex' : 'flex'].join(' ')}>
 
@@ -142,8 +208,8 @@ export default function PreinscripcionesPrincipalesPanel({
                   onClick={() => setPrograma(p)}
                   className={[
                     'text-[10px] font-bold px-3 py-1.5 rounded-full whitespace-nowrap transition-colors border',
-                    programa === p 
-                      ? 'bg-[#00D084] border-[#00D084] text-white' 
+                    programa === p
+                      ? 'bg-[#00D084] border-[#00D084] text-white'
                       : 'bg-white border-gray-200 text-slate-500 hover:bg-gray-50',
                   ].join(' ')}
                 >
@@ -154,7 +220,7 @@ export default function PreinscripcionesPrincipalesPanel({
           </div>
 
           <div className="flex flex-wrap gap-1.5 mt-1">
-            {(['Todos', 'Pendiente', 'Aprobado', 'Rechazado'] as const).map(f => (
+            {(['Todos', 'Pendiente', 'Entrevista', 'Aprobado', 'Rechazado'] as const).map(f => (
               <button
                 key={f}
                 onClick={() => setUiEstatus(f)}
@@ -204,7 +270,6 @@ export default function PreinscripcionesPrincipalesPanel({
         </div>
       </div>
 
-      {/* Detail */}
       <div className={['flex-1 min-w-0 bg-gray-50', selected ? 'flex flex-col' : 'hidden sm:flex sm:flex-col'].join(' ')}>
         {selected ? (
           <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto h-full">
@@ -252,22 +317,49 @@ export default function PreinscripcionesPrincipalesPanel({
               </div>
             </div>
 
-            {selected.estatus === 'Preinscrito' && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 flex gap-2">
-                <button
-                  onClick={() => procesar(selected.id_inscripcion, 'aprobar')}
-                  className="flex-1 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] transition-colors"
-                >
-                  ✓ Aprobar
-                </button>
-                <button
-                  onClick={() => procesar(selected.id_inscripcion, 'rechazar')}
-                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition-colors"
-                >
-                  ✗ Rechazar
-                </button>
-              </div>
-            )}
+            <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-2">
+              {selected.estatus === 'Preinscrito' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowModalAgendar(true)}
+                    className="flex-1 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] transition-colors"
+                  >
+                    Agendar Entrevista
+                  </button>
+                  <button
+                    onClick={() => rechazar(selected.id_inscripcion)}
+                    className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition-colors"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              )}
+              {selected.estatus === 'Entrevista' && (
+                <div className="flex flex-col gap-3">
+                  <div className="bg-[#E6FBF3] border border-[#00D084]/20 rounded-xl p-3">
+                    <p className="text-[11px] font-bold text-[#00D084] uppercase tracking-wider mb-1">Cita Programada</p>
+                    <p className="text-xs text-[#00B870]">
+                      {selected.entrevista_fecha} a las {selected.entrevista_hora} <br />
+                      <span className="opacity-70">{selected.entrevista_lugar}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowModalFinalizar(true)}
+                      className="flex-1 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] transition-colors shadow-lg shadow-[#00D084]/20"
+                    >
+                      Dar Veredicto Final
+                    </button>
+                    <button
+                      onClick={() => setShowModalAgendar(true)}
+                      className="px-4 py-2.5 rounded-xl border border-[#00D084]/20 text-[#00D084] text-sm font-semibold hover:bg-emerald-50 transition-colors"
+                    >
+                      Reprogramar
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-300">
@@ -278,7 +370,152 @@ export default function PreinscripcionesPrincipalesPanel({
           </div>
         )}
       </div>
+      {/* Modal Agendar Entrevista */}
+      {showModalAgendar && selected && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-[#00D084] p-6 text-white relative">
+              <h3 className="text-xl font-bold">Agendar Entrevista</h3>
+              <p className="text-white/80 text-sm mt-1">Programa: {selected.programa_codigo}</p>
+              <button
+                onClick={() => setShowModalAgendar(false)}
+                className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 flex flex-col gap-5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Fecha de Entrevista</label>
+                <input
+                  type="date"
+                  value={entrevista.fecha}
+                  onChange={e => setEntrevista({ ...entrevista, fecha: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none transition-all"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Hora</label>
+                <input
+                  type="time"
+                  value={entrevista.hora}
+                  onChange={e => setEntrevista({ ...entrevista, hora: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none transition-all"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Lugar</label>
+                <input
+                  type="text"
+                  value={entrevista.lugar}
+                  onChange={e => setEntrevista({ ...entrevista, lugar: e.target.value })}
+                  placeholder="Ej: Sede Cámara Inmobiliaria"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none transition-all"
+                />
+              </div>
+
+              <div className="pt-2 flex flex-col gap-3">
+                <button
+                  onClick={agendarEntrevista}
+                  disabled={!entrevista.fecha || !entrevista.hora || !entrevista.lugar}
+                  className="w-full py-4 rounded-2xl bg-[#00D084] text-white font-bold shadow-lg shadow-[#00D084]/20 hover:bg-[#00B870] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Confirmar Cita
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Finalizar Entrevista */}
+      {showModalFinalizar && selected && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="bg-[#00D084] p-6 text-white relative">
+              <h3 className="text-xl font-bold">Veredicto de la Entrevista</h3>
+              <p className="text-white/80 text-sm mt-1">{selected.estudiante_nombre}</p>
+              <button
+                onClick={() => setShowModalFinalizar(false)}
+                className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Resultado Final</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['Aprobado', 'Parcial', 'Rechazado'] as const).map(res => (
+                    <button
+                      key={res}
+                      onClick={() => setFinalizarData({ ...finalizarData, resultado: res, modulos: res === 'Aprobado' ? [1, 2, 3, 4, 5] : finalizarData.modulos })}
+                      className={[
+                        'py-2 px-3 rounded-xl text-xs font-bold border transition-all',
+                        finalizarData.resultado === res
+                          ? 'bg-[#00D084] border-[#00D084] text-white shadow-md'
+                          : 'bg-white border-gray-200 text-slate-500 hover:bg-gray-50'
+                      ].join(' ')}
+                    >
+                      {res === 'Parcial' ? 'Parcial (CIEBO)' : res}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {finalizarData.resultado === 'Parcial' && (
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Módulos Convalidados (CIEBO)</label>
+                    <span className="text-[10px] font-bold bg-emerald-100 text-[#00D084] px-2 py-0.5 rounded-full">{finalizarData.modulos.length}/5</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(m => {
+                      const active = finalizarData.modulos.includes(m)
+                      return (
+                        <button
+                          key={m}
+                          onClick={() => {
+                            const next = active ? finalizarData.modulos.filter(x => x !== m) : [...finalizarData.modulos, m]
+                            setFinalizarData({ ...finalizarData, modulos: next })
+                          }}
+                          className={[
+                            'h-12 rounded-xl border flex flex-col items-center justify-center transition-all',
+                            active ? 'bg-white border-[#00D084] text-[#00D084] shadow-sm' : 'bg-gray-100 border-transparent text-slate-400 opacity-60'
+                          ].join(' ')}
+                        >
+                          <span className="text-[10px] font-bold">M{m}</span>
+                          <div className={['w-1.5 h-1.5 rounded-full mt-1', active ? 'bg-[#00D084]' : 'bg-slate-300'].join(' ')} />
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic">Marca los módulos que el aspirante ya conoce o ha convalidado por experiencia.</p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Nota Administrativa (Opcional)</label>
+                <textarea
+                  value={finalizarData.nota}
+                  onChange={e => setFinalizarData({ ...finalizarData, nota: e.target.value })}
+                  placeholder="Observaciones de la entrevista..."
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none transition-all h-20 resize-none"
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  onClick={finalizarEntrevista}
+                  className="w-full py-4 rounded-2xl bg-[#00D084] text-white font-bold shadow-lg shadow-[#00D084]/20 hover:bg-[#00B870] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  Finalizar Proceso
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
-

@@ -34,6 +34,8 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   CORS_ORIGIN: z.string().optional(),
   RESEND_API_KEY: z.string().min(1),
+  RESEND_FROM_EMAIL: z.string().email().default('info@camarainmobiliariadebolivar.com'),
+  ADMIN_EMAIL: z.string().email().default('info@camarainmobiliariadebolivar.com'),
 
   // ── Supabase Storage ───────────────────────────────────────────────────────
   SUPABASE_URL: z.string().url().optional(),

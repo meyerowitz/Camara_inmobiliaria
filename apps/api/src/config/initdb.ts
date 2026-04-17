@@ -20,6 +20,7 @@
  */
 
 import { db } from '../lib/db.js'
+import bcrypt from 'bcryptjs'
 
 const statements = [
   // ──────────────────────────────────────────────────────────
@@ -184,7 +185,12 @@ const statements = [
     tipo_inscripcion   TEXT      NOT NULL DEFAULT 'cohorte'
                       CHECK (tipo_inscripcion IN ('programa','cohorte')),
     estatus            TEXT      NOT NULL DEFAULT 'Preinscrito'
-                      CHECK (estatus IN ('Preinscrito','Inscrito','Rechazado','Cancelado')),
+                      CHECK (estatus IN ('Preinscrito','Entrevista','Inscrito','Rechazado','Cancelado')),
+    entrevista_fecha   TEXT,
+    entrevista_hora    TEXT,
+    entrevista_lugar   TEXT,
+    entrevista_estatus TEXT      NOT NULL DEFAULT 'Pendiente'
+                      CHECK (entrevista_estatus IN ('Pendiente','Realizada','Cancelada')),
     nota_admin         TEXT,
     asignado_por       INTEGER, -- users.id
     aprobado_por       INTEGER, -- users.id
@@ -204,6 +210,23 @@ const statements = [
     CONSTRAINT fk_insc_aprobado_por
       FOREIGN KEY (aprobado_por) REFERENCES users(id)
       ON DELETE SET NULL ON UPDATE CASCADE
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS convalidaciones_ciebo (
+    id_convalidacion    INTEGER     PRIMARY KEY,
+    id_estudiante       INTEGER     NOT NULL,
+    modulo_numero       INTEGER     NOT NULL CHECK (modulo_numero BETWEEN 1 AND 5),
+    estatus             TEXT        NOT NULL DEFAULT 'Convalidado'
+                        CHECK (estatus IN ('Pendiente','Cursado','Convalidado')),
+    fecha_registro      TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    registrado_por      INTEGER,    -- users.id
+    CONSTRAINT fk_conv_estudiante
+      FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_conv_registrado_por
+      FOREIGN KEY (registrado_por) REFERENCES users(id)
+      ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE(id_estudiante, modulo_numero)
   )`,
 
   // Evitar duplicados (SQLite permite índices parciales)
@@ -559,25 +582,113 @@ async function migrateLegacyColumns(): Promise<void> {
       )
       console.log('  · migrate: inscripciones_cursos.tipo_inscripcion')
     }
+    if (!cols.has('entrevista_fecha')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_fecha TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_fecha')
+    }
+    if (!cols.has('entrevista_hora')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_hora TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_hora')
+    }
+    if (!cols.has('entrevista_lugar')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_lugar TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_lugar')
+    }
+    if (!cols.has('entrevista_estatus')) {
+      await db.execute(
+        `ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_estatus TEXT NOT NULL DEFAULT 'Pendiente'`
+      )
+      console.log('  · migrate: inscripciones_cursos.entrevista_estatus')
+    }
+
+    // Nueva migración para el CHECK constraint
+    await migrateInscripcionesEstatusCheck()
   }
 
   if (!(await tableExists('cms_normativas'))) {
+    console.log('  · migrate: cms_normativas (creando tabla)')
+    await db.execute(statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS cms_normativas'))!)
+  }
+}
+
+async function migrateInscripcionesEstatusCheck() {
+  const res = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='inscripciones_cursos'")
+  if (res.rows.length === 0) return
+  
+  const sql = res.rows[0].sql as string
+  if (sql.includes("'Entrevista'")) return
+
+  console.log('  · migrate: Actualizando CHECK constraint de inscripciones_cursos (recreando tabla)...')
+
+  await db.execute('PRAGMA foreign_keys = OFF')
+  
+  try {
+    // 1. Renombrar
+    await db.execute('ALTER TABLE inscripciones_cursos RENAME TO inscripciones_cursos_old')
+
+    // 2. Crear nueva con el esquema correcto
+    const createStmt = statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS inscripciones_cursos'))!
+    await db.execute(createStmt)
+
+    // 3. Mapear columnas comunes para la copia
+    const oldColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos_old)')
+    const oldCols = (oldColsRes.rows as any[]).map(c => c.name)
+    const newColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos)')
+    const newCols = (newColsRes.rows as any[]).map(c => c.name)
+
+    const commonCols = oldCols.filter(c => newCols.includes(c))
+    const colsStr = commonCols.join(', ')
+
     await db.execute(`
-      CREATE TABLE cms_normativas (
-        id               INTEGER  PRIMARY KEY,
-        titulo           TEXT     NOT NULL,
-        descripcion      TEXT,
-        url_documento    TEXT     NOT NULL,
-        categoria        TEXT,
-        orden            INTEGER  NOT NULL DEFAULT 0,
-        activo           INTEGER  NOT NULL DEFAULT 1
-                         CHECK (activo IN (0, 1)),
-        creado_en        TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-        actualizado_en   TEXT
-      )
+      INSERT INTO inscripciones_cursos (${colsStr})
+      SELECT ${colsStr} FROM inscripciones_cursos_old
     `)
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_cms_normativas_activo ON cms_normativas(activo)`)
-    console.log('  · migrate: tabla cms_normativas creada')
+
+    // 4. Recrear índices asociados
+    const tableIndexes = statements.filter(s => 
+      (s.includes('CREATE INDEX') || s.includes('CREATE UNIQUE INDEX')) && 
+      s.includes('ON inscripciones_cursos')
+    )
+    for (const idx of tableIndexes) {
+      await db.execute(idx)
+    }
+
+    // 5. Borrar tabla vieja
+    await db.execute('DROP TABLE inscripciones_cursos_old')
+    
+    console.log('  · migrate: inscripciones_cursos actualizada exitosamente.')
+  } catch (err) {
+    console.error('Error en migración de CHECK constraint:', err)
+    // Intentar restaurar si falló
+    await db.execute('DROP TABLE IF EXISTS inscripciones_cursos')
+    const hasOld = await db.execute("SELECT 1 FROM sqlite_master WHERE name='inscripciones_cursos_old'")
+    if (hasOld.rows.length > 0) {
+      await db.execute('ALTER TABLE inscripciones_cursos_old RENAME TO inscripciones_cursos')
+    }
+  } finally {
+    await db.execute('PRAGMA foreign_keys = ON')
+  }
+}
+
+async function seedSuperAdmin(): Promise<void> {
+  const email = 'admin@admin.com'
+  const password = 'admin12'
+  const roles = '["super_admin", "admin"]'
+  const rol = 'super_admin'
+
+  const { rows } = await db.execute({
+    sql: `SELECT id FROM users WHERE email = ?`,
+    args: [email],
+  })
+
+  if (rows.length === 0) {
+    const hash = await bcrypt.hash(password, 10)
+    await db.execute({
+      sql: `INSERT INTO users (email, password_hash, roles, rol, activo) 
+            VALUES (?, ?, ?, ?, 1)`,
+      args: [email, hash, roles, rol],
+    })
+    console.log(`  · Seed: Super admin creado (${email})`)
   }
 }
 
@@ -596,8 +707,10 @@ async function initDb(): Promise<void> {
 
   await db.batch(schemaBatch, 'write')
 
-  console.log('Aplicando migraciones incrementales (si la BD ya existía)...\n')
   await migrateLegacyColumns()
+
+  console.log('Sembrando datos iniciales...\n')
+  await seedSuperAdmin()
 
   console.log('Esquema creado correctamente.\n')
   console.log('Tablas disponibles:')

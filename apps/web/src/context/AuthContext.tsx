@@ -43,7 +43,9 @@ function normalizeUser(rawUser: any): AuthUser {
     ? 'super_admin'
     : roles.includes('admin')
       ? 'admin'
-      : 'afiliado'
+      : roles.includes('estudiante')
+        ? 'estudiante'
+        : 'afiliado'
   return { ...rawUser, rol, roles }
 }
 

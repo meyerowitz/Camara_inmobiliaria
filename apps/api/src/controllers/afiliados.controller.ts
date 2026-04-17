@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { db } from '../lib/db.js';
 import { generarCredenciales } from '../lib/credentials.js';
-import { enviarCorreoVerificacion, enviarCorreoAprobacion } from '../lib/email.js';
+import {
+  enviarCorreoVerificacion,
+  enviarCorreoAprobacion,
+  notificarAdminNuevaAfiliacion
+} from '../lib/email.js';
 import bcrypt from 'bcryptjs';
 
 /**
@@ -236,6 +240,14 @@ export const verificarEmail = async (req: Request, res: Response) => {
         sql: `DELETE FROM verificaciones_email WHERE token_verificacion = ?`,
         args: [token]
       });
+
+      // Notificar al admin
+      notificarAdminNuevaAfiliacion({
+        nombre: registro.nombre_completo as string,
+        email: registro.email as string,
+        cedulaRif: registro.cedula_rif as string,
+        telefono: registro.telefono as string
+      }).catch(e => console.error('Error notificando admin (afiliación):', e));
 
       return res.status(201).json({
         success: true,

@@ -2,7 +2,14 @@ import { Request, Response } from 'express'
 import { randomUUID } from 'crypto'
 import { db } from '../lib/db.js'
 import { emitirComprobanteSiCompleto } from '../lib/certificados.js'
-import { enviarCorreoConfirmacionPreinscripcionPrograma } from '../lib/email.js'
+import {
+  enviarCorreoConfirmacionPreinscripcionPrograma,
+  notificarAdminNuevaPreinscripcion,
+  enviarCorreoAprobacionEstudiante,
+  enviarCorreoSetPasswordEstudiante,
+  enviarCorreoResultadoEntrevista
+} from '../lib/email.js'
+import bcrypt from 'bcryptjs'
 import { requireAuth, requireRole } from '../middlewares/auth.middleware.js'
 
 const MAIN_PROGRAM_CODES = new Set(['PADI', 'PEGI', 'PREANI', 'CIBIR', 'AFILIACION'])
@@ -321,9 +328,47 @@ export const publicConfirmarPreinscripcionPrograma = async (req: Request, res: R
       args: [token],
     })
 
+    // 2. Crear acceso al portal (Usuario + Token)
+    try {
+      const resetToken = randomUUID()
+      const expiracion = new Date()
+      expiracion.setHours(expiracion.getHours() + 48)
+      
+      const placeholderPass = await bcrypt.hash(randomUUID(), 10)
+      
+      await db.execute({
+        sql: `INSERT INTO users (email, password_hash, rol, reset_token, reset_token_expira)
+              VALUES (?, ?, 'estudiante', ?, ?)
+              ON CONFLICT(email) DO UPDATE SET 
+                reset_token = excluded.reset_token, 
+                reset_token_expira = excluded.reset_token_expira`,
+        args: [email, placeholderPass, resetToken, expiracion.toISOString()]
+      })
+
+      // 3. Enviar correo para establecer contraseña
+      await enviarCorreoSetPasswordEstudiante({
+        nombre: nombreCompleto,
+        emailOriginal: email,
+        programaCodigo: programaCodigo,
+        token: resetToken
+      })
+    } catch (err) {
+      console.error('Error creando acceso inicial:', err)
+    }
+
+    // Notificar al admin
+    notificarAdminNuevaPreinscripcion({
+      idInscripcion: Number(result.rows[0].id_inscripcion),
+      nombre: nombreCompleto,
+      email: email,
+      programaCodigo: programaCodigo,
+      cedulaRif: cedulaRif,
+      telefono: telefono
+    }).catch(e => console.error('Error notificando admin (programa):', e))
+
     res.status(201).json({
       success: true,
-      message: 'Preinscripción confirmada correctamente. Un administrador debe aprobarla para formalizar la inscripción.',
+      message: 'Preinscripción confirmada correctamente. Revisa tu correo para establecer tu contraseña.',
       data: result.rows[0],
     })
   } catch (error) {
@@ -381,7 +426,7 @@ export const publicPreinscribirCurso = async (req: Request, res: Response): Prom
 
     // Verificar que el curso exista y esté Abierto o Próximamente
     const cursoRes = await db.execute({
-      sql: `SELECT id_curso, estatus FROM cursos WHERE id_curso = ? LIMIT 1`,
+      sql: `SELECT id_curso, nombre, estatus FROM cursos WHERE id_curso = ? LIMIT 1`,
       args: [idCurso],
     })
     if (cursoRes.rows.length === 0) {
@@ -435,6 +480,16 @@ export const publicPreinscribirCurso = async (req: Request, res: Response): Prom
             RETURNING *`,
       args: [id_estudiante, idCurso, now, now],
     })
+
+    // Notificar al admin
+    notificarAdminNuevaPreinscripcion({
+      idInscripcion: Number(result.rows[0].id_inscripcion),
+      nombre: nombreCompleto,
+      email: email,
+      programaCodigo: curso.nombre || `Curso ${idCurso}`,
+      cedulaRif: cedulaRif,
+      telefono: telefono
+    }).catch(e => console.error('Error notificando admin (curso):', e))
 
     res.status(201).json({
       success: true,
@@ -671,7 +726,7 @@ export const adminListPreinscripciones = async (req: Request, res: Response): Pr
     const programaCodigo = normalizeProgramaCodigo(req.query?.programaCodigo)
     const cursoId = req.query?.cursoId ? Number(req.query.cursoId) : null
     const estatus = typeof req.query?.estatus === 'string' ? req.query.estatus : 'Preinscrito'
-    const allowedStatus = new Set(['Todos', 'Preinscrito', 'Inscrito', 'Rechazado', 'Cancelado'])
+    const allowedStatus = new Set(['Todos', 'Preinscrito', 'Entrevista', 'Inscrito', 'Rechazado', 'Cancelado'])
     if (!allowedStatus.has(estatus)) {
       res.status(400).json({ success: false, message: 'estatus inválido' })
       return
@@ -699,11 +754,12 @@ export const adminListPreinscripciones = async (req: Request, res: Response): Pr
       args: countArgs,
     })
     
-    const counts = { Todos: 0, Pendiente: 0, Aprobado: 0, Rechazado: 0, Cancelado: 0 }
+    const counts = { Todos: 0, Pendiente: 0, Entrevista: 0, Aprobado: 0, Rechazado: 0, Cancelado: 0 }
     countsResult.rows.forEach((r: any) => {
       const c = Number(r.c)
       counts.Todos += c
       if (r.estatus === 'Preinscrito') counts.Pendiente += c
+      else if (r.estatus === 'Entrevista') counts.Entrevista += c
       else if (r.estatus === 'Inscrito') counts.Aprobado += c
       else if (r.estatus === 'Rechazado') counts.Rechazado += c
       else if (r.estatus === 'Cancelado') counts.Cancelado += c
@@ -713,8 +769,6 @@ export const adminListPreinscripciones = async (req: Request, res: Response): Pr
     const args = [...countArgs]
     if (estatus !== 'Todos') {
       whereParts.push('ic.estatus = ?')
-      // Original estatus for db lookup (UI translates Pendiente -> Preinscrito, etc but we assume UI sends exact DB estatus or we map it)
-      // Wait, UI will map "Pendiente" to "Preinscrito" in its internal state, so the URL query sends 'Preinscrito'.
       args.push(estatus)
     }
 
@@ -836,9 +890,10 @@ export const adminAsignarEstudianteACurso = async (req: Request, res: Response):
 }
 
 /**
- * PATCH /api/academia/inscripciones/:id/aprobar
+ * PATCH /api/academia/inscripciones/:id/agendar-entrevista
+ * Cambia el estatus a 'Entrevista' y notifica al estudiante.
  */
-export const adminAprobarPreinscripcion = async (req: Request, res: Response): Promise<void> => {
+export const adminAgendarEntrevista = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = Number(req.params.id)
     if (!Number.isFinite(id)) {
@@ -846,13 +901,20 @@ export const adminAprobarPreinscripcion = async (req: Request, res: Response): P
       return
     }
 
+    const { entrevistaFecha, entrevistaHora, entrevistaLugar } = req.body
+    if (!entrevistaFecha || !entrevistaHora || !entrevistaLugar) {
+      res.status(400).json({ success: false, message: 'Fecha, hora y lugar de entrevista son requeridos.' })
+      return
+    }
+
     const now = new Date().toISOString()
     const result = await db.execute({
-      sql: `UPDATE inscripciones_cursos
-            SET estatus='Inscrito', aprobado_por=?, actualizado_en=?
+      sql: `UPDATE inscripciones_cursos 
+            SET estatus='Entrevista', actualizado_en=?,
+                entrevista_fecha=?, entrevista_hora=?, entrevista_lugar=?, entrevista_estatus='Pendiente'
             WHERE id_inscripcion=? AND estatus='Preinscrito'
             RETURNING *`,
-      args: [req.user?.id ?? null, now, id],
+      args: [now, entrevistaFecha, entrevistaHora, entrevistaLugar, id],
     })
 
     if (result.rows.length === 0) {
@@ -860,19 +922,164 @@ export const adminAprobarPreinscripcion = async (req: Request, res: Response): P
       return
     }
 
-    // Si tiene id_curso, descontar cupo disponible
-    const rows = result.rows[0] as any
-    if (rows.id_curso) {
+    const row = result.rows[0] as any
+
+    try {
+      const estRes = await db.execute({
+        sql: `SELECT e.nombre_completo, e.email FROM estudiantes e 
+              WHERE e.id_estudiante = ?`,
+        args: [row.id_estudiante]
+      })
+      const estudiante = estRes.rows[0] as any
+
+      if (estudiante?.email) {
+        await enviarCorreoAprobacionEstudiante({
+          nombre: estudiante.nombre_completo,
+          emailOriginal: estudiante.email,
+          programaCodigo: row.programa_codigo || 'Curso',
+          entrevistaFecha,
+          entrevistaHora,
+          entrevistaLugar,
+          // No enviamos token todavía, ya que no es el acceso definitivo
+        })
+      }
+    } catch (err) {
+      console.error('Error enviando correo de entrevista:', err)
+    }
+
+    res.json({ success: true, message: 'Entrevista agendada correctamente.', data: row })
+  } catch (error) {
+    console.error('adminAgendarEntrevista:', error)
+    res.status(500).json({ success: false, message: 'Error al agendar entrevista' })
+  }
+}
+
+/**
+ * PATCH /api/academia/inscripciones/:id/finalizar-entrevista
+ * Procesa el resultado final de la entrevista (Aprobado, Parcial, Rechazado).
+ */
+export const adminFinalizarEntrevista = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id)
+    const { resultado, modulosConvalidados, notaAdmin } = req.body // resultado: 'Aprobado' | 'Parcial' | 'Rechazado'
+
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ success: false, message: 'id inválido' })
+      return
+    }
+
+    if (!['Aprobado', 'Parcial', 'Rechazado'].includes(resultado)) {
+      res.status(400).json({ success: false, message: 'Resultado inválido' })
+      return
+    }
+
+    const now = new Date().toISOString()
+    
+    // Obtener datos actuales
+    const currentRes = await db.execute({
+      sql: `SELECT ic.*, e.email, e.nombre_completo 
+            FROM inscripciones_cursos ic
+            JOIN estudiantes e ON e.id_estudiante = ic.id_estudiante
+            WHERE ic.id_inscripcion = ?`,
+      args: [id]
+    })
+    
+    if (currentRes.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'Inscripción no encontrada' })
+      return
+    }
+    
+    const row = currentRes.rows[0] as any
+
+    if (resultado === 'Rechazado') {
+      await db.execute({
+        sql: `UPDATE inscripciones_cursos 
+              SET estatus='Rechazado', nota_admin=?, aprobado_por=?, actualizado_en=?, entrevista_estatus='Realizada'
+              WHERE id_inscripcion=?`,
+        args: [notaAdmin || null, req.user?.id || null, now, id]
+      })
+
+      // Notificar por correo
+      await enviarCorreoResultadoEntrevista({
+        nombre: row.nombre_completo,
+        emailOriginal: row.email,
+        resultado: 'Rechazado',
+        programaCodigo: row.programa_codigo || 'Curso'
+      }).catch(e => console.error('Error enviando correo rechazo entrevista:', e))
+
+      res.json({ success: true, message: 'Postulación rechazada.' })
+      return
+    }
+
+    // Aprobación (Total o Parcial)
+    await db.execute({
+      sql: `UPDATE inscripciones_cursos 
+            SET estatus='Inscrito', aprobado_por=?, actualizado_en=?, entrevista_estatus='Realizada'
+            WHERE id_inscripcion=?`,
+      args: [req.user?.id || null, now, id]
+    })
+
+    // Si tiene id_curso, descontar cupo
+    if (row.id_curso) {
       await db.execute({
         sql: `UPDATE cursos SET cupos_disponibles = cupos_disponibles - 1 WHERE id_curso = ? AND cupos_disponibles > 0`,
-        args: [rows.id_curso],
+        args: [row.id_curso],
       })
     }
 
-    res.json({ success: true, message: 'Preinscripción aprobada.', data: result.rows[0] })
+    // Registrar módulos CIEBO
+    if (resultado === 'Aprobado' || (resultado === 'Parcial' && Array.isArray(modulosConvalidados))) {
+      const modulos = resultado === 'Aprobado' ? [1, 2, 3, 4, 5] : modulosConvalidados
+      
+      for (const num of modulos) {
+        await db.execute({
+          sql: `INSERT INTO convalidaciones_ciebo (id_estudiante, modulo_numero, estatus, registrado_por)
+                VALUES (?, ?, 'Convalidado', ?)
+                ON CONFLICT(id_estudiante, modulo_numero) DO UPDATE SET estatus='Convalidado'`,
+          args: [row.id_estudiante, num, req.user?.id || null]
+        })
+      }
+    }
+
+    // Crear/Verificar Acceso
+    try {
+      const userRes = await db.execute({
+        sql: `SELECT reset_token, activo FROM users WHERE email = ?`,
+        args: [row.email]
+      })
+      const existingUser = userRes.rows[0] as any
+      
+      let tokenToUse = existingUser?.reset_token
+
+      if (!existingUser) {
+        tokenToUse = randomUUID()
+        const expiracion = new Date()
+        expiracion.setHours(expiracion.getHours() + 48)
+        const placeholderPass = await bcrypt.hash(randomUUID(), 10)
+        
+        await db.execute({
+          sql: `INSERT INTO users (email, password_hash, rol, reset_token, reset_token_expira)
+                VALUES (?, ?, 'estudiante', ?, ?)`,
+          args: [row.email, placeholderPass, tokenToUse, expiracion.toISOString()]
+        })
+      }
+
+      // Correo de bienvenida definitivo
+      await enviarCorreoResultadoEntrevista({
+        nombre: row.nombre_completo,
+        emailOriginal: row.email,
+        resultado: resultado as 'Aprobado' | 'Parcial' | 'Rechazado',
+        programaCodigo: row.programa_codigo || 'Curso',
+        token: tokenToUse || undefined
+      })
+    } catch (err) {
+      console.error('Error preparando acceso:', err)
+    }
+
+    res.json({ success: true, message: `Inscripción finalizada como ${resultado}.` })
   } catch (error) {
-    console.error('adminAprobarPreinscripcion:', error)
-    res.status(500).json({ success: false, message: 'Error al aprobar preinscripción' })
+    console.error('adminFinalizarEntrevista:', error)
+    res.status(500).json({ success: false, message: 'Error al finalizar entrevista' })
   }
 }
 
@@ -898,7 +1105,7 @@ export const adminRechazarPreinscripcion = async (req: Request, res: Response): 
     const result = await db.execute({
       sql: `UPDATE inscripciones_cursos
             SET estatus='Rechazado', nota_admin=COALESCE(?, nota_admin), aprobado_por=?, actualizado_en=?
-            WHERE id_inscripcion=? AND estatus IN ('Preinscrito', 'Inscrito')
+            WHERE id_inscripcion=? AND estatus IN ('Preinscrito', 'Entrevista', 'Inscrito')
             RETURNING *`,
       args: [notaAdmin, req.user?.id ?? null, now, id],
     })

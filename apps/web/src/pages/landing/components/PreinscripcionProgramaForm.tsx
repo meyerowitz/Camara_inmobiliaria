@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { User, IdCard, Mail, Phone, CheckCircle2, Loader2, AlertCircle } from 'lucide-react'
 import { API_URL } from '@/config/env'
 
-type ProgramaCodigo = 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR'
+type ProgramaCodigo = 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' | 'AFILIACION'
 
 interface Props {
   programaCodigo: ProgramaCodigo
