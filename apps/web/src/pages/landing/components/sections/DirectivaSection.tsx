@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '@/config/env'
 import { STATIC } from '@/pages/landing/config/staticContent'
-import Mision_img from '@/pages/landing/assets/Mision.jpeg'
+import Mision_img from '@/assets/Mision.jpeg'
 
 const s = STATIC.directiva
 
@@ -23,10 +23,10 @@ export default function DirectivaSection() {
       <div className='max-w-7xl mx-auto space-y-16'>
         <div className='flex flex-col md:flex-row md:items-end justify-between gap-6'>
           <div className='space-y-4'>
-            <p className='text-emerald-600 font-black uppercase tracking-[0.3em] text-xs'>
+            <p className='text-emerald-600 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs'>
               {s.subtitulo}
             </p>
-            <h2 className='text-5xl lg:text-7xl font-black text-[#022c22] tracking-tighter'>
+            <h2 className='text-4xl sm:text-5xl lg:text-7xl font-black text-[#022c22] tracking-tighter'>
               {s.titulo}
             </h2>
           </div>
@@ -52,7 +52,13 @@ export default function DirectivaSection() {
           ) : (
             <Link to='/junta_directiva' className='col-span-full max-w-4xl mx-auto group cursor-pointer w-full'>
               <div className='relative aspect-video overflow-hidden rounded-[2.5rem] mb-4 shadow-2xl shadow-emerald-900/10'>
-                <img src={Mision_img} alt='Junta Directiva' className='w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out' />
+                <img 
+                  src={Mision_img} 
+                  alt='Junta Directiva' 
+                  loading="lazy"
+                  decoding="async"
+                  className='w-full h-full object-cover group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-in-out' 
+                />
                 <div className='absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500' />
               </div>
               <div className='bg-white border-2 border-gray-100 group-hover:border-emerald-500 p-6 rounded-[1.5rem] flex items-center justify-center transition-all duration-300 shadow-sm'>

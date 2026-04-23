@@ -10,6 +10,10 @@ interface LandingPreviewPaneProps {
    * Cuando cambia, manda scroll_to al iframe.
    */
   sectionAnchor?: string
+  /** Ruta distinta de la home para previsualizar (p. ej. `/normativas`). */
+  iframeSrc?: string
+  /** Enlace "abrir en pestaña" cuando no basta con `/${sectionAnchor}`. */
+  openInTabHref?: string
 }
 
 type CmsPreviewWindow = Window & typeof globalThis & {
@@ -24,6 +28,8 @@ export const LandingPreviewPane = ({
   visible,
   onToggle,
   sectionAnchor,
+  iframeSrc = '/',
+  openInTabHref,
 }: LandingPreviewPaneProps) => {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [iframeReady, setIframeReady] = useState(false)
@@ -89,7 +95,7 @@ export const LandingPreviewPane = ({
 
           {/* Open in tab */}
           <a
-            href={sectionAnchor ? `/${sectionAnchor}` : '/'}
+            href={openInTabHref ?? (sectionAnchor ? `/${sectionAnchor}` : '/')}
             target="_blank"
             rel="noopener noreferrer"
             title="Abrir en nueva pestaña"
@@ -119,7 +125,8 @@ export const LandingPreviewPane = ({
       <div className="flex-1 overflow-hidden relative">
         <iframe
           ref={iframeRef}
-          src="/"
+          key={iframeSrc}
+          src={iframeSrc}
           onLoad={handleLoad}
           className="w-full h-full border-0"
           title="Landing Page Preview"

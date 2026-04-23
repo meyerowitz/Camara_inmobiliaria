@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import bgCaracas from "../assets/Pzo.jpg"; 
-import logoPadi from "../assets/Padi.jpg"; 
+import bgCaracas from "../assets/Pzo.jpg";
+import logoPadi from "../assets/Padi.jpg";
 import Estudiosa from "../assets/estudiosa1.png";
 import Estudioso from "../assets/estudioso1.png";
 import Navbar from '@/pages/landing/components/navbar/Navbar';
@@ -42,15 +42,15 @@ const ModuloPadi: React.FC<ModuloProps> = ({ numero, titulo, descripcion, index 
   const isEven = index % 2 === 0;
 
   return (
-    <div 
-      ref={(el) => setReveal(el)} 
+    <div
+      ref={(el) => setReveal(el)}
       className="reveal-on-scroll relative mb-16 md:mb-20 flex flex-col md:flex-row items-center"
     >
       {/* Indicador de Módulo */}
       <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex w-12 h-12 rounded-xl bg-emerald-500 items-center justify-center z-20 shadow-lg border-2 border-white text-white font-black">
         {numero}
       </div>
-      
+
       {/* Contenido Dinámico */}
       <div className={`w-full md:w-1/2 ${isEven ? 'md:pr-20 md:text-right' : 'md:pl-20 md:order-last text-left'}`}>
         <h3 className="text-2xl font-black text-[#022c22] mb-3 uppercase tracking-tight">
@@ -60,7 +60,7 @@ const ModuloPadi: React.FC<ModuloProps> = ({ numero, titulo, descripcion, index 
           {descripcion}
         </p>
       </div>
-      
+
       <div className="hidden md:block md:w-1/2" />
     </div>
   );
@@ -69,8 +69,8 @@ const ModuloPadi: React.FC<ModuloProps> = ({ numero, titulo, descripcion, index 
 export default function Padi() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(true);
-  const setRevealEstudiosa = useScrollReveal(); 
-  const setRevealEstudioso = useScrollReveal(); 
+  const setRevealEstudiosa = useScrollReveal();
+  const setRevealEstudioso = useScrollReveal();
 
   const modulos: Omit<ModuloProps, "index">[] = [
     {
@@ -97,8 +97,8 @@ export default function Padi() {
 
   return (
     <div className="min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth">
-      
-      <Navbar/>
+
+      <Navbar />
 
       <header
         className="relative px-6 lg:px-20 py-20 lg:py-32 flex items-center justify-center min-h-[55vh] bg-cover animate-header-bg"
@@ -124,7 +124,7 @@ export default function Padi() {
 
       <main className="bg-white text-slate-900 rounded-t-[4rem] -mt-12 relative z-10 px-6 lg:px-20 py-24">
         <div className="max-w-6xl mx-auto">
-          
+
           <div className="flex flex-col lg:flex-row items-center gap-12 mb-20 bg-slate-50 p-8 lg:p-16 rounded-[3rem] border border-emerald-50">
             <div className="w-full lg:w-1/3 flex justify-center">
               <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop" alt="Logo PADI" className="w-64 h-auto drop-shadow-2xl" />
@@ -132,7 +132,7 @@ export default function Padi() {
             <div className="w-full lg:w-2/3 space-y-6">
               <h2 className="text-3xl font-black text-[#022c22] uppercase tracking-tight">Sobre el Programa</h2>
               <p className="text-slate-600 text-lg leading-relaxed">
-                Amplía tus servicios inmobiliarios e incursiona en la administración de condominios, arrendamientos y centros comerciales. 
+                Amplía tus servicios inmobiliarios e incursiona en la administración de condominios, arrendamientos y centros comerciales.
                 Nuestro programa consta de materias actualizadas diseñadas para la excelencia profesional.
               </p>
               <div className="flex gap-4">
@@ -141,7 +141,6 @@ export default function Padi() {
               </div>
             </div>
           </div>
-//ÑIEJEJEJJEJEJJEJEJEJJEJEJJEJEJJEJEJEJ
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-32 items-stretch">
             <div className="relative rounded-[3rem] overflow-hidden group">
               <div className="absolute inset-0 bg-[#022c22]/90 flex flex-col justify-end p-12 text-white">
@@ -150,8 +149,8 @@ export default function Padi() {
                 <p className="text-emerald-100/80 leading-relaxed mb-8">
                   Incursiona en la gestión profesional de condominios, arrendamientos y centros comerciales con el Programa de Especialización en Administración de Inmuebles (PADI). Lidera proyectos con bases sólidas y visión estratégica.
                 </p>
-                <button 
-                  onClick={() => window.open('/ruta-al-pensum.pdf', '_blank')} 
+                <button
+                  onClick={() => window.open('/ruta-al-pensum.pdf', '_blank')}
                   className="inline-block px-10 py-4 bg-emerald-500 text-[#022c22] rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-400 transition-all shadow-xl self-start"
                 >
                   Descarga el Pensum (PDF)
@@ -160,9 +159,9 @@ export default function Padi() {
             </div>
 
             <div className="relative rounded-[3rem] overflow-hidden flex items-end">
-              <img 
-                src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop" 
-                alt="Inscripciones Abiertas PADI" 
+              <img
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
+                alt="Inscripciones Abiertas PADI"
                 className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="relative z-10 w-full p-12 bg-white/95 backdrop-blur-sm m-6 rounded-2xl shadow-2xl space-y-8">
@@ -185,7 +184,7 @@ export default function Padi() {
           <div className="relative">
             <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-px bg-slate-200 hidden md:block" />
             {modulos.map((mod, index) => (
-              <ModuloPadi 
+              <ModuloPadi
                 key={index}
                 index={index}
                 numero={mod.numero}
@@ -195,31 +194,31 @@ export default function Padi() {
             ))}
           </div>
 
-          <div className="relative mt-16 group"> 
-            <div 
-              ref={(el) => setRevealEstudiosa(el)} 
+          <div className="relative mt-16 group">
+            <div
+              ref={(el) => setRevealEstudiosa(el)}
               className="reveal-on-scroll absolute -bottom-40 -left-80 pointer-events-none hidden lg:block transition-all duration-1000 opacity-0 [&.active]:opacity-20"
             >
-              <img 
-                src={Estudiosa} 
-                alt="Decoración" 
+              <img
+                src={Estudiosa}
+                alt="Decoración"
                 className="h-[800px] w-auto max-w-none transform"
               />
             </div>
-            <div 
-              ref={(el) => setRevealEstudioso(el)} 
+            <div
+              ref={(el) => setRevealEstudioso(el)}
               className="reveal-on-scroll absolute -bottom-40 -right-60 z-10 pointer-events-none hidden lg:block transition-all duration-1000 opacity-0 [&.active]:opacity-20"
             >
-              <img 
-                src={Estudioso} 
-                alt="Decoración" 
+              <img
+                src={Estudioso}
+                alt="Decoración"
                 className="h-[650px] w-auto max-w-none transform"
               />
             </div>
-          
+
             <div className="relative z-10 p-12 rounded-[4rem] bg-[#022c22]/95 backdrop-blur-sm text-white text-center space-y-8 overflow-hidden border border-white/5">
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-              
+
               <div className="relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">
                   ¿Quieres certificarte como Profesional?
@@ -228,14 +227,14 @@ export default function Padi() {
                   Inicia tu proceso de preinscripción para nuestra próxima cohorte. Fórmate con los mejores especialistas del sector inmobiliario.
                 </p>
                 <div className="flex flex-col md:flex-row gap-4 justify-center">
-                  <button 
+                  <button
                     onClick={() => navigate('/contacto')}
                     className="px-10 py-4 bg-emerald-500 text-[#022c22] rounded-full font-black uppercase text-xs tracking-widest hover:bg-emerald-400 transition-all shadow-xl"
                   >
                     Deseo más información
                   </button>
-                  <a 
-                    href="https://wa.me/584241554321" 
+                  <a
+                    href="https://wa.me/584241554321"
                     className="px-10 py-4 border border-emerald-500/50 text-emerald-400 rounded-full font-black uppercase text-xs tracking-widest hover:bg-white/5 transition-all"
                   >
                     Contactar por WhatsApp

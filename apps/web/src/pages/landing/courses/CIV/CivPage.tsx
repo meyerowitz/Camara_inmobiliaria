@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import bgBolivar from '@/pages/landing/assets/Camara_Metropolitana.jpg'
+import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import actaPDF from '@/pages/landing/courses/CIV/acta.pdf'
 

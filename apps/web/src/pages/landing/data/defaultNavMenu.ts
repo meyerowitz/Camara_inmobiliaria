@@ -15,9 +15,9 @@ export const DEFAULT_NAV_MENU = [
   {
     title: 'Afiliados',
     items: [
-      { label: 'Directorio', path: '/directorio' },
+      { label: 'Miembros', path: '/miembros' },
       { label: 'Beneficios', path: '/beneficios' },
-      { label: 'Requisitos', path: '/requisitos' },
+      { label: 'Afíliate', path: '/afiliate' },
     ],
     Tpath: '',
   },
@@ -34,7 +34,7 @@ export const DEFAULT_NAV_MENU = [
   {
     title: 'Convenios',
     items: [
-      { label: 'Institucionales', path: '/convenios-institucionales' },
+      { label: 'Institucionales', path: '/convenios' },
       { label: 'Comerciales', path: '/convenios-comerciales' },
       { label: 'Internacionales', path: '/convenios-internacionales' },
     ],

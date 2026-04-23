@@ -16,22 +16,29 @@ import {
   BarChart,
   BookOpen,
   Image as ImageIcon,
-  UserCog
+  UserCog,
+  FileText,
+  UserPlus,
 } from 'lucide-react';
-import DashboardSidebar from '@/pages/afiliado/components/DashboardSidebar';
-import DashboardHeader from '@/pages/afiliado/components/DashboardHeader';
-import WidgetFinanciero from '@/pages/afiliado/components/WidgetFinanciero';
-import WidgetNotificaciones from '@/pages/afiliado/components/WidgetNotificaciones';
-import WidgetAcademico from '@/pages/afiliado/components/WidgetAcademico';
-import WidgetFormalizarInscripcion from '@/pages/afiliado/components/WidgetFormalizarInscripcion';
+import DashboardSidebar from '@/pages/landing/afiliado/components/DashboardSidebar';
+import DashboardHeader from '@/pages/landing/afiliado/components/DashboardHeader';
+import WidgetFinanciero from '@/pages/landing/afiliado/components/WidgetFinanciero';
+import WidgetNotificaciones from '@/pages/landing/afiliado/components/WidgetNotificaciones';
+import WidgetAcademico from '@/pages/landing/afiliado/components/WidgetAcademico';
+import WidgetFormalizarInscripcion from '@/pages/landing/afiliado/components/WidgetFormalizarInscripcion';
+import WidgetMisCertificados from '@/pages/landing/afiliado/components/WidgetMisCertificados';
+import WidgetSolicitudAfiliacion from '@/pages/landing/afiliado/components/WidgetSolicitudAfiliacion';
+import WidgetGestionAfiliadosCorp from '@/pages/landing/afiliado/components/WidgetGestionAfiliadosCorp';
 
-// Componentes Administrativos pre-existentes
+// Componentes Administrativos
 import UsersPanel from '@/pages/admin/components/Users/UsersPanel';
 import SuperAdminUsersPanel from '@/pages/admin/components/Users/SuperAdminUsersPanel';
 import AnalyticsPanel from '@/pages/admin/components/Analytics/AnalyticsPanel';
 import FormacionPanel from '@/pages/admin/components/Formacion/FormacionPanel';
+
 import CmsDashboard from '@/pages/admin/components/dashboard/CmsDashboard';
 import CmsArticlesPanel, { type CmsTab } from '@/pages/admin/components/Cms/CmsArticlesPanel';
+import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/config/env';
@@ -55,7 +62,16 @@ const NAV_ADMIN_CORE = [
 
 const NAV_CMS = [
   { icon: Newspaper, label: 'CMS · Noticias' },
-  { icon: Handshake, label: 'CMS · Convenios' },
+  { 
+    icon: FileText, 
+    label: 'CMS · Marco Legal',
+    children: [
+      { icon: FileText, label: 'Leyes y Decretos' },
+      { icon: FileText, label: 'Reglamentos y Estatutos' },
+      { icon: FileText, label: 'Normas y Procedimientos' },
+      { icon: FileText, label: 'Actas de Asamblea' },
+    ]
+  },
   { icon: Users, label: 'CMS · Directiva' },
   { icon: Settings, label: 'CMS · Configuración' },
 ];
@@ -75,30 +91,39 @@ const Section = ({ label }: { label: string }) => (
   </div>
 );
 
-/* Eliminado el wrap de redirección innecesario */
+
 
 // ─── Panel unificado principal ────────────────────────────────────────────────
 
 const PanelPage = () => {
-  const { user, token, logout, isAdmin, isSuperAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState('Resumen / Inicio');
+  const { user, token, logout, isAdmin, isSuperAdmin, isEstudiante, isAfiliado } = useAuth();
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'formacion' ? 'Catálogo Académico' : 'Resumen / Inicio');
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const [loadingAgremiado, setLoadingAgremiado] = useState(true);
   const [agremiado, setAgremiado] = useState<{
     nombre_completo: string;
     codigo_cibir: string | null;
     estatus: string;
     inscripcion_pagada: number;
+    tipo_afiliado?: string;
+    razon_social?: string;
   } | null>(null);
 
   const fetchAgremiado = () => {
-    if (!user?.id_agremiado || !token) return;
+    if (!user?.id_agremiado || !token) {
+      setLoadingAgremiado(false);
+      return;
+    }
+    setLoadingAgremiado(true);
     fetch(`${API_URL}/api/afiliados/${user.id_agremiado}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
       .then(d => { if (d.success) setAgremiado(d.data) })
-      .catch(() => { });
+      .catch(() => { })
+      .finally(() => setLoadingAgremiado(false));
   };
 
   useEffect(() => { fetchAgremiado(); }, [user?.id_agremiado, token]);
@@ -111,9 +136,27 @@ const PanelPage = () => {
 
   // Construir nav items dinámicamente según roles
   const buildNavItems = () => {
-    const affItems = isLimited
-      ? [{ icon: LayoutDashboard, label: 'Resumen / Inicio' }, { icon: FolderSearch, label: 'Mi Expediente' }]
-      : [...NAV_AFILIADO];
+    let baseItems: any[] = [];
+    
+    // Base de navegación pública o afiliada
+    if (user?.roles.includes('afiliado')) {
+      baseItems = isLimited
+        ? [{ icon: LayoutDashboard, label: 'Resumen / Inicio' }, { icon: FolderSearch, label: 'Mi Expediente' }]
+        : [...NAV_AFILIADO];
+    } else if (isEstudiante && user?.roles.length === 1) {
+      // Exclusivo estudiante
+      baseItems = [
+        { icon: LayoutDashboard, label: 'Resumen / Inicio' },
+        { icon: GraduationCap, label: 'Catálogo Académico' },
+        { icon: Award, label: 'Mis Certificados' },
+        { icon: UserPlus, label: 'Solicitud de Afiliación' },
+      ];
+    }
+    
+    // Si es corporativo, agregar pestaña de gestión
+    if (agremiado?.tipo_afiliado === 'Juridico') {
+      baseItems.push({ icon: Users, label: 'Mis Afiliados' });
+    }
 
     if (isAdmin) {
       let adminItems = [
@@ -128,9 +171,9 @@ const PanelPage = () => {
         NAV_DIVIDER_CMS as any,
         ...NAV_CMS
       ];
-      return [...affItems, ...adminItems];
+      return [...baseItems, ...adminItems];
     }
-    return affItems;
+    return baseItems;
   };
 
   const navItems = buildNavItems();
@@ -140,12 +183,24 @@ const PanelPage = () => {
   const renderContent = () => {
     // 1. Sección de Afiliado
     if (activeTab === 'Resumen / Inicio') {
-      if (isAdmin) return <div className="col-span-1 lg:col-span-3 -m-4 sm:-m-6 lg:-m-8"><CmsDashboard /></div>;
-      if (isLimited) return <div className="col-span-1 lg:col-span-3"><WidgetFormalizarInscripcion onSuccess={fetchAgremiado} /></div>;
+      if (isAdmin) return <div className="col-span-1 lg:col-span-3 relative z-10"><CmsDashboard /></div>;
+      if (isLimited && user?.roles.includes('afiliado')) return <div className="col-span-1 lg:col-span-3"><WidgetFormalizarInscripcion onSuccess={fetchAgremiado} /></div>;
+      
+      // Si es solo estudiante
+      if (isEstudiante && !isAfiliado) {
+        return (
+          <>
+            <div className="lg:col-span-3"><WidgetSolicitudAfiliacion /></div>
+            <div className="lg:col-span-3"><WidgetAcademico /></div>
+          </>
+        )
+      }
+
+      // Afiliado standard
       return (
         <>
-          <div className="lg:col-span-2"><WidgetFinanciero /></div>
-          <div className="lg:col-span-1"><WidgetNotificaciones /></div>
+          <div className="lg:col-span-2"><WidgetFinanciero loading={loadingAgremiado} /></div>
+          <div className="lg:col-span-1"><WidgetNotificaciones loading={loadingAgremiado} /></div>
           <div className="lg:col-span-3"><WidgetAcademico /></div>
         </>
       );
@@ -153,28 +208,40 @@ const PanelPage = () => {
     if (activeTab === 'Mi Expediente') return <Section label="Mi Expediente" />;
     if (activeTab === 'Estado de Cuenta y Solvencias') return <Section label="Estado de Cuenta" />;
     if (activeTab === 'Catálogo Académico') return <div className="col-span-1 lg:col-span-3"><WidgetAcademico limit={0} /></div>;
-    if (activeTab === 'Mis Certificados') return <Section label="Mis Certificados" />;
+    if (activeTab === 'Mis Certificados') {
+      return (
+        <div className="col-span-1 lg:col-span-3">
+          <WidgetMisCertificados />
+        </div>
+      );
+    }
     if (activeTab === 'Sistema de Denuncias') return <Section label="Sistema de Denuncias" />;
+    if (activeTab === 'Solicitud de Afiliación') return <div className="col-span-1 lg:col-span-3"><WidgetSolicitudAfiliacion /></div>;
+    if (activeTab === 'Mis Afiliados') return <div className="col-span-1 lg:col-span-3"><WidgetGestionAfiliadosCorp /></div>;
 
     // 2. Sección Administrativa
     if (!isAdmin) return null;
 
-    if (activeTab === 'Gestión de Afiliados') return <div className="col-span-1 lg:col-span-3 min-h-[600px] border border-gray-100 rounded-3xl bg-white overflow-hidden shadow-xs relative"><UsersPanel /></div>;
-    if (activeTab === 'Administradores') return <div className="col-span-1 lg:col-span-3 border border-gray-100 rounded-3xl bg-white overflow-hidden shadow-xs min-h-[600px] p-6 relative"><SuperAdminUsersPanel /></div>;
-    if (activeTab === 'Análisis y Métricas') return <div className="col-span-1 lg:col-span-3 min-h-[600px] relative"><AnalyticsPanel /></div>;
-    if (activeTab === 'Gestión de Formación') return <div className="col-span-1 lg:col-span-3 border border-gray-100 rounded-3xl bg-white overflow-hidden shadow-xs min-h-[600px] relative"><FormacionPanel /></div>;
+    if (activeTab === 'Gestión de Afiliados') return <div className="col-span-1 lg:col-span-3 min-h-[600px] bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><UsersPanel /></div>;
+    if (activeTab === 'Administradores') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] p-6 overflow-hidden"><SuperAdminUsersPanel /></div>;
+    if (activeTab === 'Análisis y Métricas') return <div className="col-span-1 lg:col-span-3 min-h-[600px]"><AnalyticsPanel /></div>;
+    if (activeTab === 'Gestión de Formación') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] overflow-hidden"><FormacionPanel /></div>;
 
     // 3. Sección CMS (Incrustada)
-    if (activeTab.startsWith('CMS ·')) {
+    if (activeTab.startsWith('CMS ·') || ['Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea'].includes(activeTab)) {
       const tabMap: Record<string, CmsTab> = {
         'CMS · Noticias': 'noticias',
-        'CMS · Convenios': 'convenios',
+        'CMS · Marco Legal': 'normativas',
+        'Leyes y Decretos': 'leyes',
+        'Reglamentos y Estatutos': 'reglamentos',
+        'Normas y Procedimientos': 'normas',
+        'Actas de Asamblea': 'actas',
         'CMS · Directiva': 'directiva',
         'CMS · Configuración': 'config',
       };
       const externalTab = tabMap[activeTab] ?? 'config';
       return (
-        <div className="col-span-1 lg:col-span-3 h-[calc(100vh-160px)] -m-4 sm:-m-6 lg:-m-8 bg-white border border-gray-100 rounded-3xl overflow-hidden relative">
+        <div className="h-full bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-xs">
           <CmsArticlesPanel externalTab={externalTab} />
         </div>
       );
@@ -183,7 +250,7 @@ const PanelPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex font-sans" style={{ backgroundColor: 'var(--color-bg-page)', color: 'var(--color-text-base)' }}>
+    <div className="h-screen flex font-sans overflow-hidden" style={{ backgroundColor: 'var(--color-bg-page)', color: 'var(--color-text-base)' }}>
       <DashboardSidebar
         navItems={navItems}
         activeTab={activeTab}
@@ -193,53 +260,60 @@ const PanelPage = () => {
         onLogout={logout}
       />
 
-      <main className="flex-grow flex flex-col min-w-0">
+      <main className="flex-grow flex flex-col min-w-0 h-full overflow-hidden">
         <DashboardHeader
           onMenuOpen={() => setMobileOpen(true)}
           userName={displayName}
           userCode={displayCode}
         />
 
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6 lg:space-y-8">
-          {/* Welcome */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: 'var(--color-primary)' }}>
-                ¡Bienvenido, {displayName}!
-              </h1>
-              <p className="mt-1 font-medium text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                {isAdmin
-                  ? 'Panel unificado · Afiliado y Administración.'
-                  : 'Revisa el estado de tu membresía y tus actualizaciones recientes.'}
-              </p>
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {((activeTab.startsWith('CMS ·') || ['Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea', 'Gestión de Afiliados', 'Administradores', 'Análisis y Métricas', 'Gestión de Formación'].includes(activeTab)) || (activeTab === 'Resumen / Inicio' && isAdmin)) ? (
+             renderContent()
+          ) : (
+              <div className="max-w-7xl mx-auto w-full space-y-6 lg:space-y-8">
+                {/* Welcome */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: 'var(--color-primary)' }}>
+                      ¡Bienvenido, {displayName}!
+                    </h1>
+                    <p className="mt-1 font-medium text-sm" style={{ color: 'var(--color-text-muted)' }}>
+                      {isAdmin
+                        ? 'Panel unificado · Afiliado y Administración.'
+                        : 'Revisa el estado de tu membresía y tus actualizaciones recientes.'}
+                    </p>
+                  </div>
 
-            <div className="flex flex-wrap gap-2">
-              {user?.roles?.map(role => (
-                <span
-                  key={role}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm text-[10px] font-black uppercase tracking-widest border ${role === 'super_admin' ? 'border-purple-300 bg-purple-50 text-purple-700'
-                    : role === 'admin' ? 'border-blue-200 bg-blue-50 text-blue-700'
-                      : isLimited
-                        ? 'border-amber-200 bg-amber-50 text-amber-700'
-                        : 'border-[var(--color-border-accent)] bg-[var(--color-accent-muted)] text-[var(--color-accent-hover)]'
-                    }`}
-                >
-                  <CheckCircle size={11} />
-                  {role === 'super_admin' ? 'Super Admin'
-                    : role === 'admin' ? 'Administrador'
-                      : isLimited ? 'CIBIR Restringido'
-                        : isActivo ? 'CIBIR Activo'
-                          : agremiado ? `Estatus: ${agremiado.estatus}` : 'Afiliado'}
-                </span>
-              ))}
-            </div>
-          </div>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Filtramos y normalizamos los roles para la vista */}
+                    {Array.from(new Set(user?.roles?.map(r => r === 'super_admin' ? 'admin' : r))).map(role => (
+                      <span
+                        key={role}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-sm text-[10px] font-black uppercase tracking-widest border ${
+                          role === 'admin' ? 'border-blue-200 bg-blue-50 text-blue-700'
+                            : isLimited
+                              ? 'border-amber-200 bg-amber-50 text-amber-700'
+                              : 'border-[var(--color-border-accent)] bg-[var(--color-accent-muted)] text-[var(--color-accent-hover)]'
+                          }`}
+                      >
+                        <CheckCircle size={11} />
+                        {role === 'admin' ? 'Administrador'
+                            : role === 'estudiante' ? 'Estudiante'
+                            : isLimited ? 'CIBIR Restringido'
+                              : isActivo ? 'CIBIR Activo'
+                                : agremiado ? `Estatus: ${agremiado.estatus}` : 'Afiliado'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
-          {/* Content grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
-            {renderContent()}
-          </div>
+                {/* Content grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:gap-8">
+                  {renderContent()}
+                </div>
+              </div>
+          )}
         </div>
       </main>
     </div>

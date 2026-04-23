@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail } from '@/pages/admin/components/Cms/CmsShared'
+import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail, uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared'
 
 interface CursoItem {
   id: string | number;
@@ -18,6 +18,21 @@ export const CursosPanel = () => {
   const [form, setForm] = useState({ codigo: '', titulo: '', subtitulo: '', imagen_url: '', orden: 0, activo: true })
   const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const uploadImage = async (file: File) => {
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const publicUrl = await uploadFileSupabase(file, 'cursos')
+      setForm((p) => ({ ...p, imagen_url: publicUrl }))
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Error al subir archivo')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -55,7 +70,22 @@ export const CursosPanel = () => {
       </div>
       <FormField label="Título"><Input value={form.titulo} onChange={f('titulo')} placeholder="Nombre del curso" /></FormField>
       <FormField label="Subtítulo"><Input value={form.subtitulo} onChange={f('subtitulo')} placeholder="Descripción breve" /></FormField>
-      <FormField label="URL de imagen"><Input value={form.imagen_url} onChange={f('imagen_url')} placeholder="https://..." /></FormField>
+      <FormField label="Imagen del curso (subida directa)">
+        <Input
+          type="file"
+          accept="image/*,.svg,.png,.jpg,.jpeg,.webp"
+          disabled={uploading}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) uploadImage(file)
+          }}
+        />
+      </FormField>
+      {uploadError && <p className="text-[11px] text-red-600 -mt-2">{uploadError}</p>}
+      <p className="text-[10px] text-slate-400 leading-relaxed -mt-2">
+        Al subir el archivo, se guarda y completa automáticamente la imagen.
+      </p>
+      {form.imagen_url && <img src={form.imagen_url} alt="preview" className="h-24 w-auto object-cover rounded-lg border border-gray-100 p-1" />}
       <FormField label="Activo">
         <label className="flex items-center gap-2 mt-1 cursor-pointer">
           <input type="checkbox" checked={form.activo} onChange={f('activo')} className="w-4 h-4 accent-[#00D084]" />
@@ -63,7 +93,7 @@ export const CursosPanel = () => {
         </label>
       </FormField>
       <div className="flex gap-2 pt-2">
-        <BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
+        <BtnPrimary onClick={save} disabled={saving || uploading}>{uploading ? 'Subiendo...' : saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
         <BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary>
       </div>
     </div>

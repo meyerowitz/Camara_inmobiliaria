@@ -1,12 +1,27 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { UserPlus, RefreshCw, Shield, User, ToggleLeft, ToggleRight, KeyRound, Loader2, Search } from 'lucide-react'
+import {
+  UserPlus,
+  RefreshCw,
+  ShieldCheck,
+  UserCircle2,
+  LayoutGrid,
+  CheckCircle2,
+  XCircle,
+  KeyRound,
+  Loader2,
+  Search,
+  ListFilter,
+} from 'lucide-react'
+
+const ic = 'shrink-0 opacity-95'
+const icBtn = (active: boolean) => (active ? 'text-white' : 'text-slate-500')
 import { useAuth } from '@/context/AuthContext'
 import { API_URL } from '@/config/env'
 
 interface SystemUser {
   id: number
   email: string
-  rol: 'admin' | 'afiliado'
+  rol: 'admin' | 'afiliado' | 'super_admin'
   activo: number
   creado_en: string
   id_agremiado: number | null
@@ -17,13 +32,12 @@ interface SystemUser {
 interface CreateForm {
   email: string
   password: string
-  rol: 'admin' | 'afiliado'
-  id_agremiado: string
+  rol: 'admin' | 'afiliado' | 'super_admin'
 }
 
-const EMPTY_FORM: CreateForm = { email: '', password: '', rol: 'afiliado', id_agremiado: '' }
+const EMPTY_FORM: CreateForm = { email: '', password: '', rol: 'afiliado' }
 
-type FiltroRol    = 'todos' | 'admin' | 'afiliado'
+type FiltroRol    = 'todos' | 'admin' | 'afiliado' | 'super_admin'
 type FiltroActivo = 'todos' | 'activo' | 'inactivo'
 
 export default function UsersPanel() {
@@ -84,7 +98,6 @@ export default function UsersPanel() {
           email:        form.email,
           password:     form.password,
           rol:          form.rol,
-          id_agremiado: form.id_agremiado ? Number(form.id_agremiado) : null,
         }),
       })
       const d = await r.json()
@@ -108,23 +121,41 @@ export default function UsersPanel() {
     load()
   }
 
-  const handleReset = async (u: SystemUser) => {
-    const r = await fetch(`${API_URL}/api/users/${u.id}/reset`, {
-      method: 'POST', headers: authHeaders,
-    })
-    const d = await r.json()
-    if (d.success) {
-      setResetMsg(prev => ({ ...prev, [u.id]: 'Correo de restablecimiento enviado' }))
-    } else {
-      setResetMsg(prev => ({ ...prev, [u.id]: d.message || 'Error al restablecer' }))
+  const [resettingUser, setResettingUser] = useState<SystemUser | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+
+  const handleResetClick = (u: SystemUser) => {
+    setResettingUser(u)
+    setNewPassword('')
+    setFeedback(null)
+  }
+
+  const confirmPasswordReset = async () => {
+    if (!resettingUser || !newPassword) return
+    setSaving(true)
+    try {
+      const r = await fetch(`${API_URL}/api/users/${resettingUser.id}`, {
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify({ password: newPassword }),
+      })
+      const d = await r.json()
+      if (d.success) {
+        setFeedback({ type: 'ok', msg: `Contraseña de ${resettingUser.email} actualizada` })
+        setResettingUser(null)
+      } else {
+        setFeedback({ type: 'err', msg: d.message })
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
   const filterBtnCls = (active: boolean) =>
-    `px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
+    `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
       active
-        ? 'bg-slate-800 border-slate-800 text-white'
-        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+        ? 'bg-slate-800 border-slate-800 text-white shadow-sm'
+        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
     }`
 
   return (
@@ -137,23 +168,25 @@ export default function UsersPanel() {
         </div>
         <div className='flex gap-3'>
           <button
+            type='button'
             onClick={load}
-            className='flex items-center gap-2 px-4 py-2 text-slate-500 border border-slate-200 rounded-xl text-sm hover:bg-slate-50 transition'
+            className='flex items-center gap-2 px-4 py-2 text-slate-600 border border-slate-200 rounded-xl text-sm font-semibold hover:bg-slate-50 hover:border-slate-300 transition'
           >
-            <RefreshCw size={15} /> Actualizar
+            <RefreshCw size={16} strokeWidth={2} className={ic} /> Actualizar
           </button>
           <button
-            onClick={() => { setShowForm(!showForm); setFeedback(null) }}
-            className='flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition'
+            type='button'
+            onClick={() => { setShowForm(!showForm); setFeedback(null); setResettingUser(null) }}
+            className='flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition shadow-sm shadow-emerald-500/20'
           >
-            <UserPlus size={15} /> Nuevo usuario
+            <UserPlus size={16} strokeWidth={2} className={ic} /> Nuevo usuario
           </button>
         </div>
       </div>
 
       {/* Feedback */}
       {feedback && (
-        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${feedback.type === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+        <div className={`px-4 py-3 rounded-xl text-sm font-medium ${feedback.type === 'ok' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100 shadow-sm'}`}>
           {feedback.msg}
         </div>
       )}
@@ -162,71 +195,148 @@ export default function UsersPanel() {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className='bg-white border border-slate-100 rounded-2xl p-6 shadow-sm space-y-4'
+          className='bg-white border border-slate-100 rounded-[2rem] p-8 shadow-xl shadow-slate-200/40 animate-in fade-in slide-in-from-top-4 duration-300 space-y-6 relative overflow-hidden'
         >
-          <h2 className='text-sm font-bold text-slate-600 uppercase tracking-widest'>Nuevo Usuario</h2>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-xs font-semibold text-slate-500 mb-1'>Email</label>
-              <input
-                type='email' required
-                value={form.email}
-                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                className='w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400'
-                placeholder='correo@ejemplo.com'
-              />
+          {/* Decoración sutil */}
+          <div className="absolute top-0 left-0 w-1 bg-emerald-500 h-full" />
+          
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <UserPlus size={20} />
             </div>
             <div>
-              <label className='block text-xs font-semibold text-slate-500 mb-1'>Contraseña inicial</label>
-              <input
-                type='text' required
-                value={form.password}
-                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                className='w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400'
-                placeholder='Mínimo 8 caracteres'
-              />
-            </div>
-            <div>
-              <label className='block text-xs font-semibold text-slate-500 mb-1'>Rol</label>
-              <select
-                value={form.rol}
-                onChange={e => setForm(p => ({ ...p, rol: e.target.value as 'admin' | 'afiliado' }))}
-                className='w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400'
-              >
-                <option value='afiliado'>Afiliado</option>
-                <option value='admin'>Administrador</option>
-              </select>
-            </div>
-            <div>
-              <label className='block text-xs font-semibold text-slate-500 mb-1'>ID Agremiado (opcional)</label>
-              <input
-                type='number'
-                value={form.id_agremiado}
-                onChange={e => setForm(p => ({ ...p, id_agremiado: e.target.value }))}
-                className='w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-emerald-400'
-                placeholder='Dejar vacío si no aplica'
-              />
+              <h2 className='text-lg font-black text-slate-800 leading-none'>Nuevo Usuario</h2>
+              <p className="text-xs text-slate-400 mt-1 font-medium">Define las credenciales y el nivel de acceso</p>
             </div>
           </div>
-          <div className='flex justify-end gap-3 pt-2'>
-            <button type='button' onClick={() => setShowForm(false)} className='px-5 py-2 text-sm text-slate-500 hover:text-slate-700'>
+
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className="space-y-1.5">
+              <label className='block text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1'>Email</label>
+              <div className="relative group">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                <input
+                  type='email' required
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  className='w-full bg-slate-50 border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 focus:bg-white transition-all placeholder:text-slate-300'
+                  placeholder='correo@ejemplo.com'
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className='block text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1'>Contraseña inicial</label>
+              <div className="relative group">
+                <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
+                <input
+                  type='text' required
+                  value={form.password}
+                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                  className='w-full bg-slate-50 border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 focus:bg-white transition-all placeholder:text-slate-300'
+                  placeholder='Mínimo 8 caracteres'
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className='block text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1'>Rol / Nivel de Acceso</label>
+              <div className="relative group">
+                <ShieldCheck size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors pointer-events-none" />
+                <select
+                  value={form.rol}
+                  onChange={e => setForm(p => ({ ...p, rol: e.target.value as any }))}
+                  className='w-full bg-slate-50 border border-slate-100 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-400 focus:bg-white transition-all appearance-none cursor-pointer'
+                >
+                  <option value='afiliado'>Afiliado</option>
+                  <option value='admin'>Administrador</option>
+                  <option value='super_admin'>Súper Administrador</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                  <LayoutGrid size={14} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className='flex justify-end items-center gap-4 pt-4 border-t border-slate-50'>
+            <button 
+              type='button' 
+              onClick={() => setShowForm(false)} 
+              className='px-6 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors'
+            >
               Cancelar
             </button>
             <button
-              type='submit' disabled={saving}
-              className='px-6 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 disabled:opacity-50'
+              type='submit' 
+              disabled={saving}
+              className='px-8 py-3 bg-emerald-500 text-white rounded-2xl text-sm font-black hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2'
             >
-              {saving ? <Loader2 size={15} className='animate-spin inline' /> : 'Crear usuario'}
+              {saving ? <Loader2 size={18} className='animate-spin' /> : <UserPlus size={18} />}
+              Crear Usuario
             </button>
           </div>
         </form>
+      )}
+
+      {/* Reset password modal */}
+      {resettingUser && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm'>
+          <div className='bg-white rounded-2xl shadow-xl border border-slate-100 p-6 w-full max-w-md animate-in fade-in zoom-in duration-200'>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500'>
+                <KeyRound size={20} />
+              </div>
+              <div>
+                <h3 className='font-bold text-slate-800'>Actualizar Contraseña</h3>
+                <p className='text-xs text-slate-500'>{resettingUser.email}</p>
+              </div>
+            </div>
+            
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-xs font-semibold text-slate-500 mb-1'>Nueva contraseña</label>
+                <input
+                  type='text'
+                  autoFocus
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className='w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-amber-400'
+                  placeholder='Nueva clave de acceso'
+                />
+              </div>
+              <p className='text-[10px] text-slate-400 leading-relaxed italic'>
+                * Al actualizar, el usuario deberá usar esta nueva clave para ingresar inmediatamente.
+              </p>
+            </div>
+
+            <div className='flex justify-end gap-3 mt-6'>
+              <button 
+                type='button' 
+                onClick={() => setResettingUser(null)} 
+                className='px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors'
+              >
+                Cancelar
+              </button>
+              <button
+                type='button'
+                disabled={saving || !newPassword}
+                onClick={confirmPasswordReset}
+                className='px-5 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 disabled:opacity-50 shadow-sm transition-all active:scale-95 flex items-center gap-2'
+              >
+                {saving ? <Loader2 size={14} className='animate-spin' /> : <ShieldCheck size={14} />}
+                Confirmar cambio
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ── Filtros ──────────────────────────────────────────────────────────── */}
       <div className='bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center gap-3'>
         {/* Búsqueda */}
         <div className='relative flex-1 min-w-[180px]'>
-          <Search size={14} className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400' />
+          <Search size={15} strokeWidth={2} className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none' />
           <input
             type='text'
             placeholder='Buscar por email o agremiado...'
@@ -239,9 +349,37 @@ export default function UsersPanel() {
         {/* Filtro Rol */}
         <div className='flex items-center gap-1.5'>
           <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Rol</span>
-          {(['todos', 'admin', 'afiliado'] as FiltroRol[]).map(r => (
-            <button key={r} onClick={() => setFiltroRol(r)} className={filterBtnCls(filtroRol === r)}>
-              {r === 'todos' ? 'Todos' : r === 'admin' ? '🛡 Admin' : '👤 Afiliado'}
+          {(['todos', 'admin', 'afiliado', 'super_admin'] as FiltroRol[]).map(r => (
+            <button
+              key={r}
+              type='button'
+              onClick={() => setFiltroRol(r)}
+              className={filterBtnCls(filtroRol === r)}
+            >
+              {r === 'todos' && (
+                <>
+                  <LayoutGrid size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Todos
+                </>
+              )}
+              {r === 'admin' && (
+                <>
+                  <ShieldCheck size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Admin
+                </>
+              )}
+              {r === 'afiliado' && (
+                <>
+                  <UserCircle2 size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Afiliado
+                </>
+              )}
+              {r === 'super_admin' && (
+                <>
+                  <UserPlus size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroRol === r)}`} />
+                  Super Admin
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -250,8 +388,30 @@ export default function UsersPanel() {
         <div className='flex items-center gap-1.5'>
           <span className='text-[10px] font-bold text-slate-400 uppercase tracking-wide mr-1'>Estado</span>
           {(['todos', 'activo', 'inactivo'] as FiltroActivo[]).map(s => (
-            <button key={s} onClick={() => setFiltroActivo(s)} className={filterBtnCls(filtroActivo === s)}>
-              {s === 'todos' ? 'Todos' : s === 'activo' ? '✓ Activo' : '✗ Inactivo'}
+            <button
+              key={s}
+              type='button'
+              onClick={() => setFiltroActivo(s)}
+              className={filterBtnCls(filtroActivo === s)}
+            >
+              {s === 'todos' && (
+                <>
+                  <ListFilter size={14} strokeWidth={2} className={`${ic} ${icBtn(filtroActivo === s)}`} />
+                  Todos
+                </>
+              )}
+              {s === 'activo' && (
+                <>
+                  <CheckCircle2 size={14} strokeWidth={2} className={`${ic} ${filtroActivo === s ? 'text-emerald-200' : 'text-emerald-600'}`} />
+                  Activo
+                </>
+              )}
+              {s === 'inactivo' && (
+                <>
+                  <XCircle size={14} strokeWidth={2} className={`${ic} ${filtroActivo === s ? 'text-rose-200' : 'text-slate-500'}`} />
+                  Inactivo
+                </>
+              )}
             </button>
           ))}
         </div>
@@ -276,7 +436,7 @@ export default function UsersPanel() {
           <table className='w-full text-sm'>
             <thead className='bg-slate-50 border-b border-slate-100'>
               <tr>
-                {['Usuario', 'Rol', 'Agremiado', 'Estado', 'Acciones'].map(h => (
+                {['Usuario', 'Rol', 'Estado', 'Acciones'].map(h => (
                   <th key={h} className={`px-5 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider ${h === 'Acciones' ? 'text-right' : 'text-left'}`}>{h}</th>
                 ))}
               </tr>
@@ -289,46 +449,51 @@ export default function UsersPanel() {
                     <p className='text-xs text-slate-400 mt-0.5'>
                       {new Date(u.creado_en).toLocaleDateString('es-VE')}
                     </p>
-                    {resetMsg[u.id] && (
-                      <p className={`text-xs font-bold mt-1 px-2 py-1 rounded-lg ${resetMsg[u.id].includes('Error') ? 'text-red-600 bg-red-50' : 'text-emerald-700 bg-emerald-50' }`}>
-                        {resetMsg[u.id]}
-                      </p>
-                    )}
                   </td>
                   <td className='px-5 py-4'>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                      u.rol === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                      u.rol === 'super_admin'
+                        ? 'bg-amber-50 text-amber-800 border-amber-200/80 shadow-sm shadow-amber-500/10'
+                        : u.rol === 'admin'
+                        ? 'bg-violet-50 text-violet-800 border-violet-200/80'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
                     }`}>
-                      {u.rol === 'admin' ? <Shield size={11} /> : <User size={11} />}
-                      {u.rol === 'admin' ? 'Admin' : 'Afiliado'}
+                      {u.rol === 'super_admin' ? (
+                        <ShieldCheck size={14} strokeWidth={2} className='shrink-0 text-amber-600' />
+                      ) : u.rol === 'admin' ? (
+                        <ShieldCheck size={14} strokeWidth={2} className='shrink-0 text-violet-600' />
+                      ) : (
+                        <UserCircle2 size={14} strokeWidth={2} className='shrink-0 text-emerald-600' />
+                      )}
+                      {u.rol === 'super_admin' ? 'Super Admin' : u.rol === 'admin' ? 'Admin' : 'Afiliado'}
                     </span>
                   </td>
                   <td className='px-5 py-4'>
-                    {u.nombre_completo
-                      ? <div>
-                          <p className='text-slate-700 font-medium text-xs'>{u.nombre_completo}</p>
-                          {u.codigo_cibir && <p className='text-slate-400 text-xs'>{u.codigo_cibir}</p>}
-                        </div>
-                      : <span className='text-slate-300 text-xs italic'>No vinculado</span>
-                    }
-                  </td>
-                  <td className='px-5 py-4'>
-                    <button onClick={() => toggleActive(u)} className='flex items-center gap-1.5'>
-                      {u.activo
-                        ? <ToggleRight size={22} className='text-emerald-500' />
-                        : <ToggleLeft  size={22} className='text-slate-300' />
-                      }
-                      <span className={`text-xs font-medium ${u.activo ? 'text-emerald-600' : 'text-slate-400'}`}>
+                    <button
+                      type='button'
+                      onClick={() => toggleActive(u)}
+                      className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition hover:bg-slate-50 ${
+                        u.activo ? 'border-emerald-200/80 bg-emerald-50/50' : 'border-slate-200 bg-slate-50/80'
+                      }`}
+                    >
+                      {u.activo ? (
+                        <CheckCircle2 size={18} strokeWidth={2} className='shrink-0 text-emerald-600' />
+                      ) : (
+                        <XCircle size={18} strokeWidth={2} className='shrink-0 text-slate-400' />
+                      )}
+                      <span className={`text-xs font-semibold ${u.activo ? 'text-emerald-800' : 'text-slate-500'}`}>
                         {u.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </button>
                   </td>
                   <td className='px-5 py-4 text-right'>
                     <button
-                      onClick={() => handleReset(u)}
-                      className='inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 text-slate-500 rounded-lg text-xs hover:bg-slate-100 transition'
+                      type='button'
+                      onClick={() => handleResetClick(u)}
+                      className='inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 hover:border-slate-300 transition shadow-sm'
                     >
-                      <KeyRound size={12} /> Reset
+                      <KeyRound size={14} strokeWidth={2} className='shrink-0 text-slate-500' />
+                      Reset
                     </button>
                   </td>
                 </tr>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import featureImg from '@/pages/landing/assets/empresaria_3.png'
+import featureImg from '@/assets/empresaria_3.png'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 import { STATIC } from '@/pages/landing/config/staticContent'
 
@@ -46,7 +46,7 @@ export default function AfiliadosSection() {
   return (
     <section id='afiliados' className='scroll-mt-24 bg-slate-50 text-slate-900 px-6 lg:px-20 py-20'>
       <div className='flex flex-col lg:flex-row gap-16 items-center'>
-        <div className='lg:w-1/2 grid grid-cols-2 gap-4'>
+        <div className='lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-4'>
           <div className='space-y-4'>
             <div className='bg-white p-6 rounded-[2rem] shadow-sm border border-emerald-100 text-center'>
               <div className='text-emerald-600 font-bold text-3xl mb-2'>
@@ -56,7 +56,14 @@ export default function AfiliadosSection() {
                 {s.labelAfiliados}
               </p>
             </div>
-            <img src={featureImg} alt='Gestión' ref={revealImg} className='rounded-[2rem] h-64 w-full object-cover shadow-lg reveal-on-scroll' />
+            <img 
+              src={featureImg} 
+              alt='Gestión' 
+              loading="lazy"
+              decoding="async"
+              ref={revealImg} 
+              className='rounded-[2rem] h-64 w-full object-cover shadow-lg reveal-on-scroll' 
+            />
           </div>
           <div className='pt-12 space-y-4'>
             <div ref={revealStats} className='bg-emerald-600 p-8 rounded-[2rem] text-white shadow-xl shadow-emerald-900/20 reveal-on-scroll'>

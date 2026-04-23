@@ -27,3 +27,12 @@ dist-ssr
 .vscode
 .vercel
 .env*.local
+
+scripts/temp_*
+*.temp.js
+*.temp.ts
+*.temp.sh
+*.temp.py
+scratch/
+temp/
+tmp/

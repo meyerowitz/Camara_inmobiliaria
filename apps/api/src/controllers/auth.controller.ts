@@ -75,9 +75,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Generar JWT
     const payload: JwtPayload = {
-      id:           user.id as number,
-      email:        user.email as string,
-      rol:          rolPrimary,
+      id: user.id as number,
+      email: user.email as string,
+      rol: rolPrimary,
       roles,
       id_agremiado: user.id_agremiado as number | null,
     }
@@ -106,11 +106,18 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.user!
 
     const result = await db.execute({
-      sql: `SELECT id, email, rol, roles, id_agremiado, activo, creado_en FROM users WHERE id = ?`,
+      sql: `
+        SELECT 
+          u.id, u.email, u.rol, u.roles, u.id_agremiado, u.activo, u.creado_en,
+          e.nombre_completo, e.cedula_rif, e.telefono, e.nivel_profesional, e.es_corredor_inmobiliario, e.tipo as estudiante_tipo
+        FROM users u
+        LEFT JOIN estudiantes e ON e.email = u.email
+        WHERE u.id = ?
+      `,
       args: [id],
     })
 
-    const user = result.rows[0]
+    const user = result.rows[0] as any
     if (!user) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
@@ -214,16 +221,16 @@ export const resetPasswordWithToken = async (req: Request, res: Response): Promi
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    
+
     await db.execute({
       sql: `UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expira = NULL, activo = 1 WHERE id = ?`,
       args: [passwordHash, user.id],
     })
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.', 
-      email: user.email 
+    res.status(200).json({
+      success: true,
+      message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.',
+      email: user.email
     })
   } catch (error) {
     console.error('Error en resetPasswordWithToken:', error)
@@ -261,7 +268,7 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
     // Nota: datetime('now', 'localtime') en SQLite depende de la zona horaria del servidor. 
     // Usamos strftime('%Y-%m-%dT%H:%M:%SZ','now') o similar para consistencia ISO.
     // Dado que guardamos en ISO en el controller de afiliados, comparemos strings:
-    
+
     const resultFix = await db.execute({
       sql: `SELECT id, email FROM users WHERE reset_token = ?`,
       args: [token],
@@ -276,8 +283,8 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
     // Verificar expiración (ISO compare)
     const { id, email } = user as any
     const userWithExp = await db.execute({
-       sql: `SELECT reset_token_expira FROM users WHERE id = ?`,
-       args: [id]
+      sql: `SELECT reset_token_expira FROM users WHERE id = ?`,
+      args: [id]
     })
     const exp = userWithExp.rows[0].reset_token_expira as string
     if (new Date(exp) < new Date()) {
@@ -295,10 +302,10 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
       args: [passwordHash, id],
     })
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       message: 'Contraseña establecida exitosamente. Ya puedes iniciar sesión.',
-      email 
+      email
     })
   } catch (error) {
     console.error('Error en setupInitialPassword:', error)

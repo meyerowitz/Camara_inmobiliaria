@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import bgBolivar from '@/pages/landing/assets/Pzo.jpg'
+import bgBolivar from '@/assets/Pzo.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import { API_URL } from '@/config/env'
 

@@ -26,7 +26,7 @@ export default function NoticiasSection() {
 
   const noticias = [...noticiasBase, ...noticiasBase]
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = React.useCallback((direction: 'left' | 'right') => {
     const current = scrollRef.current
     if (!current) return
     const cardWidth = current.offsetWidth / 3
@@ -38,12 +38,12 @@ export default function NoticiasSection() {
       if (current.scrollLeft <= 0) current.scrollTo({ left: maxScroll, behavior: 'instant' })
       else current.scrollBy({ left: -cardWidth, behavior: 'smooth' })
     }
-  }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => scroll('right'), 4000)
     return () => clearInterval(interval)
-  }, [])
+  }, [scroll])
 
   return (
     <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden rounded-b-[4rem]'>
@@ -71,7 +71,13 @@ export default function NoticiasSection() {
             <div key={i} className='min-w-full md:min-w-[calc(50%-20px)] lg:min-w-[calc(33.333%-27px)] snap-start group/card cursor-pointer'>
               <div className='relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5'>
                 <div className='absolute inset-0 bg-emerald-900/20 opacity-0 group-hover/card:opacity-100 transition-opacity z-10 duration-500' />
-                <img src={news.imagen_url || news.img} alt={news.titulo} className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' />
+                <img 
+                  src={news.imagen_url || news.img} 
+                  alt={news.titulo} 
+                  loading="lazy"
+                  decoding="async"
+                  className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' 
+                />
                 <span className='absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-sm text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg'>
                   {news.tag}
                 </span>

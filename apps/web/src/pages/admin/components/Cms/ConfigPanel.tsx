@@ -172,9 +172,17 @@ const AccordionGroup = ({
       style={{ borderLeft: `4px solid ${group.color}` }}
     >
       {/* Header */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setOpen(o => !o)
+          }
+        }}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-slate-700">{group.label}</span>
@@ -201,7 +209,7 @@ const AccordionGroup = ({
             <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
           </span>
         </div>
-      </button>
+      </div>
 
       {/* Accordion body — smooth height animation via CSS grid trick */}
       <div className={`cms-accordion-body ${open ? '' : 'closed'}`}>
@@ -400,7 +408,7 @@ export const ConfigPanel = () => {
           <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
             <svg className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
             <p className="text-[10px] text-blue-600 leading-relaxed">
-              Los textos de secciones (Nosotros, Afiliados, Formación, etc.) son <strong>contenido estático</strong> y no aparecen aquí. Para modificarlos, edite el archivo <code className="bg-blue-100 px-1 rounded">staticContent.ts</code>.
+              Los textos de secciones (Nosotros, Afiliados, Formación, etc.) son <strong>contenido estático</strong> y no aparecen aquí.
               Los módulos de <strong>Noticias, Cursos y Directiva</strong> se gestionan en sus propias secciones del menú lateral.
             </p>
           </div>

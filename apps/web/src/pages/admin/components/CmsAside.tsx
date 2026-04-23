@@ -5,6 +5,7 @@ interface NavItem {
   id: string
   label: string
   icon: React.ReactNode
+  children?: NavItem[]
 }
 
 const icons = {
@@ -100,6 +101,15 @@ const icons = {
       <path d="M16 8l1.5 1.5" />
     </svg>
   ),
+  fileDoc: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </svg>
+  ),
   team: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
       <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -132,7 +142,17 @@ interface NavGroup {
 
 const CMS_CHILDREN: NavItem[] = [
   { id: 'cms_noticias', label: 'Noticias', icon: icons.news },
-  { id: 'cms_convenios', label: 'Convenios', icon: icons.handshake },
+  { 
+    id: 'cms_normativas', 
+    label: 'Marco Legal', 
+    icon: icons.fileDoc,
+    children: [
+      { id: 'cms_leyes', label: 'Leyes y Decretos', icon: icons.fileDoc },
+      { id: 'cms_reglamentos', label: 'Reglamentos y Estatutos', icon: icons.fileDoc },
+      { id: 'cms_normas', label: 'Normas y Procedimientos', icon: icons.fileDoc },
+      { id: 'cms_actas', label: 'Actas de Asamblea', icon: icons.fileDoc },
+    ]
+  },
   { id: 'cms_directiva', label: 'Directiva', icon: icons.team },
   { id: 'cms_config', label: 'Configuración', icon: icons.sliders },
 ]
@@ -214,8 +234,29 @@ const SidebarContent = ({
 }) => {
   const { user } = useAuth()
   // Auto-expand CMS group if any child is active
-  const cmsChildIds = CMS_CHILDREN.map(c => c.id)
+  // Auto-expand CMS group if any child (even nested) is active
+  const getAllIds = (items: NavItem[]): string[] => {
+    let ids: string[] = []
+    items.forEach(i => {
+      ids.push(i.id)
+      if (i.children) ids.push(...getAllIds(i.children))
+    })
+    return ids
+  }
+  const cmsChildIds = getAllIds(CMS_CHILDREN)
   const [cmsOpen, setCmsOpen] = React.useState(cmsChildIds.includes(activeId) || activeId === 'cms')
+  const [expandedIds, setExpandedIds] = React.useState<string[]>(['cms_normativas'])
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id])
+  }
+
+  // Sync cmsOpen when activeId changes externally
+  useEffect(() => {
+    if (cmsChildIds.includes(activeId) || activeId === 'cms') {
+      setCmsOpen(true)
+    }
+  }, [activeId, cmsChildIds])
 
   return (
     <>
@@ -278,22 +319,57 @@ const SidebarContent = ({
               {/* CMS sub-items */}
               {isCmsGroup && cmsOpen && !isCollapsed && (
                 <div className="ml-3 pl-3 border-l border-gray-100 flex flex-col gap-0.5 mb-1">
-                  {CMS_CHILDREN.map(child => (
-                    <button
-                      key={child.id}
-                      onClick={() => onNav(child.id)}
-                      style={activeId === child.id
-                        ? { backgroundColor: 'var(--color-admin-accent-muted)', color: 'var(--color-admin-active-text)' }
-                        : undefined}
-                      className={[
-                        'flex items-center gap-2.5 rounded-xl py-2 px-3 text-sm transition-all duration-150 w-full text-left',
-                        activeId === child.id ? '' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                      ].join(' ')}
-                    >
-                      <span className="flex-shrink-0">{child.icon}</span>
-                      <span className="truncate font-medium">{child.label}</span>
-                    </button>
-                  ))}
+                  {CMS_CHILDREN.map(child => {
+                    const hasSubChildren = !!child.children?.length
+                    const subChildIds = child.children?.map(sc => sc.id) || []
+                    const isSubActive = activeId === child.id || subChildIds.includes(activeId)
+                    const isExpanded = expandedIds.includes(child.id)
+                    
+                    return (
+                      <React.Fragment key={child.id}>
+                        <button
+                          onClick={() => {
+                            onNav(child.id)
+                            if (hasSubChildren) toggleExpand(child.id)
+                          }}
+                          style={activeId === child.id
+                            ? { backgroundColor: 'var(--color-admin-accent-muted)', color: 'var(--color-admin-active-text)' }
+                            : undefined}
+                          className={[
+                            'flex items-center gap-2.5 rounded-xl py-2 px-3 text-sm transition-all duration-150 w-full text-left',
+                            isSubActive ? 'text-[#00D084]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                          ].join(' ')}
+                        >
+                          <span className="flex-shrink-0">{child.icon}</span>
+                          <span className="truncate font-medium flex-1">{child.label}</span>
+                          {hasSubChildren && (
+                            <span className={['transition-transform duration-200 opacity-40', isExpanded ? 'rotate-90' : ''].join(' ')}>
+                              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                            </span>
+                          )}
+                        </button>
+                        
+                        {hasSubChildren && isExpanded && (
+                          <div className="ml-4 pl-3 border-l border-emerald-100 flex flex-col gap-0.5 mb-1 mt-0.5">
+                            {child.children?.map(sc => (
+                              <button
+                                key={sc.id}
+                                onClick={() => onNav(sc.id)}
+                                className={[
+                                  'py-1.5 px-2 text-[11px] font-medium transition-all rounded-lg text-left',
+                                  activeId === sc.id 
+                                    ? 'text-emerald-600 bg-emerald-50' 
+                                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                                ].join(' ')}
+                              >
+                                {sc.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
                 </div>
               )}
             </React.Fragment>

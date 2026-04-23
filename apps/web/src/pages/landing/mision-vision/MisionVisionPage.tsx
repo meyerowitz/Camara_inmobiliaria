@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import bgBolivar from '@/pages/landing/assets/Pzo.jpg'
+import bgBolivar from '@/assets/Pzo.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import SEO from '@/components/SEO'
 
 const useScrollReveal = () => {
   const [ref, setRef] = useState(null)
@@ -22,6 +23,11 @@ export default function MisionVision() {
   const navigate = useNavigate()
   return (
     <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
+      <SEO 
+        title="Misión y Visión"
+        description="Conoce los valores, misión y visión de la Cámara Inmobiliaria del Estado Bolívar. Nuestro compromiso con la ética y el profesionalismo."
+        keywords="mision camara inmobiliaria bolivar, valores cibir, etica inmobiliaria venezuela"
+      />
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <header className='relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover animate-header-bg' style={{ backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.85), rgba(2, 44, 34, 0.85)), url(${bgBolivar})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
         <div className='text-center space-y-4'>

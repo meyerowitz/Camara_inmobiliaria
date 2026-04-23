@@ -1,20 +1,25 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { NoticiasPanel } from '@/pages/admin/components/Cms/NoticiasPanel'
-import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { DirectivaPanel } from '@/pages/admin/components/Cms/DirectivaPanel'
 import { ConfigPanel } from '@/pages/admin/components/Cms/ConfigPanel'
 import { PaginasPanel } from '@/pages/admin/components/Cms/PaginasPanel'
+import { NormativasPanel } from '@/pages/admin/components/Cms/NormativasPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
-export type CmsTab = 'noticias' | 'convenios' | 'directiva' | 'config' | 'paginas'
+export type CmsTab = 'noticias' | 'normativas' | 'directiva' | 'config' | 'paginas' 
+  | 'leyes' | 'reglamentos' | 'normas' | 'actas'
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
   noticias: '#noticias',
-  convenios: '#convenios',
+  normativas: '',
   directiva: '#directiva',
   config: '',
   paginas: '',
+  leyes: '',
+  reglamentos: '',
+  normas: '',
+  actas: '',
 }
 
 const MIN_LEFT = 360   // px
@@ -91,6 +96,14 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   }
 
   const sectionAnchor = SECTION_ANCHORS[externalTab]
+  const previewIframeSrc = externalTab === 'normativas' ? '/normativas' : '/'
+  const previewOpenTabHref = externalTab === 'normativas' ? '/normativas' : undefined
+  const mobileLandingHref =
+    externalTab === 'normativas' ? '/normativas' : sectionAnchor ? `/${sectionAnchor}` : '/'
+
+  // Desactivamos el preview para normativas y config según petición del usuario
+  const hasPreview = !['normativas', 'leyes', 'reglamentos', 'normas', 'actas', 'config', 'paginas'].includes(externalTab)
+  const isPreviewActuallyVisible = previewVisible && hasPreview
 
   return (
     <div ref={containerRef} className="flex w-full h-full overflow-hidden bg-white select-none">
@@ -99,8 +112,8 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
       <div
         className="flex flex-col overflow-hidden flex-shrink-0 max-lg:!w-full max-lg:!flex-1"
         style={{
-          width: previewVisible ? leftWidth : undefined,
-          flex: previewVisible ? 'none' : '1 1 0%',
+          width: isPreviewActuallyVisible ? leftWidth : undefined,
+          flex: isPreviewActuallyVisible ? 'none' : '1 1 0%',
           transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -126,7 +139,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
             )}
           </div>
           {/* Show-preview button when hidden */}
-          {!previewVisible && (
+          {!isPreviewActuallyVisible && hasPreview && (
             <button
               onClick={() => setPreviewVisible(true)}
               className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all"
@@ -143,13 +156,17 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
         {/* Tab content — key forces remount+animation on every tab switch */}
         <div key={externalTab} className="flex-1 overflow-hidden relative cms-fade-up">
           {externalTab === 'noticias' && <NoticiasPanel />}
-          {externalTab === 'convenios' && <ConveniosPanel />}
+          {externalTab === 'normativas' && <NormativasPanel />}
+          {externalTab === 'leyes' && <NormativasPanel fixedCategory="Leyes y Decretos" />}
+          {externalTab === 'reglamentos' && <NormativasPanel fixedCategory="Reglamentos y Estatutos" />}
+          {externalTab === 'normas' && <NormativasPanel fixedCategory="Normas y Procedimientos" />}
+          {externalTab === 'actas' && <NormativasPanel fixedCategory="Actas de Asamblea" />}
           {externalTab === 'directiva' && <DirectivaPanel />}
         </div>
       </div>
 
       {/* ── DIVIDER (drag handle) ─────────────────────────────────────────── */}
-      {previewVisible && (
+      {isPreviewActuallyVisible && (
         <div
           onMouseDown={onDividerMouseDown}
           className="hidden lg:flex flex-shrink-0 w-1.5 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-[#00D084] transition-colors duration-150 z-10"
@@ -160,18 +177,22 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
       )}
 
       {/* ── RIGHT: landing preview ────────────────────────────────────────── */}
-      <div className={`hidden lg:flex flex-col overflow-hidden ${previewVisible ? 'flex-1' : 'w-0'}`}>
-        <LandingPreviewPane
-          visible={previewVisible}
-          onToggle={() => setPreviewVisible(v => !v)}
-          sectionAnchor={sectionAnchor}
-        />
-      </div>
+      {hasPreview && (
+        <div className={`hidden lg:flex flex-col overflow-hidden ${previewVisible ? 'flex-1' : 'w-0'}`}>
+          <LandingPreviewPane
+            visible={previewVisible}
+            onToggle={() => setPreviewVisible(v => !v)}
+            sectionAnchor={sectionAnchor}
+            iframeSrc={previewIframeSrc}
+            openInTabHref={previewOpenTabHref}
+          />
+        </div>
+      )}
 
       {/* Mobile: open in new tab */}
       <div className="lg:hidden fixed bottom-4 right-4 z-50">
         <a
-          href={`/${sectionAnchor}`}
+          href={mobileLandingHref}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 px-4 py-2.5 bg-[#00D084] text-white text-xs font-bold rounded-full shadow-lg shadow-emerald-500/30 hover:bg-[#00B870] transition-colors"

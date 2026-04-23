@@ -1,5 +1,5 @@
 import React from 'react'
-import logo from '@/pages/landing/assets/Logo3.png'
+import logo from '@/assets/Logo3.png'
 import { useCachedConfig } from '@/hooks/useCachedConfig'
 import { STATIC } from '@/pages/landing/config/staticContent'
 
@@ -12,7 +12,11 @@ export default function Footer() {
 
   return (
     <footer className='bg-[#022c22] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6'>
-      <img src={logo} alt='Logo' className='h-20 mx-auto opacity-50 grayscale brightness-200' />
+      <img 
+        src={logo} 
+        alt='Logo Cámara Inmobiliaria de Bolívar - Inmobiliarias en Puerto Ordaz y Ciudad Bolívar' 
+        className='h-20 mx-auto opacity-50 grayscale brightness-200' 
+      />
       <p className='text-gray-500 text-sm max-w-lg mx-auto leading-relaxed'>
         {s.descripcion} <br />
         {s.direccion}

@@ -89,7 +89,7 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
-    const { rol, activo, id_agremiado } = req.body
+    const { rol, activo, id_agremiado, password } = req.body
 
     // Si queremos actualizar a un usuario, validamos permisos estrictos para administradores
     const userToUpdate = await db.execute({ sql: `SELECT rol FROM users WHERE id = ?`, args: [Number(id)] })
@@ -97,7 +97,7 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
-    
+
     const targetRole = userToUpdate.rows[0].rol
     if (['admin', 'super_admin'].includes(targetRole as string) && !isSuperAdmin(req.user!)) {
       res.status(403).json({ success: false, message: 'Acceso denegado: Solo el súper administrador puede editar a otros administradores' })
@@ -120,6 +120,14 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
     }
     if (activo !== undefined) { fields.push('activo = ?'); args.push(activo ? 1 : 0) }
     if (id_agremiado !== undefined) { fields.push('id_agremiado = ?'); args.push(id_agremiado) }
+    if (password !== undefined) {
+      if (password.length < 4) {
+        res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 4 caracteres' })
+        return
+      }
+      const hash = await bcrypt.hash(password, 10)
+      fields.push('password_hash = ?'); args.push(hash)
+    }
 
     if (fields.length === 0) {
       res.status(400).json({ success: false, message: 'No hay campos para actualizar' })
@@ -169,7 +177,7 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
     })
 
     const { enviarCorreoResetAdmin } = await import('../lib/email.js')
-    
+
     try {
       await enviarCorreoResetAdmin(nombre, user.email, token)
     } catch (err) {
@@ -202,7 +210,7 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
-    
+
     const targetRole = userToUpdate.rows[0].rol
     if (['admin', 'super_admin'].includes(targetRole as string) && !isSuperAdmin(req.user!)) {
       res.status(403).json({ success: false, message: 'Acceso denegado: Solo el súper administrador puede eliminar a administradores' })
@@ -211,8 +219,8 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
     // Do not allow deleting yourself if you are superadmin
     if (Number(id) === req.user?.id) {
-       res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo' })
-       return
+      res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo' })
+      return
     }
 
     await db.execute({ sql: `DELETE FROM users WHERE id = ?`, args: [Number(id)] })

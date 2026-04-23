@@ -2,16 +2,30 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
 
-type EstatusAgremiado = 'Preinscrito' | 'CIBIR' | 'Moroso' | 'Suspendido' | 'Rechazado'
+type EstatusAgremiado = 
+  | '1_SOLICITUD' | '2_REQUISITOS' | '3_CONFIRMACION' 
+  | '4_RECEPCION' | '5_ENTREVISTA' | '6_JUNTA_DIRECTIVA' 
+  | '7_RESULTADO' | '8_FORMALIZACION' | '9_AFILIACION'
+  | 'Moroso' | 'Suspendido' | 'Rechazado' | 'Preinscrito' | 'CIBIR'
 
 type Agremiado = {
   id_agremiado: number
   codigo_cibir: string | null
   cedula_rif: string
   nombre_completo: string
+  nombres: string | null
+  apellidos: string | null
+  razon_social: string | null
+  cedula_personal: string | null
+  tipo_afiliado: 'Natural' | 'Juridico'
   email: string
   telefono: string | null
+  direccion: string | null
+  fecha_nacimiento: string | null
+  nivel_academico: string | null
+  notas: string | null
   estatus: EstatusAgremiado
+  cibir_convalidado?: number
   inscripcion_pagada: number
   fecha_registro: string
   fecha_ultimo_cambio_estatus: string | null
@@ -66,6 +80,21 @@ export default function AfiliadosPanel() {
     }
   }
 
+  const updateField = async (field: keyof Agremiado, value: any) => {
+    if (!selected) return
+    try {
+      const res = await fetch(`${API_URL}/api/afiliados/${selected.id_agremiado}`, {
+        method: 'PATCH',
+        headers: { ...authHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      })
+      if (res.ok) {
+        await loadDetail(selected.id_agremiado)
+        if (['estatus', 'nombre_completo', 'codigo_cibir'].includes(field)) await load()
+      }
+    } catch (err) { console.error(err) }
+  }
+
   useEffect(() => { load() }, []) // initial
   useEffect(() => { load() }, [estatus]) // reload on filter
 
@@ -97,11 +126,22 @@ export default function AfiliadosPanel() {
               className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-slate-700"
             >
               <option value="Todos">Todos</option>
-              <option value="Preinscrito">Preinscrito</option>
-              <option value="CIBIR">CIBIR</option>
-              <option value="Moroso">Moroso</option>
-              <option value="Suspendido">Suspendido</option>
-              <option value="Rechazado">Rechazado</option>
+              <optgroup label="Proceso de Afiliación">
+                <option value="1_SOLICITUD">1. Solicitud</option>
+                <option value="2_REQUISITOS">2. Requisitos</option>
+                <option value="3_CONFIRMACION">3. Confirmación</option>
+                <option value="4_RECEPCION">4. Recepción</option>
+                <option value="5_ENTREVISTA">5. Entrevista</option>
+                <option value="6_JUNTA_DIRECTIVA">6. Junta Directiva</option>
+                <option value="7_RESULTADO">7. Resultado</option>
+                <option value="8_FORMALIZACION">8. Formalización</option>
+              </optgroup>
+              <optgroup label="Estados Finales">
+                <option value="9_AFILIACION">9. Afiliación (CIBIR)</option>
+                <option value="Moroso">Moroso</option>
+                <option value="Suspendido">Suspendido</option>
+                <option value="Rechazado">Rechazado</option>
+              </optgroup>
             </select>
             <button
               onClick={load}
@@ -112,7 +152,7 @@ export default function AfiliadosPanel() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+        <div className="flex-1 overflow-y-auto scrollbar-hide divide-y divide-gray-50">
           {loading ? (
             <div className="p-4 text-center text-xs text-slate-400 font-semibold uppercase tracking-widest mt-10">Cargando...</div>
           ) : error ? (
@@ -130,8 +170,8 @@ export default function AfiliadosPanel() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm font-semibold truncate text-slate-800">{a.nombre_completo}</span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                    {a.estatus}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {a.estatus.replace(/_/g, ' ')}
                   </span>
                 </div>
                 <span className="text-xs text-slate-400 truncate">{a.email}</span>
@@ -155,17 +195,28 @@ export default function AfiliadosPanel() {
             <p className="text-sm font-medium">Cargando detalle...</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto h-full">
+          <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto scrollbar-hide h-full">
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 leading-tight">{selected.nombre_completo}</h3>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <select
+                      value={selected.tipo_afiliado}
+                      onChange={(e) => updateField('tipo_afiliado', e.target.value)}
+                      className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-100 text-slate-500 border-none focus:ring-0 cursor-pointer"
+                    >
+                      <option value="Natural">Natural</option>
+                      <option value="Juridico">Juridico</option>
+                    </select>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                    {selected.tipo_afiliado === 'Juridico' ? (selected.razon_social || selected.nombre_completo) : selected.nombre_completo}
+                  </h3>
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{selected.email}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{selected.telefono || 'Teléfono: —'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600">
-                    {selected.estatus}
+                    {selected.estatus.replace(/_/g, ' ')}
                   </span>
                   {selected.codigo_cibir && (
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700">
@@ -176,33 +227,160 @@ export default function AfiliadosPanel() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl p-4 border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Cédula/RIF</span>
-                <span className="text-sm text-slate-700 font-medium break-all">{selected.cedula_rif}</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Inscripción pagada</span>
-                <span className="text-sm text-slate-700 font-medium">{selected.inscripcion_pagada ? 'Sí' : 'No'}</span>
+            {/* Profile Info */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 flex flex-col gap-5">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Información del Perfil</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selected.tipo_afiliado === 'Juridico' && (
+                  <div className="col-span-full flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Razón Social</label>
+                    <input 
+                      type="text" 
+                      value={selected.razon_social || ''} 
+                      onChange={(e) => updateField('razon_social', e.target.value)}
+                      className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                      placeholder="Nombre de la empresa"
+                    />
+                  </div>
+                )}
+                
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Nombres</label>
+                  <input 
+                    type="text" 
+                    value={selected.nombres || ''} 
+                    onChange={(e) => updateField('nombres', e.target.value)}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Apellidos</label>
+                  <input 
+                    type="text" 
+                    value={selected.apellidos || ''} 
+                    onChange={(e) => updateField('apellidos', e.target.value)}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Cédula / RIF</label>
+                  <input 
+                    type="text" 
+                    value={selected.cedula_rif || ''} 
+                    disabled
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Cédula Personal</label>
+                  <input 
+                    type="text" 
+                    value={selected.cedula_personal || ''} 
+                    onChange={(e) => updateField('cedula_personal', e.target.value)}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Teléfono</label>
+                  <input 
+                    type="text" 
+                    value={selected.telefono || ''} 
+                    onChange={(e) => updateField('telefono', e.target.value)}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Fecha Nacimiento</label>
+                  <input 
+                    type="text" 
+                    value={selected.fecha_nacimiento || ''} 
+                    onChange={(e) => updateField('fecha_nacimiento', e.target.value)}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                    placeholder="DD-MM-YYYY"
+                  />
+                </div>
+                <div className="col-span-full flex flex-col gap-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Dirección</label>
+                  <textarea 
+                    value={selected.direccion || ''} 
+                    onChange={(e) => updateField('direccion', e.target.value)}
+                    rows={2}
+                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors resize-none"
+                  />
+                </div>
               </div>
             </div>
 
-            {selected.estatus === 'Preinscrito' && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 flex gap-2">
-                <button
-                  onClick={() => procesar(selected.id_agremiado, 'aprobar')}
-                  className="flex-1 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] transition-colors"
+            {/* Process Management */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 flex flex-col gap-4">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Gestión del Proceso</h4>
+              
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Estado Actual</label>
+                <select 
+                  value={selected.estatus}
+                  onChange={(e) => updateField('estatus', e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-bold text-slate-700"
                 >
-                  ✓ Aprobar (CIBIR)
-                </button>
-                <button
-                  onClick={() => procesar(selected.id_agremiado, 'rechazar')}
-                  className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 transition-colors"
-                >
-                  ✗ Rechazar
-                </button>
+                  <option value="1_SOLICITUD">1. Solicitud de Afiliación</option>
+                  <option value="2_REQUISITOS">2. Requisitos</option>
+                  <option value="3_CONFIRMACION">3. Confirmación</option>
+                  <option value="4_RECEPCION">4. Recepción</option>
+                  <option value="5_ENTREVISTA">5. Entrevista</option>
+                  <option value="6_JUNTA_DIRECTIVA">6. Junta Directiva</option>
+                  <option value="7_RESULTADO">7. Resultado</option>
+                  <option value="8_FORMALIZACION">8. Formalización</option>
+                  <option value="9_AFILIACION">9. Afiliación (CIBIR)</option>
+                  <option value="Moroso">Moroso</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="Rechazado">Rechazado</option>
+                </select>
               </div>
-            )}
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <input 
+                  type="checkbox" 
+                  id="cibir_convalidado"
+                  checked={!!selected.cibir_convalidado}
+                  onChange={(e) => updateField('cibir_convalidado', e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
+                />
+                <label htmlFor="cibir_convalidado" className="text-xs font-bold text-slate-600 cursor-pointer">
+                  Convalidar conocimientos CIBIR (Vía Entrevista)
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <input 
+                  type="checkbox" 
+                  id="inscripcion_pagada"
+                  checked={!!selected.inscripcion_pagada}
+                  onChange={(e) => updateField('inscripcion_pagada', e.target.checked ? 1 : 0)}
+                  className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
+                />
+                <label htmlFor="inscripcion_pagada" className="text-xs font-bold text-slate-600 cursor-pointer">
+                  Cuota de inscripción pagada
+                </label>
+              </div>
+
+              {['1_SOLICITUD', '6_JUNTA_DIRECTIVA'].includes(selected.estatus) && (
+                <div className="flex gap-2 pt-2 border-t border-slate-50">
+                  <button
+                    onClick={() => procesar(selected.id_agremiado, 'aprobar')}
+                    className="flex-1 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-bold hover:bg-[#00B870] shadow-sm shadow-emerald-200 transition-all hover:-translate-y-0.5"
+                  >
+                    ✓ Aprobar (A Paso 7)
+                  </button>
+                  <button
+                    onClick={() => procesar(selected.id_agremiado, 'rechazar')}
+                    className="flex-1 py-2.5 rounded-xl bg-red-50 text-red-500 text-sm font-bold hover:bg-red-100 transition-colors"
+                  >
+                    ✗ Rechazar
+                  </button>
+                </div>
+              )}
+            </div>
 
             {error && (
               <div className="text-sm text-red-500 bg-red-50 border border-red-100 rounded-2xl p-4">{error}</div>

@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import {
   adminAsignarEstudianteACurso,
-  adminAprobarPreinscripcion,
+  adminAgendarEntrevista,
+  adminFinalizarEntrevista,
   adminGetEstudiante,
   adminListCursos,
   adminCreateCurso,
@@ -11,6 +12,7 @@ import {
   adminListPreinscripciones,
   adminRechazarPreinscripcion,
   adminCompletarCursoEstudiante,
+  adminAprobarPreinscripcionDirecta,
   academiaAdminGuards,
 } from '../controllers/academia.controller.js'
 
@@ -40,8 +42,17 @@ router.get('/estudiantes/:id', adminGetEstudiante)
 // POST /api/academia/cursos/:id_curso/asignar
 router.post('/cursos/:id_curso/asignar', adminAsignarEstudianteACurso)
 
-// PATCH /api/academia/inscripciones/:id/aprobar
-router.patch('/inscripciones/:id/aprobar', adminAprobarPreinscripcion)
+// PATCH /api/academia/inscripciones/:id/agendar-entrevista
+router.patch('/inscripciones/:id/agendar-entrevista', adminAgendarEntrevista)
+
+// PATCH /api/academia/inscripciones/:id/finalizar-entrevista
+router.patch('/inscripciones/:id/finalizar-entrevista', adminFinalizarEntrevista)
+
+// PATCH /api/academia/inscripciones/:id/aprobar-directo
+router.patch('/inscripciones/:id/aprobar-directo', adminAprobarPreinscripcionDirecta)
+
+// Mantenemos /aprobar por compatibilidad temporal si es necesario, pero redirigimos a agendar
+router.patch('/inscripciones/:id/aprobar', adminAgendarEntrevista)
 
 // PATCH /api/academia/inscripciones/:id/rechazar
 router.patch('/inscripciones/:id/rechazar', adminRechazarPreinscripcion)

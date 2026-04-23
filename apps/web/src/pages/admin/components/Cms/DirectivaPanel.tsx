@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail } from '@/pages/admin/components/Cms/CmsShared'
+import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail, uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared'
 import { sendToPreview } from '@/pages/admin/components/Cms/LandingPreviewPane'
 import { invalidateDirectivaCache } from '@/pages/landing/junta-directiva/JuntaDirectivaPage'
 
@@ -25,6 +25,21 @@ export const DirectivaPanel = () => {
   const [form, setForm] = useState({ nombre: '', cargo: '', foto_url: '', orden: 0, activo: true })
   const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const uploadImage = async (file: File) => {
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const publicUrl = await uploadFileSupabase(file, 'directiva')
+      setForm((p) => ({ ...p, foto_url: publicUrl }))
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Error al subir archivo')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const load = useCallback(async () => { setLoading(true); const data = await api.get('/api/cms/directiva'); if (data.success) setItems(data.data); setLoading(false) }, [])
 
@@ -40,10 +55,24 @@ export const DirectivaPanel = () => {
       <h3 className="text-sm font-bold text-slate-800">{selectedId === 'new' ? 'Nuevo Miembro' : 'Editar Miembro'}</h3>
       <FormField label="Nombre completo"><Input value={form.nombre} onChange={f('nombre')} /></FormField>
       <FormField label="Cargo"><Input value={form.cargo} onChange={f('cargo')} placeholder="Presidente, Secretario..." /></FormField>
-      <FormField label="URL de foto"><Input value={form.foto_url} onChange={f('foto_url')} placeholder="https://..." /></FormField>
+      <FormField label="Foto (subida directa)">
+         <Input
+           type="file"
+           accept="image/*,.svg,.png,.jpg,.jpeg,.webp"
+           disabled={uploading}
+           onChange={(e) => {
+             const file = e.target.files?.[0]
+             if (file) uploadImage(file)
+           }}
+         />
+      </FormField>
+      {uploadError && <p className="text-[11px] text-red-600 -mt-2">{uploadError}</p>}
+      <p className="text-[10px] text-slate-400 leading-relaxed -mt-2">
+        Al subir el archivo, se guarda y completa automáticamente la foto.
+      </p>
       {form.foto_url && <img src={form.foto_url} alt="" className="w-16 h-16 object-cover rounded-full border border-gray-100" />}
       <FormField label="Orden"><Input type="number" value={form.orden} onChange={f('orden')} /></FormField>
-      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary></div>
+      <div className="flex gap-2 pt-2"><BtnPrimary onClick={save} disabled={saving || uploading}>{uploading ? 'Subiendo...' : saving ? 'Guardando...' : 'Guardar'}</BtnPrimary><BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary></div>
     </div>
   )
 

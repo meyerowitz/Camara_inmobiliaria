@@ -41,7 +41,7 @@ const CibirDetail = ({
   onUpdate: (id: string, status: CibirStatus) => void
   onBack?: () => void
 }) => (
-  <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto h-full">
+  <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto h-full scrollbar-hide">
     {/* Back button — visible only on mobile */}
     {onBack && (
       <button
@@ -149,7 +149,7 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
         setCounts(nuevosCuentas)
         if (onCountsUpdate) onCountsUpdate(nuevosCuentas.Pendiente)
 
-        const mapped: Solicitud[] = json.data.map((item: { id_agremiado: string | number; nombre_completo: string; cedula_rif: string; email: string; telefono: string; estatus: string; fecha_registro: string }) => {
+        const mapped: Solicitud[] = json.data.map((item: any) => {
           let status: CibirStatus = 'Pendiente'
           if (item.estatus === 'CIBIR') status = 'Aprobado'
           if (item.estatus === 'Rechazado' || item.estatus === 'Suspendido') status = 'Rechazado'
@@ -228,7 +228,7 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
         </div>
 
         {/* List */}
-        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+        <div className="flex-1 overflow-y-auto scrollbar-hide divide-y divide-gray-50">
           {loading ? (
             <div className="p-4 text-center text-xs text-slate-400 font-semibold uppercase tracking-widest mt-10">Cargando...</div>
           ) : filtered.map(s => (
@@ -286,25 +286,22 @@ const CibirPanel = ({ onCountsUpdate }: { onCountsUpdate?: (pendientes: number) 
 
 
 // ─── MAIN FORMACION PANEL ─────────────────────────────────────────────────────
-type SubTab = 'cursos' | 'preinscripciones' | 'asignar'
+type SubTab = 'cursos' | 'preinscripciones' | 'afiliaciones' | 'asignar'
 
 const FormacionPanel = () => {
   const { token } = useAuth()
   const [activeTab, setActiveTab] = useState<SubTab>('cursos')
 
-  // Cargar contadores globales (opcional, removido si no hace falta badge, o se puede re-agregar luego)
-  useEffect(() => {}, [token])
-
   const tabs: { id: SubTab; label: string; badge?: number }[] = [
     { id: 'cursos', label: 'Cursos & Talleres' },
     { id: 'preinscripciones', label: 'Preinscripciones' },
+    { id: 'afiliaciones', label: 'Afiliaciones' },
     { id: 'asignar', label: 'Asignar Estudiante' },
   ]
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Sub-nav tabs */}
-      <div className="flex items-center gap-1 px-4 sm:px-5 pt-4 pb-0 bg-white border-b border-gray-100 flex-shrink-0 overflow-x-auto">
+      <div className="flex items-center gap-1 px-4 sm:px-5 pt-4 pb-0 bg-white border-b border-gray-100 flex-shrink-0 overflow-x-auto scrollbar-hide">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -317,25 +314,15 @@ const FormacionPanel = () => {
             ].join(' ')}
           >
             {tab.label}
-            {tab.badge !== undefined && tab.badge > 0 && (
-              <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-400 text-white text-[9px] font-bold flex items-center justify-center">
-                {tab.badge}
-              </span>
-            )}
           </button>
         ))}
-
-        {activeTab === 'cibir' && (
-          <span className="ml-auto mb-1 text-[10px] text-slate-400 font-medium hidden md:block whitespace-nowrap">
-            Curso de Incorporación al Bienes Inmuebles Registrados
-          </span>
-        )}
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === 'cursos' && <CursosAdminPanel />}
         {activeTab === 'preinscripciones' && <PreinscripcionesPrincipalesPanel />}
+        {activeTab === 'afiliaciones' && <PreinscripcionesPrincipalesPanel initialPrograma="AFILIACION" />}
         {activeTab === 'asignar' && <AsignarEstudiantePanel />}
       </div>
     </div>

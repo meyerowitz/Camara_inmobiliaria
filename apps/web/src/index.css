@@ -1,54 +1,45 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
-/* ─── Color Tokens ──────────────────────────────────────────────────────────
-   Edita estas variables para cambiar la paleta en todo el proyecto.
-   Afiliado Panel: verde oscuro + emerald (alineado con la landing).
-──────────────────────────────────────────────────────────────────────────── */
+
+/* ─── Color Tokens ────────────────────────────────────────────────────────── */
 :root {
-  /* ── Afiliado Panel / Landing ───────────────────────────── */
   --color-primary:        #022c22;
   --color-primary-light:  #04432f;
-  --color-accent:         #10b981;   /* emerald-500 */
-  --color-accent-hover:   #059669;   /* emerald-600 */
-  --color-accent-muted:   #d1fae5;   /* emerald-100 */
+  --color-accent:         #10b981;
+  --color-accent-hover:   #059669;
+  --color-accent-muted:   #d1fae5;
   --color-accent-subtle:  rgba(16,185,129,0.12);
 
-  /* ── Admin Panel ────────────────────────────────────────── */
   --color-admin-accent:       #00D084;
   --color-admin-accent-hover: #00B870;
   --color-admin-accent-muted: #E9FAF4;
   --color-admin-active-text:  #00C07A;
 
-  /* ── Texto ──────────────────────────────────────────────── */
   --color-text-base:      #1e293b;
   --color-text-muted:     #64748b;
   --color-text-faint:     #94a3b8;
   --color-text-on-dark:   #ffffff;
   --color-text-on-accent: #ffffff;
 
-  /* ── Fondos ─────────────────────────────────────────────── */
   --color-bg-page:        #f8fafc;
   --color-bg-surface:     #ffffff;
   --color-bg-subtle:      #f1f5f9;
 
-  /* ── Bordes ─────────────────────────────────────────────── */
   --color-border:         #e2e8f0;
   --color-border-accent:  #a7f3d0;
 
-  /* ── Status ─────────────────────────────────────────────── */
   --color-danger:         #ef4444;
   --color-warning:        #f59e0b;
   --color-success:        #10b981;
 
-  /* Fix: prevent browsers from applying dark-mode text colors inside the
-     CMS preview iframe when the OS is in dark mode. */
   color-scheme: light;
 }
 
+html { overflow: hidden; height: 100%; scroll-behavior: smooth; }
+body { margin: 0; padding: 0; height: 100%; overflow-y: scroll; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+#root { min-height: 100%; }
 
-/* ── CMS Admin Animations ─────────────────────────────────────────────────────
-   Smooth micro-animations for the admin content management interface.
-──────────────────────────────────────────────────────────────────────────── */
+/* ── CMS Animations ────────────────────────────────────────────────────────── */
 @keyframes cms-fade-up {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0);   }
@@ -65,183 +56,61 @@
   from { opacity: 0; transform: scale(0.97); }
   to   { opacity: 1; transform: scale(1);    }
 }
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0;  }
+}
 
-.cms-fade-up    { animation: cms-fade-up    0.22s cubic-bezier(0.4,0,0.2,1) both; }
+.cms-fade-up    { animation: cms-fade-up 0.22s cubic-bezier(0.4,0,0.2,1) both; }
 .cms-slide-left { animation: cms-slide-left 0.22s cubic-bezier(0.4,0,0.2,1) both; }
 .cms-slide-right{ animation: cms-slide-right 0.22s cubic-bezier(0.4,0,0.2,1) both; }
-.cms-scale-in   { animation: cms-scale-in   0.2s  cubic-bezier(0.4,0,0.2,1) both; }
+.cms-scale-in   { animation: cms-scale-in 0.2s cubic-bezier(0.4,0,0.2,1) both; }
 
-/* Stagger children inside a container */
-.cms-stagger > * { animation: cms-fade-up 0.2s cubic-bezier(0.4,0,0.2,1) both; }
-.cms-stagger > *:nth-child(1)  { animation-delay: 0ms;  }
-.cms-stagger > *:nth-child(2)  { animation-delay: 40ms; }
-.cms-stagger > *:nth-child(3)  { animation-delay: 80ms; }
-.cms-stagger > *:nth-child(4)  { animation-delay: 120ms;}
-.cms-stagger > *:nth-child(5)  { animation-delay: 160ms;}
-.cms-stagger > *:nth-child(n+6){ animation-delay: 200ms;}
-
-/* Accordion smooth height */
-.cms-accordion-body {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 1;
-}
-.cms-accordion-body.closed {
-  grid-template-rows: 0fr;
-  opacity: 0;
-}
-.cms-accordion-body > * {
-  overflow: hidden;
-}
-
+/* ── Landing Animations ───────────────────────────────────────────────────── */
 @keyframes revealUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes curtainDown {
   from { transform: translateY(-100%); }
   to { transform: translateY(0); }
 }
-
-.animate-reveal {
-  animation: revealUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.animate-curtain {
-  animation: curtainDown 1.5s cubic-bezier(0.7, 0, 0.3, 1) forwards;
-}
-@keyframes bg-zoom {
+@keyframes bgZoom {
   from { transform: scale(1); }
   to { transform: scale(1.1); }
 }
-
-@keyframes curtain-down {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(0); }
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
-@keyframes text-reveal {
-  from { 
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+.animate-reveal { animation: revealUp 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-curtain { animation: curtainDown 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-bg-zoom { animation: bgZoom 10s ease-out forwards; }
+.animate-text-reveal { animation: revealUp 1s ease-out forwards; }
+.animate-header-text { animation: revealUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.animate-header-bg { animation: bgZoom 20s linear infinite alternate; }
 
-.animate-bg-zoom {
-  animation: bg-zoom 10s ease-out forwards;
-}
-
-.animate-curtain {
-  animation: curtain-down 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-text-reveal {
-  animation: text-reveal 1s ease-out forwards;
-}
-
-/* Esto debe estar en tu archivo CSS principal */
 .reveal-on-scroll {
   opacity: 0;
   transform: translateY(30px);
   transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.reveal-on-scroll.active { opacity: 1; transform: translateY(0); }
 
-.reveal-on-scroll.active {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Animación de entrada para el texto del Header */
-@keyframes headerTextUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Animación de zoom suave para el fondo */
-@keyframes headerBgZoom {
-  from { transform: scale(1.1); }
-  to { transform: scale(1); }
-}
-
-.animate-header-text {
-  animation: headerTextUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.animate-header-bg {
-  animation: headerBgZoom 2s ease-out forwards;
-}
 .formacion-panel {
   transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   filter: grayscale(100%);
+  flex: 1;
 }
-
-.formacion-panel:hover {
-  flex: 2; /* El panel se agranda */
-  filter: grayscale(0%);
-}
-
-.formacion-panel:not(:hover) {
-  flex: 1; /* Los demás se mantienen pequeños */
-}
-.formacion-panel {
-  transition: all 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-  filter: grayscale(100%);
-}
-
-.formacion-panel:hover {
-  flex: 2; /* El panel se agranda */
-  filter: grayscale(0%);
-}
-
-.formacion-panel:not(:hover) {
-  flex: 1; /* Los demás se mantienen pequeños */
-}
+.formacion-panel:hover { flex: 2; filter: grayscale(0%); }
 
 @layer utilities {
   .animate-marquee {
     display: inline-flex;
-    animation: marquee 25s linear infinite;
+    animation: marquee 30s linear infinite;
   }
-
-  @keyframes marquee {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-33.33%); } /* Ajustado según la cantidad de repeticiones */
-  }
-}
-
-/* Opcional: Pausar al pasar el mouse */
-.animate-marquee:hover {
-  animation-play-state: paused;
-}
-.animate-marquee {
-  display: inline-flex;
-  animation: marquee 30s linear infinite;
-}
-
-.pause {
-  animation-play-state: paused;
-}
-
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  .pause { animation-play-state: paused; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }

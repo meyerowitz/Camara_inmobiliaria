@@ -13,9 +13,14 @@
  *
  * Uso:
  *   pnpm tsx src/config/initdb.ts
+ *
+ * Reinicio completo (borra todas las tablas de usuario y recrea el esquema):
+ *   INITDB_RESET=1 pnpm tsx src/config/initdb.ts
+ *   pnpm tsx src/config/initdb.ts --reset
  */
 
 import { db } from '../lib/db.js'
+import bcrypt from 'bcryptjs'
 
 const statements = [
   // ──────────────────────────────────────────────────────────
@@ -29,17 +34,55 @@ const statements = [
   `CREATE TABLE IF NOT EXISTS agremiados (
     id_agremiado                INTEGER     PRIMARY KEY,
     codigo_cibir                TEXT        UNIQUE,
+    tipo_afiliado               TEXT        NOT NULL DEFAULT 'Natural'
+                                CHECK (tipo_afiliado IN ('Natural', 'Juridico')),
+    razon_social                TEXT,
     cedula_rif                  TEXT        UNIQUE NOT NULL,
+    nombres                     TEXT,
+    apellidos                   TEXT,
     nombre_completo             TEXT        NOT NULL,
+    cedula_personal             TEXT,
     email                       TEXT        UNIQUE NOT NULL,
+    direccion                   TEXT,
     telefono                    TEXT,
-    estatus                     TEXT        NOT NULL DEFAULT 'Preinscrito'
-                                CHECK (estatus IN ('Preinscrito','CIBIR','Moroso','Suspendido', 'Rechazado')),
+    fecha_nacimiento            TEXT,
+    nivel_academico             TEXT,
+    notas                       TEXT,
+    estatus                     TEXT        NOT NULL DEFAULT '1_SOLICITUD'
+                                CHECK (estatus IN (
+                                  '1_SOLICITUD','2_REQUISITOS','3_CONFIRMACION',
+                                  '4_RECEPCION','5_ENTREVISTA','6_JUNTA_DIRECTIVA',
+                                  '7_RESULTADO','8_FORMALIZACION','9_AFILIACION',
+                                  'Moroso','Suspendido','Rechazado'
+                                )),
+    cibir_convalidado           INTEGER     NOT NULL DEFAULT 0
+                                CHECK (cibir_convalidado IN (0, 1)),
     inscripcion_pagada          INTEGER     NOT NULL DEFAULT 0,
+    -- Corporativo: afiliados individuales vinculados a esta empresa
+    id_agremiado_corp           INTEGER     REFERENCES agremiados(id_agremiado) ON DELETE SET NULL,
+    representante_legal         TEXT,
     fecha_registro              TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     fecha_ultimo_cambio_estatus TEXT,
+    url_cedula                  TEXT,
+    url_titulo                  TEXT,
+    url_cv                      TEXT,
     CONSTRAINT chk_email_formato CHECK (email LIKE '%@%.%')
   )`,
+
+  // ── Invitaciones corporativas (links reutilizables para afiliados individuales) ──
+  `CREATE TABLE IF NOT EXISTS invitaciones_corporativas (
+    id_invitacion     INTEGER  PRIMARY KEY,
+    id_agremiado_corp INTEGER  NOT NULL REFERENCES agremiados(id_agremiado) ON DELETE CASCADE,
+    token             TEXT     UNIQUE NOT NULL,
+    nombre_empresa    TEXT     NOT NULL,
+    activo            INTEGER  NOT NULL DEFAULT 1
+                      CHECK (activo IN (0, 1)),
+    fecha_expiracion  TEXT,
+    creado_en         TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_invitaciones_corp ON invitaciones_corporativas(id_agremiado_corp)`,
+  `CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON invitaciones_corporativas(token)`,
 
   // ===========================================================
   // FASE 1.5 — ESTUDIANTES (REGULARES / NO NECESARIAMENTE CIBIR)
@@ -52,10 +95,17 @@ const statements = [
     nombre_completo   TEXT        NOT NULL,
     email             TEXT        NOT NULL,
     telefono          TEXT,
+    nivel_profesional TEXT
+                    CHECK (nivel_profesional IS NULL OR nivel_profesional IN ('Bachiller','TSU','Universitario','Postgrado')),
+    es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0
+                    CHECK (es_corredor_inmobiliario IN (0, 1)),
     tipo              TEXT        NOT NULL DEFAULT 'Regular'
                       CHECK (tipo IN ('Regular','Agremiado')),
     creado_en         TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     actualizado_en    TEXT,
+    url_cedula        TEXT,
+    url_titulo        TEXT,
+    url_cv            TEXT,
     CONSTRAINT fk_estudiante_agremiado
       FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado)
       ON DELETE SET NULL ON UPDATE CASCADE,
@@ -76,13 +126,42 @@ const statements = [
     creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
 
+  // ── Verificación de preinscripción (programas principales) ──────────────────
+  `CREATE TABLE IF NOT EXISTS verificaciones_preinscripciones (
+    token_verificacion  TEXT PRIMARY KEY,
+    nombre_completo     TEXT NOT NULL,
+    cedula_rif          TEXT,
+    email               TEXT NOT NULL,
+    telefono            TEXT,
+    programa_codigo     TEXT NOT NULL
+                      CHECK (programa_codigo IN ('PADI','PEGI','PREANI','CIBIR', 'AFILIACION')),
+    tipo_afiliado       TEXT NOT NULL DEFAULT 'Natural',
+    -- Campos opcionales: solo aplican a personas naturales / no-corporativos
+    nivel_profesional   TEXT
+                      CHECK (nivel_profesional IS NULL OR nivel_profesional IN ('Bachiller','TSU','Universitario','Postgrado')),
+    es_corredor_inmobiliario INTEGER
+                      CHECK (es_corredor_inmobiliario IS NULL OR es_corredor_inmobiliario IN (0, 1)),
+    -- Campos exclusivos para Corporativo
+    razon_social        TEXT,
+    representante_legal TEXT,
+    url_cedula          TEXT,
+    url_titulo          TEXT,
+    url_cv              TEXT,
+    id_agremiado_corp   INTEGER, -- Link a la empresa que invita
+    fecha_expiracion    TEXT NOT NULL,
+    creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_verif_preinsc_email_programa
+    ON verificaciones_preinscripciones(email, programa_codigo)`,
+
   // ── Tabla de autenticación (usuarios del sistema) ───────────────────────────
   `CREATE TABLE IF NOT EXISTS users (
     id            INTEGER  PRIMARY KEY,
     email         TEXT     NOT NULL UNIQUE,
     password_hash TEXT     NOT NULL,
-    roles         TEXT     NOT NULL DEFAULT '["afiliado"]',
-    rol           TEXT     NOT NULL DEFAULT 'afiliado', -- deprecado pero mantenido temporalmente si hay codigo viejo
+    rol           TEXT     NOT NULL DEFAULT 'estudiante',
+    roles         TEXT     NOT NULL DEFAULT '["estudiante"]',
     id_agremiado  INTEGER  REFERENCES agremiados(id_agremiado) ON DELETE SET NULL,
     activo        INTEGER  NOT NULL DEFAULT 1
                   CHECK (activo IN (0, 1)),
@@ -152,14 +231,24 @@ const statements = [
     id_inscripcion     INTEGER     PRIMARY KEY,
     id_estudiante      INTEGER     NOT NULL,
     id_curso           INTEGER, -- si todavía es solo preinscripción por programa, puede ser NULL
-    programa_codigo    TEXT,    -- 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' (catálogo público)
+    programa_codigo    TEXT,    -- 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' | 'AFILIACION' (catálogo público)
+    tipo_inscripcion   TEXT      NOT NULL DEFAULT 'cohorte'
+                      CHECK (tipo_inscripcion IN ('programa','cohorte')),
     estatus            TEXT      NOT NULL DEFAULT 'Preinscrito'
-                      CHECK (estatus IN ('Preinscrito','Inscrito','Rechazado','Cancelado')),
+                      CHECK (estatus IN ('Preinscrito','Entrevista','Inscrito','Rechazado','Cancelado')),
+    entrevista_fecha   TEXT,
+    entrevista_hora    TEXT,
+    entrevista_lugar   TEXT,
+    entrevista_estatus TEXT      NOT NULL DEFAULT 'Pendiente'
+                      CHECK (entrevista_estatus IN ('Pendiente','Realizada','Cancelada')),
     nota_admin         TEXT,
     asignado_por       INTEGER, -- users.id
     aprobado_por       INTEGER, -- users.id
+    id_agremiado_corp  INTEGER, -- Link a la empresa (para AFILIACION_CORP)
     creado_en          TEXT      NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     actualizado_en     TEXT,
+    completado         INTEGER     NOT NULL DEFAULT 0
+                      CHECK (completado IN (0, 1)),
     CONSTRAINT fk_insc_estudiante
       FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
       ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -172,6 +261,23 @@ const statements = [
     CONSTRAINT fk_insc_aprobado_por
       FOREIGN KEY (aprobado_por) REFERENCES users(id)
       ON DELETE SET NULL ON UPDATE CASCADE
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS convalidaciones_ciebo (
+    id_convalidacion    INTEGER     PRIMARY KEY,
+    id_estudiante       INTEGER     NOT NULL,
+    modulo_numero       INTEGER     NOT NULL CHECK (modulo_numero BETWEEN 1 AND 5),
+    estatus             TEXT        NOT NULL DEFAULT 'Convalidado'
+                        CHECK (estatus IN ('Pendiente','Cursado','Convalidado')),
+    fecha_registro      TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    registrado_por      INTEGER,    -- users.id
+    CONSTRAINT fk_conv_estudiante
+      FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_conv_registrado_por
+      FOREIGN KEY (registrado_por) REFERENCES users(id)
+      ON DELETE SET NULL ON UPDATE CASCADE,
+    UNIQUE(id_estudiante, modulo_numero)
   )`,
 
   // Evitar duplicados (SQLite permite índices parciales)
@@ -191,8 +297,8 @@ const statements = [
     codigo_validacion   TEXT        UNIQUE NOT NULL,
     fecha_emision       TEXT        NOT NULL,
     url_documento       TEXT,
-    CONSTRAINT fk_certificado_inscripcion
-      FOREIGN KEY (id_inscripcion) REFERENCES inscripciones_academicas(id_inscripcion)
+    CONSTRAINT fk_certificado_inscripcion_curso
+      FOREIGN KEY (id_inscripcion) REFERENCES inscripciones_cursos(id_inscripcion)
       ON DELETE RESTRICT ON UPDATE CASCADE
   )`,
 
@@ -384,6 +490,21 @@ const statements = [
     orden         INTEGER  NOT NULL DEFAULT 0
   )`,
 
+  `CREATE TABLE IF NOT EXISTS cms_normativas (
+    id               INTEGER  PRIMARY KEY,
+    titulo           TEXT     NOT NULL,
+    descripcion      TEXT,
+    url_documento    TEXT     NOT NULL,
+    categoria        TEXT,
+    orden            INTEGER  NOT NULL DEFAULT 0,
+    activo           INTEGER  NOT NULL DEFAULT 1
+                     CHECK (activo IN (0, 1)),
+    creado_en        TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    actualizado_en   TEXT
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_cms_normativas_activo ON cms_normativas(activo)`,
+
   `CREATE TABLE IF NOT EXISTS cms_configuracion (
     clave         TEXT     PRIMARY KEY,
     valor         TEXT     NOT NULL,
@@ -399,8 +520,437 @@ const statements = [
   `CREATE INDEX IF NOT EXISTS idx_cms_paginas_actualizado ON cms_paginas(actualizado_en)`
 ]
 
+const RESET_SCHEMA =
+  process.env.INITDB_RESET === '1' ||
+  process.argv.includes('--reset') ||
+  process.argv.includes('reset')
+
+/** Orden: hijas primero (FK), para que DROP funcione aunque foreign_keys esté mal soportado en remoto. */
+const DROP_TABLE_ORDER = [
+  'certificados',
+  'evidencias_legales',
+  'transacciones_pagos',
+  'inscripciones_cursos',
+  'denuncias',
+  'inscripciones_academicas',
+  'cuotas_contables',
+  'solvencias',
+  'planes_gestion',
+  'estudiantes',
+  'users',
+  'verificaciones_email',
+  'verificaciones_preinscripciones',
+  'cursos',
+  'cms_noticias',
+  'cms_cursos',
+  'cms_convenios',
+  'cms_directiva',
+  'cms_hitos',
+  'cms_normativas',
+  'cms_configuracion',
+  'cms_paginas',
+  'actas_y_convocatorias',
+  'agremiados',
+  'instructores',
+] as const
+
+async function dropAllUserTables(): Promise<void> {
+  console.log('INITDB_RESET: eliminando tablas existentes (PRAGMA foreign_keys=OFF)...\n')
+  await db.execute('PRAGMA foreign_keys = OFF')
+  for (const name of DROP_TABLE_ORDER) {
+    const safe = name.replace(/"/g, '""')
+    await db.execute({ sql: `DROP TABLE IF EXISTS "${safe}"`, args: [] })
+    console.log(`  · dropped ${name}`)
+  }
+  // Cualquier tabla huérfana que no esté en la lista (p. ej. migraciones futuras)
+  const { rows } = await db.execute({
+    sql: `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'`,
+    args: [],
+  })
+  for (const row of rows) {
+    const name = String((row as unknown as { name: unknown }).name)
+    if (DROP_TABLE_ORDER.includes(name as (typeof DROP_TABLE_ORDER)[number])) continue
+    const safe = name.replace(/"/g, '""')
+    await db.execute({ sql: `DROP TABLE IF EXISTS "${safe}"`, args: [] })
+    console.log(`  · dropped ${name} (extra)`)
+  }
+  await db.execute('PRAGMA foreign_keys = ON')
+  console.log('')
+}
+
+async function tableColumnNames(table: string): Promise<Set<string>> {
+  const { rows } = await db.execute({ sql: `PRAGMA table_info(${table})`, args: [] })
+  return new Set(
+    rows.map((r: Record<string, unknown>) => String(r.name))
+  )
+}
+
+async function tableExists(name: string): Promise<boolean> {
+  const { rows } = await db.execute({
+    sql: `SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`,
+    args: [name],
+  })
+  return rows.length > 0
+}
+
+/**
+ * Ajusta BDs creadas antes de nuevas columnas (CREATE IF NOT EXISTS no altera tablas viejas).
+ */
+async function migrateLegacyColumns(): Promise<void> {
+  if (await tableExists('estudiantes')) {
+    const cols = await tableColumnNames('estudiantes')
+    if (!cols.has('nivel_profesional')) {
+      await db.execute(`ALTER TABLE estudiantes ADD COLUMN nivel_profesional TEXT`)
+      console.log('  · migrate: estudiantes.nivel_profesional')
+    }
+    if (!cols.has('es_corredor_inmobiliario')) {
+      await db.execute(
+        `ALTER TABLE estudiantes ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
+      )
+      console.log('  · migrate: estudiantes.es_corredor_inmobiliario')
+    }
+  }
+
+  if (await tableExists('verificaciones_preinscripciones')) {
+    const cols = await tableColumnNames('verificaciones_preinscripciones')
+    if (!cols.has('nivel_profesional')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN nivel_profesional TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.nivel_profesional')
+    }
+    if (!cols.has('es_corredor_inmobiliario')) {
+      await db.execute(
+        `ALTER TABLE verificaciones_preinscripciones ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
+      )
+      console.log('  · migrate: verificaciones_preinscripciones.es_corredor_inmobiliario')
+    }
+  }
+
+  if (await tableExists('inscripciones_cursos')) {
+    const cols = await tableColumnNames('inscripciones_cursos')
+    if (!cols.has('tipo_inscripcion')) {
+      await db.execute(
+        `ALTER TABLE inscripciones_cursos ADD COLUMN tipo_inscripcion TEXT NOT NULL DEFAULT 'cohorte'`
+      )
+      console.log('  · migrate: inscripciones_cursos.tipo_inscripcion')
+    }
+    if (!cols.has('entrevista_fecha')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_fecha TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_fecha')
+    }
+    if (!cols.has('entrevista_hora')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_hora TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_hora')
+    }
+    if (!cols.has('entrevista_lugar')) {
+      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_lugar TEXT`)
+      console.log('  · migrate: inscripciones_cursos.entrevista_lugar')
+    }
+    if (!cols.has('entrevista_estatus')) {
+      await db.execute(
+        `ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_estatus TEXT NOT NULL DEFAULT 'Pendiente'`
+      )
+      console.log('  · migrate: inscripciones_cursos.entrevista_estatus')
+    }
+
+    // Nueva migración para el CHECK constraint
+    await migrateInscripcionesEstatusCheck()
+  }
+
+  if (await tableExists('agremiados')) {
+    const cols = await tableColumnNames('agremiados')
+    if (!cols.has('cibir_convalidado')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN cibir_convalidado INTEGER NOT NULL DEFAULT 0`)
+      console.log('  · migrate: agremiados.cibir_convalidado')
+    }
+
+    // Nuevas columnas basadas en el formato extendido
+    if (!cols.has('razon_social')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN razon_social TEXT`)
+      console.log('  · migrate: agremiados.razon_social')
+    }
+    if (!cols.has('nombres')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN nombres TEXT`)
+      console.log('  · migrate: agremiados.nombres')
+    }
+    if (!cols.has('apellidos')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN apellidos TEXT`)
+      console.log('  · migrate: agremiados.apellidos')
+    }
+    if (!cols.has('cedula_personal')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN cedula_personal TEXT`)
+      console.log('  · migrate: agremiados.cedula_personal')
+    }
+    if (!cols.has('direccion')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN direccion TEXT`)
+      console.log('  · migrate: agremiados.direccion')
+    }
+    if (!cols.has('fecha_nacimiento')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN fecha_nacimiento TEXT`)
+      console.log('  · migrate: agremiados.fecha_nacimiento')
+    }
+    if (!cols.has('nivel_academico')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN nivel_academico TEXT`)
+      console.log('  · migrate: agremiados.nivel_academico')
+    }
+    if (!cols.has('notas')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN notas TEXT`)
+      console.log('  · migrate: agremiados.notas')
+    }
+    if (!cols.has('tipo_afiliado')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN tipo_afiliado TEXT NOT NULL DEFAULT 'Natural'`)
+      console.log('  · migrate: agremiados.tipo_afiliado')
+    }
+    if (!cols.has('representante_legal')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN representante_legal TEXT`)
+      console.log('  · migrate: agremiados.representante_legal')
+    }
+    if (!cols.has('id_agremiado_corp')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN id_agremiado_corp INTEGER REFERENCES agremiados(id_agremiado) ON DELETE SET NULL`)
+      console.log('  · migrate: agremiados.id_agremiado_corp')
+    }
+
+    // Migración de estados de agremiados
+    await migrateAgremiadosEstatusCheck()
+
+    // Nuevas columnas de documentos
+    if (!cols.has('url_cedula')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_cedula TEXT`)
+      console.log('  · migrate: agremiados.url_cedula')
+    }
+    if (!cols.has('url_titulo')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_titulo TEXT`)
+      console.log('  · migrate: agremiados.url_titulo')
+    }
+    if (!cols.has('url_cv')) {
+      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_cv TEXT`)
+      console.log('  · migrate: agremiados.url_cv')
+    }
+  }
+
+  if (await tableExists('estudiantes')) {
+    const cols = await tableColumnNames('estudiantes')
+    if (!cols.has('url_cedula')) {
+      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_cedula TEXT`)
+      console.log('  · migrate: estudiantes.url_cedula')
+    }
+    if (!cols.has('url_titulo')) {
+      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_titulo TEXT`)
+      console.log('  · migrate: estudiantes.url_titulo')
+    }
+    if (!cols.has('url_cv')) {
+      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_cv TEXT`)
+      console.log('  · migrate: estudiantes.url_cv')
+    }
+  }
+
+  if (await tableExists('verificaciones_preinscripciones')) {
+    const cols = await tableColumnNames('verificaciones_preinscripciones')
+    if (!cols.has('url_cedula')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_cedula TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.url_cedula')
+    }
+    if (!cols.has('url_titulo')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_titulo TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.url_titulo')
+    }
+    if (!cols.has('url_cv')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_cv TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.url_cv')
+    }
+    if (!cols.has('tipo_afiliado')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN tipo_afiliado TEXT NOT NULL DEFAULT 'Natural'`)
+      console.log('  · migrate: verificaciones_preinscripciones.tipo_afiliado')
+    }
+    if (!cols.has('razon_social')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN razon_social TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.razon_social')
+    }
+    if (!cols.has('representante_legal')) {
+      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN representante_legal TEXT`)
+      console.log('  · migrate: verificaciones_preinscripciones.representante_legal')
+    }
+  }
+
+  // Tabla de invitaciones corporativas
+  if (!(await tableExists('invitaciones_corporativas'))) {
+    console.log('  · migrate: invitaciones_corporativas (creando tabla)')
+    await db.execute(`CREATE TABLE IF NOT EXISTS invitaciones_corporativas (
+      id_invitacion     INTEGER  PRIMARY KEY,
+      id_agremiado_corp INTEGER  NOT NULL,
+      token             TEXT     UNIQUE NOT NULL,
+      nombre_empresa    TEXT     NOT NULL,
+      activo            INTEGER  NOT NULL DEFAULT 1,
+      fecha_expiracion  TEXT,
+      creado_en         TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    )`)
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_invitaciones_corp ON invitaciones_corporativas(id_agremiado_corp)`)
+    await db.execute(`CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON invitaciones_corporativas(token)`)
+  }
+
+  if (!(await tableExists('cms_normativas'))) {
+    console.log('  · migrate: cms_normativas (creando tabla)')
+    await db.execute(statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS cms_normativas'))!)
+  }
+}
+
+async function migrateInscripcionesEstatusCheck() {
+  const res = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='inscripciones_cursos'")
+  if (res.rows.length === 0) return
+
+  const sql = res.rows[0].sql as string
+  if (sql.includes("'Entrevista'")) return
+
+  console.log('  · migrate: Actualizando CHECK constraint de inscripciones_cursos (recreando tabla)...')
+
+  await db.execute('PRAGMA foreign_keys = OFF')
+
+  try {
+    // 1. Renombrar
+    await db.execute('ALTER TABLE inscripciones_cursos RENAME TO inscripciones_cursos_old')
+
+    // 2. Crear nueva con el esquema correcto
+    const createStmt = statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS inscripciones_cursos'))!
+    await db.execute(createStmt)
+
+    // 3. Mapear columnas comunes para la copia
+    const oldColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos_old)')
+    const oldCols = (oldColsRes.rows as any[]).map(c => c.name)
+    const newColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos)')
+    const newCols = (newColsRes.rows as any[]).map(c => c.name)
+
+    const commonCols = oldCols.filter(c => newCols.includes(c))
+    const colsStr = commonCols.join(', ')
+
+    await db.execute(`
+      INSERT INTO inscripciones_cursos (${colsStr})
+      SELECT ${colsStr} FROM inscripciones_cursos_old
+    `)
+
+    // 4. Recrear índices asociados
+    const tableIndexes = statements.filter(s =>
+      (s.includes('CREATE INDEX') || s.includes('CREATE UNIQUE INDEX')) &&
+      s.includes('ON inscripciones_cursos')
+    )
+    for (const idx of tableIndexes) {
+      await db.execute(idx)
+    }
+
+    // 5. Borrar tabla vieja
+    await db.execute('DROP TABLE inscripciones_cursos_old')
+
+    console.log('  · migrate: inscripciones_cursos actualizada exitosamente.')
+  } catch (err) {
+    console.error('Error en migración de CHECK constraint:', err)
+    // Intentar restaurar si falló
+    await db.execute('DROP TABLE IF EXISTS inscripciones_cursos')
+    const hasOld = await db.execute("SELECT 1 FROM sqlite_master WHERE name='inscripciones_cursos_old'")
+    if (hasOld.rows.length > 0) {
+      await db.execute('ALTER TABLE inscripciones_cursos_old RENAME TO inscripciones_cursos')
+    }
+  } finally {
+    await db.execute('PRAGMA foreign_keys = ON')
+  }
+}
+
+async function migrateAgremiadosEstatusCheck() {
+  const res = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='agremiados'")
+  if (res.rows.length === 0) return
+
+  const sql = res.rows[0].sql as string
+  if (sql.includes("'1_SOLICITUD'")) return
+
+  console.log('  · migrate: Actualizando CHECK constraint de agremiados (recreando tabla)...')
+
+  await db.execute('PRAGMA foreign_keys = OFF')
+
+  try {
+    // 1. Renombrar
+    await db.execute('ALTER TABLE agremiados RENAME TO agremiados_old')
+
+    // 2. Crear nueva con el esquema correcto
+    const createStmt = statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS agremiados'))!
+    await db.execute(createStmt)
+
+    // 3. Mapear columnas comunes para la copia
+    const oldColsRes = await db.execute('PRAGMA table_info(agremiados_old)')
+    const oldCols = (oldColsRes.rows as any[]).map(c => c.name)
+    const newColsRes = await db.execute('PRAGMA table_info(agremiados)')
+    const newCols = (newColsRes.rows as any[]).map(c => c.name)
+
+    const commonCols = oldCols.filter(c => newCols.includes(c))
+    const colsStr = commonCols.join(', ')
+
+    // 4. Copiar datos mapeando estados viejos a nuevos
+    await db.execute(`
+      INSERT INTO agremiados (${colsStr})
+      SELECT 
+        ${commonCols.map(c => {
+      if (c === 'estatus') {
+        return `CASE 
+              WHEN estatus = 'Preinscrito' THEN '1_SOLICITUD'
+              WHEN estatus = 'CIBIR' THEN '9_AFILIACION'
+              ELSE estatus 
+            END`
+      }
+      return c
+    }).join(', ')}
+      FROM agremiados_old
+    `)
+
+    // 5. Recrear índices asociados
+    const tableIndexes = statements.filter(s =>
+      (s.includes('CREATE INDEX') || s.includes('CREATE UNIQUE INDEX')) &&
+      s.includes('ON agremiados')
+    )
+    for (const idx of tableIndexes) {
+      await db.execute(idx)
+    }
+
+    // 6. Borrar tabla vieja
+    await db.execute('DROP TABLE agremiados_old')
+
+    console.log('  · migrate: agremiados actualizada exitosamente.')
+  } catch (err) {
+    console.error('Error en migración de agremiados:', err)
+    // Intentar restaurar si falló
+    await db.execute('DROP TABLE IF EXISTS agremiados')
+    const hasOld = await db.execute("SELECT 1 FROM sqlite_master WHERE name='agremiados_old'")
+    if (hasOld.rows.length > 0) {
+      await db.execute('ALTER TABLE agremiados_old RENAME TO agremiados')
+    }
+  } finally {
+    await db.execute('PRAGMA foreign_keys = ON')
+  }
+}
+
+async function seedSuperAdmin(): Promise<void> {
+  const email = 'admin@admin.com'
+  const password = 'admin12'
+  const roles = '["super_admin", "admin"]'
+  const rol = 'super_admin'
+
+  const { rows } = await db.execute({
+    sql: `SELECT id FROM users WHERE email = ?`,
+    args: [email],
+  })
+
+  if (rows.length === 0) {
+    const hash = await bcrypt.hash(password, 10)
+    await db.execute({
+      sql: `INSERT INTO users (email, password_hash, roles, rol, activo) 
+            VALUES (?, ?, ?, ?, 1)`,
+      args: [email, hash, roles, rol],
+    })
+    console.log(`  · Seed: Super admin creado (${email})`)
+  }
+}
+
 async function initDb(): Promise<void> {
   console.log('Iniciando creación del esquema en Turso...\n')
+
+  if (RESET_SCHEMA) {
+    await dropAllUserTables()
+  }
 
   await db.execute('PRAGMA foreign_keys = ON')
 
@@ -409,6 +959,11 @@ async function initDb(): Promise<void> {
     .map(sql => ({ sql, args: [] as [] }))
 
   await db.batch(schemaBatch, 'write')
+
+  await migrateLegacyColumns()
+
+  console.log('Sembrando datos iniciales...\n')
+  await seedSuperAdmin()
 
   console.log('Esquema creado correctamente.\n')
   console.log('Tablas disponibles:')

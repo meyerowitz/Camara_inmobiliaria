@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import bgBolivar from '@/pages/landing/assets/Camara_Metropolitana.jpg'
+import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import { API_URL } from '@/config/env'
 
@@ -51,7 +51,7 @@ export default function Historia() {
   }, [])
   return (
     <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
-      <Navbar  />
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <header
         className='relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[45vh] bg-cover animate-header-bg'
         style={{ backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.88), rgba(2, 44, 34, 0.88)), url(${bgBolivar})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}

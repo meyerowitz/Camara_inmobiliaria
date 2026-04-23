@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { api, FormField, Input, Textarea, BtnPrimary, BtnDanger, BtnSecondary, ListDetail } from '@/pages/admin/components/Cms/CmsShared'
+import { api, FormField, Input, Textarea, BtnPrimary, BtnDanger, BtnSecondary, ListDetail, uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared'
 
 interface NoticiaItem {
   id: string | number;
@@ -19,6 +19,21 @@ export const NoticiasPanel = () => {
   const [form, setForm] = useState({ titulo: '', extracto: '', imagen_url: '', categoria: 'Noticias', tag: '', fecha: '', publicado: true })
   const [saving, setSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const uploadImage = async (file: File) => {
+    setUploadError(null)
+    setUploading(true)
+    try {
+      const publicUrl = await uploadFileSupabase(file, 'noticias')
+      setForm((p) => ({ ...p, imagen_url: publicUrl }))
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Error al subir archivo')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -65,7 +80,22 @@ export const NoticiasPanel = () => {
       <h3 className="text-sm font-bold text-slate-800">{selectedId === 'new' ? 'Nueva Noticia' : 'Editar Noticia'}</h3>
       <FormField label="Título"><Input value={form.titulo} onChange={f('titulo')} placeholder="Título de la noticia" /></FormField>
       <FormField label="Extracto"><Textarea value={form.extracto} onChange={f('extracto')} placeholder="Descripción corta..." /></FormField>
-      <FormField label="URL de imagen"><Input value={form.imagen_url} onChange={f('imagen_url')} placeholder="https://..." /></FormField>
+      <FormField label="Imagen de portada (subida directa)">
+        <Input
+          type="file"
+          accept="image/*,.svg,.png,.jpg,.jpeg,.webp"
+          disabled={uploading}
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) uploadImage(file)
+          }}
+        />
+      </FormField>
+      {uploadError && <p className="text-[11px] text-red-600 -mt-2">{uploadError}</p>}
+      <p className="text-[10px] text-slate-400 leading-relaxed -mt-2">
+        Al subir el archivo, se guarda y completa automáticamente la imagen.
+      </p>
+      {form.imagen_url && <img src={form.imagen_url} alt="preview" className="h-24 w-auto object-cover rounded-lg border border-gray-100 p-1" />}
       <div className="grid grid-cols-2 gap-3">
         <FormField label="Categoría"><Input value={form.categoria} onChange={f('categoria')} /></FormField>
         <FormField label="Tag"><Input value={form.tag} onChange={f('tag')} placeholder="Legal, Mercado..." /></FormField>
@@ -78,7 +108,7 @@ export const NoticiasPanel = () => {
         </FormField>
       </div>
       <div className="flex gap-2 pt-2">
-        <BtnPrimary onClick={save} disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
+        <BtnPrimary onClick={save} disabled={saving || uploading}>{uploading ? 'Subiendo...' : saving ? 'Guardando...' : 'Guardar'}</BtnPrimary>
         <BtnSecondary onClick={() => { setSelectedId(null); setIsEditing(false) }}>Cancelar</BtnSecondary>
       </div>
     </div>

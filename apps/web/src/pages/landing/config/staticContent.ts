@@ -19,7 +19,7 @@ export const STATIC = {
     boton: 'Contáctanos',
     cards: [
       { title: 'Misión y Visión', path: '/mision_vision', img: 'https://escalas.org/wp-content/uploads/2019/10/4-1.jpg' },
-      { title: 'Propósito', path: '/proposito', img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800' },
+      { title: 'Historia', path: '/historia', img: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80&w=800' },
       { title: 'Junta Directiva', path: '/junta_directiva', img: 'https://gentecompetente.com/wp-content/uploads/2023/10/las-empresas-que-se-hacen-querer.jpg' },
     ],
   },
