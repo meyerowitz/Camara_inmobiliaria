@@ -141,7 +141,7 @@ export default function Padi() {
               </div>
             </div>
           </div>
-//ÑIEJEJEJJEJEJJEJEJEJJEJEJJE
+//ÑIEJEJEJJEJEJJEJEJEJJEJEJJEJEJJEJEJEJ
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-32 items-stretch">
             <div className="relative rounded-[3rem] overflow-hidden group">
               <div className="absolute inset-0 bg-[#022c22]/90 flex flex-col justify-end p-12 text-white">
