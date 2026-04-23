@@ -35,6 +35,7 @@ import UsersPanel from '@/pages/admin/components/Users/UsersPanel';
 import SuperAdminUsersPanel from '@/pages/admin/components/Users/SuperAdminUsersPanel';
 import AnalyticsPanel from '@/pages/admin/components/Analytics/AnalyticsPanel';
 import FormacionPanel from '@/pages/admin/components/Formacion/FormacionPanel';
+import MiembrosPanel from '@/pages/admin/components/Afiliados/MiembrosPanel';
 
 import CmsDashboard from '@/pages/admin/components/dashboard/CmsDashboard';
 import CmsArticlesPanel, { type CmsTab } from '@/pages/admin/components/Cms/CmsArticlesPanel';
@@ -56,7 +57,8 @@ const NAV_AFILIADO = [
 ];
 
 const NAV_ADMIN_CORE = [
-  { icon: Users, label: 'Gestión de Afiliados' },
+  { icon: Users, label: 'Directorio de Miembros' },
+  { icon: ShieldCheck, label: 'Control de Acceso' },
   { icon: BookOpen, label: 'Gestión de Formación' },
   { icon: BarChart, label: 'Análisis y Métricas' },
 ];
@@ -225,7 +227,8 @@ const PanelPage = () => {
     // 2. Sección Administrativa
     if (!isAdmin) return null;
 
-    if (activeTab === 'Gestión de Afiliados') return <div className="col-span-1 lg:col-span-3 min-h-[600px] bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><UsersPanel /></div>;
+    if (activeTab === 'Directorio de Miembros') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><MiembrosPanel /></div>;
+    if (activeTab === 'Control de Acceso') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><UsersPanel /></div>;
     if (activeTab === 'Administradores') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] p-6 overflow-hidden"><SuperAdminUsersPanel /></div>;
     if (activeTab === 'Análisis y Métricas') return <div className="col-span-1 lg:col-span-3 min-h-[600px]"><AnalyticsPanel /></div>;
     if (activeTab === 'Gestión de Formación') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] overflow-hidden"><FormacionPanel /></div>;
@@ -252,6 +255,8 @@ const PanelPage = () => {
     return null;
   };
 
+  const isFullPanel = (activeTab.startsWith('CMS ·') || ['Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea', 'Directorio de Miembros', 'Control de Acceso', 'Administradores', 'Análisis y Métricas', 'Gestión de Formación'].includes(activeTab)) || (activeTab === 'Resumen / Inicio' && isAdmin);
+
   return (
     <div className="h-screen flex font-sans overflow-hidden" style={{ backgroundColor: 'var(--color-bg-page)', color: 'var(--color-text-base)' }}>
       <DashboardSidebar
@@ -270,8 +275,8 @@ const PanelPage = () => {
           userCode={displayCode}
         />
 
-        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {((activeTab.startsWith('CMS ·') || ['Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea', 'Gestión de Afiliados', 'Administradores', 'Análisis y Métricas', 'Gestión de Formación'].includes(activeTab)) || (activeTab === 'Resumen / Inicio' && isAdmin)) ? (
+        <div className={`flex-1 min-h-0 ${isFullPanel ? 'h-full overflow-hidden' : 'overflow-y-auto p-4 sm:p-6 lg:p-8'}`}>
+          {isFullPanel ? (
              renderContent()
           ) : (
               <div className="max-w-7xl mx-auto w-full space-y-6 lg:space-y-8">

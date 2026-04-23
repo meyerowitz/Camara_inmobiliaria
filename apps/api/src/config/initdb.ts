@@ -66,6 +66,11 @@ const statements = [
     url_cedula                  TEXT,
     url_titulo                  TEXT,
     url_cv                      TEXT,
+    instagram                   TEXT,
+    facebook                    TEXT,
+    linkedin                    TEXT,
+    twitter                     TEXT,
+    website                     TEXT,
     CONSTRAINT chk_email_formato CHECK (email LIKE '%@%.%')
   )`,
 
@@ -93,45 +98,37 @@ const statements = [
     id_agremiado      INTEGER,
     cedula_rif        TEXT,
     nombre_completo   TEXT        NOT NULL,
-    email             TEXT        NOT NULL,
+    email             TEXT        NOT NULL UNIQUE,
     telefono          TEXT,
-    nivel_profesional TEXT
-                    CHECK (nivel_profesional IS NULL OR nivel_profesional IN ('Bachiller','TSU','Universitario','Postgrado')),
-    es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0
-                    CHECK (es_corredor_inmobiliario IN (0, 1)),
-    tipo              TEXT        NOT NULL DEFAULT 'Regular'
-                      CHECK (tipo IN ('Regular','Agremiado')),
-    creado_en         TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    actualizado_en    TEXT,
+    programa_interes  TEXT,
+    nivel_profesional TEXT        CHECK (nivel_profesional IS NULL OR nivel_profesional IN ('Bachiller','TSU','Universitario','Postgrado')),
+    es_corredor_inmobiliario INTEGER CHECK (es_corredor_inmobiliario IS NULL OR es_corredor_inmobiliario IN (0, 1)),
+    tipo              TEXT        NOT NULL DEFAULT 'Regular' CHECK (tipo IN ('Regular','Invitado','Agremiado')),
     url_cedula        TEXT,
     url_titulo        TEXT,
     url_cv            TEXT,
-    CONSTRAINT fk_estudiante_agremiado
-      FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado)
-      ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT chk_estudiante_email CHECK (email LIKE '%@%.%')
+    creado_en         TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    CONSTRAINT fk_estudiante_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE SET NULL
   )`,
 
-  `CREATE UNIQUE INDEX IF NOT EXISTS uq_estudiantes_email ON estudiantes(email)`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS uq_estudiantes_cedula_rif ON estudiantes(cedula_rif)`,
-  `CREATE INDEX IF NOT EXISTS idx_estudiantes_agremiado ON estudiantes(id_agremiado)`,
+  `CREATE INDEX IF NOT EXISTS idx_estudiantes_email ON estudiantes(email)`,
+  `CREATE INDEX IF NOT EXISTS idx_estudiantes_cedula ON estudiantes(cedula_rif)`,
 
   `CREATE TABLE IF NOT EXISTS verificaciones_email (
-    token_verificacion  TEXT PRIMARY KEY,
-    nombre_completo     TEXT NOT NULL,
-    cedula_rif          TEXT NOT NULL,
-    email               TEXT NOT NULL,
-    telefono            TEXT,
-    fecha_expiracion    TEXT NOT NULL,
-    creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    id          INTEGER  PRIMARY KEY,
+    email       TEXT     NOT NULL,
+    token       TEXT     NOT NULL UNIQUE,
+    expira_en   TEXT     NOT NULL,
+    usado       INTEGER  NOT NULL DEFAULT 0 CHECK (usado IN (0, 1)),
+    creado_en   TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
 
-  // ── Verificación de preinscripción (programas principales) ──────────────────
   `CREATE TABLE IF NOT EXISTS verificaciones_preinscripciones (
-    token_verificacion  TEXT PRIMARY KEY,
-    nombre_completo     TEXT NOT NULL,
+    id                  INTEGER  PRIMARY KEY,
+    token_verificacion  TEXT     NOT NULL UNIQUE,
+    email               TEXT     NOT NULL,
+    nombre_completo     TEXT     NOT NULL,
     cedula_rif          TEXT,
-    email               TEXT NOT NULL,
     telefono            TEXT,
     programa_codigo     TEXT NOT NULL
                       CHECK (programa_codigo IN ('PADI','PEGI','PREANI','CIBIR', 'AFILIACION')),
@@ -163,35 +160,36 @@ const statements = [
     rol           TEXT     NOT NULL DEFAULT 'estudiante',
     roles         TEXT     NOT NULL DEFAULT '["estudiante"]',
     id_agremiado  INTEGER  REFERENCES agremiados(id_agremiado) ON DELETE SET NULL,
-    activo        INTEGER  NOT NULL DEFAULT 1
-                  CHECK (activo IN (0, 1)),
-    reset_token         TEXT,
-    reset_token_expira  TEXT,
+    reset_token   TEXT,
+    reset_token_expira TEXT,
+    activo        INTEGER  NOT NULL DEFAULT 1 CHECK (activo IN (0, 1)),
     creado_en     TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
 
   `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
-  `CREATE INDEX IF NOT EXISTS idx_users_rol   ON users(rol)`,
 
-  // ===========================================================
-  // FASE 1 — MÓDULO ACADÉMICO Y DE FORMACIÓN
-  // ===========================================================
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASE 2 — ACADEMIA (CURSOS, COHORTES, INSCRIPCIONES)
+  // ───────────────────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS instructores (
-    id_instructor   INTEGER     PRIMARY KEY,
-    nombre          TEXT        NOT NULL,
-    especialidad    TEXT,
-    email           TEXT        UNIQUE,
-    activo          INTEGER     NOT NULL DEFAULT 1
-                    CHECK (activo IN (0, 1))
+    id_instructor       INTEGER     PRIMARY KEY,
+    nombre              TEXT        NOT NULL,
+    especialidad        TEXT,
+    email               TEXT,
+    activo              INTEGER     NOT NULL DEFAULT 1 CHECK (activo IN (0, 1))
   )`,
 
   `CREATE TABLE IF NOT EXISTS cursos (
     id_curso            INTEGER     PRIMARY KEY,
-    id_instructor       INTEGER     NOT NULL,
+    id_instructor       INTEGER,
     nombre              TEXT        NOT NULL,
     descripcion         TEXT,
-    imagen_url          TEXT,
+    programa_codigo     TEXT        CHECK (programa_codigo IN ('PADI','PEGI','PREANI','CIBIR','AFILIACION')),
     nivel_academico     TEXT,
+    precio              REAL,
+    imagen_url          TEXT,
+    creado_en           TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    actualizado_en      TEXT,
     cupos_totales       INTEGER     NOT NULL CHECK (cupos_totales > 0),
     cupos_disponibles   INTEGER     NOT NULL CHECK (cupos_disponibles >= 0),
     fecha_inicio        TEXT,
@@ -247,11 +245,13 @@ const statements = [
     id_agremiado_corp  INTEGER, -- Link a la empresa (para AFILIACION_CORP)
     creado_en          TEXT      NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     actualizado_en     TEXT,
-    completado         INTEGER     NOT NULL DEFAULT 0
-                      CHECK (completado IN (0, 1)),
+    pago_comprobante   TEXT,
+    monto_pagado       REAL,
+    referencia_pago    TEXT,
+    completado         INTEGER   NOT NULL DEFAULT 0 CHECK (completado IN (0, 1)),
     CONSTRAINT fk_insc_estudiante
       FOREIGN KEY (id_estudiante) REFERENCES estudiantes(id_estudiante)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
+      ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_insc_curso
       FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
       ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -277,233 +277,151 @@ const statements = [
     CONSTRAINT fk_conv_registrado_por
       FOREIGN KEY (registrado_por) REFERENCES users(id)
       ON DELETE SET NULL ON UPDATE CASCADE,
-    UNIQUE(id_estudiante, modulo_numero)
+    CONSTRAINT uq_convalidacion UNIQUE (id_estudiante, modulo_numero)
   )`,
-
-  // Evitar duplicados (SQLite permite índices parciales)
-  `CREATE UNIQUE INDEX IF NOT EXISTS uq_insc_estudiante_programa_pre
-    ON inscripciones_cursos(id_estudiante, programa_codigo)
-    WHERE programa_codigo IS NOT NULL AND (id_curso IS NULL)`,
-  `CREATE UNIQUE INDEX IF NOT EXISTS uq_insc_estudiante_curso
-    ON inscripciones_cursos(id_estudiante, id_curso)
-    WHERE id_curso IS NOT NULL`,
-  `CREATE INDEX IF NOT EXISTS idx_insc_estatus ON inscripciones_cursos(estatus)`,
-  `CREATE INDEX IF NOT EXISTS idx_insc_programa ON inscripciones_cursos(programa_codigo)`,
-  `CREATE INDEX IF NOT EXISTS idx_insc_curso ON inscripciones_cursos(id_curso)`,
 
   `CREATE TABLE IF NOT EXISTS certificados (
     id_certificado      INTEGER     PRIMARY KEY,
-    id_inscripcion      INTEGER     NOT NULL UNIQUE,
-    codigo_validacion   TEXT        UNIQUE NOT NULL,
-    fecha_emision       TEXT        NOT NULL,
-    url_documento       TEXT,
-    CONSTRAINT fk_certificado_inscripcion_curso
-      FOREIGN KEY (id_inscripcion) REFERENCES inscripciones_cursos(id_inscripcion)
-      ON DELETE RESTRICT ON UPDATE CASCADE
+    id_agremiado        INTEGER     NOT NULL,
+    id_curso            INTEGER     NOT NULL,
+    codigo_verificacion TEXT        NOT NULL UNIQUE,
+    url_descarga        TEXT,
+    fecha_emision       TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    CONSTRAINT fk_cert_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE RESTRICT,
+    CONSTRAINT fk_cert_curso FOREIGN KEY (id_curso) REFERENCES cursos(id_curso) ON DELETE RESTRICT
   )`,
 
-  // ===========================================================
-  // FASE 2 — MÓDULO CONTABLE Y FINANCIERO
-  // ===========================================================
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASE 3 — ADMINISTRACIÓN, PAGOS Y SOLVENCIAS
+  // ─────────────────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS cuotas_contables (
     id_cuota            INTEGER     PRIMARY KEY,
     id_agremiado        INTEGER     NOT NULL,
-    monto_usd           NUMERIC     NOT NULL CHECK (monto_usd > 0),
-    concepto            TEXT        NOT NULL,
-    fecha_emision       TEXT        NOT NULL,
-    fecha_vencimiento   TEXT        NOT NULL,
-    estatus             TEXT        NOT NULL DEFAULT 'Pendiente'
-                        CHECK (estatus IN ('Pendiente','Pagado','Moroso')),
-    CONSTRAINT fk_cuota_agremiado
-      FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado)
-      ON DELETE RESTRICT ON UPDATE CASCADE
+    descripcion         TEXT        NOT NULL,
+    monto               REAL        NOT NULL,
+    fecha_vencimiento   TEXT,
+    pagado              INTEGER     NOT NULL DEFAULT 0 CHECK (pagado IN (0, 1)),
+    fecha_pago          TEXT,
+    CONSTRAINT fk_cuota_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE CASCADE
   )`,
-
-  `CREATE INDEX IF NOT EXISTS idx_cuotas_agremiado ON cuotas_contables(id_agremiado)`,
-  `CREATE INDEX IF NOT EXISTS idx_cuotas_estatus   ON cuotas_contables(estatus)`,
 
   `CREATE TABLE IF NOT EXISTS transacciones_pagos (
     id_pago             INTEGER     PRIMARY KEY,
-    id_cuota            INTEGER     NOT NULL,
-    monto_pagado_usd    NUMERIC     NOT NULL CHECK (monto_pagado_usd > 0),
+    id_agremiado        INTEGER     NOT NULL,
+    monto               REAL        NOT NULL,
+    metodo_pago         TEXT,
+    referencia          TEXT,
     fecha_pago          TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    estatus_validacion  TEXT        NOT NULL DEFAULT 'En revisión'
-                        CHECK (estatus_validacion IN ('En revisión','Validado','Rechazado')),
-    referencia_bancaria TEXT,
-    notas_validacion    TEXT,
-    CONSTRAINT fk_pago_cuota
-      FOREIGN KEY (id_cuota) REFERENCES cuotas_contables(id_cuota)
-      ON DELETE RESTRICT ON UPDATE CASCADE
+    url_comprobante     TEXT,
+    estatus             TEXT        NOT NULL DEFAULT 'Pendiente'
+                        CHECK (estatus IN ('Pendiente','Validado','Rechazado')),
+    CONSTRAINT fk_pago_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE CASCADE
   )`,
-
-  `CREATE INDEX IF NOT EXISTS idx_pagos_cuota ON transacciones_pagos(id_cuota)`,
 
   `CREATE TABLE IF NOT EXISTS solvencias (
     id_solvencia        INTEGER     PRIMARY KEY,
     id_agremiado        INTEGER     NOT NULL,
-    codigo_verificacion TEXT        UNIQUE NOT NULL,
-    fecha_emision       TEXT        NOT NULL,
-    fecha_vencimiento   TEXT        NOT NULL,
-    estatus             TEXT        NOT NULL DEFAULT 'Vigente'
-                        CHECK (estatus IN ('Vigente','Vencida','Anulada')),
-    CONSTRAINT fk_solvencia_agremiado
-      FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado)
-      ON DELETE RESTRICT ON UPDATE CASCADE
+    fecha_emision       TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    fecha_expiracion    TEXT,
+    codigo_verificacion TEXT        UNIQUE,
+    CONSTRAINT fk_solvencia_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE CASCADE
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_solvencias_agremiado ON solvencias(id_agremiado)`,
-
-  // ===========================================================
-  // FASE 2 — MÓDULO DE DENUNCIAS Y ÉTICA
-  // ===========================================================
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASE 4 — TRIBUNAL DISCIPLINARIO (DENUNCIAS, EVIDENCIAS)
+  // ─────────────────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS denuncias (
     id_denuncia         INTEGER     PRIMARY KEY,
-    id_denunciante      INTEGER     NOT NULL,
-    id_denunciado       INTEGER     NOT NULL,
-    numero_expediente   TEXT        UNIQUE,
+    id_denunciante      INTEGER,    -- puede ser agremiado o externo
+    nombre_denunciante  TEXT,
+    id_denunciado       INTEGER     NOT NULL, -- agremiado denunciado
     descripcion         TEXT        NOT NULL,
-    estatus             TEXT        NOT NULL DEFAULT 'Recepción'
-                        CHECK (estatus IN ('Recepción','En Tribunal Disciplinario','Resuelta')),
-    sla_fecha_limite    TEXT        NOT NULL,
-    resolucion          TEXT,
-    fecha_resolucion    TEXT,
-    fecha_creacion      TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    CONSTRAINT chk_denuncia_distintos CHECK (id_denunciante != id_denunciado),
-    CONSTRAINT fk_denuncia_denunciante
-      FOREIGN KEY (id_denunciante) REFERENCES agremiados(id_agremiado)
-      ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_denuncia_denunciado
-      FOREIGN KEY (id_denunciado) REFERENCES agremiados(id_agremiado)
-      ON DELETE RESTRICT ON UPDATE CASCADE
+    fecha_denuncia      TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    estatus             TEXT        NOT NULL DEFAULT 'Recibida'
+                        CHECK (estatus IN ('Recibida','En Investigación','Cerrada','Sanción')),
+    CONSTRAINT fk_denuncia_denunciado FOREIGN KEY (id_denunciado) REFERENCES agremiados(id_agremiado) ON DELETE CASCADE
   )`,
-
-  `CREATE INDEX IF NOT EXISTS idx_denuncias_denunciante ON denuncias(id_denunciante)`,
-  `CREATE INDEX IF NOT EXISTS idx_denuncias_denunciado  ON denuncias(id_denunciado)`,
-  `CREATE INDEX IF NOT EXISTS idx_denuncias_estatus     ON denuncias(estatus)`,
 
   `CREATE TABLE IF NOT EXISTS evidencias_legales (
-    id_evidencia    INTEGER     PRIMARY KEY,
-    id_denuncia     INTEGER     NOT NULL,
-    tipo_documento  TEXT        NOT NULL
-                    CHECK (tipo_documento IN ('Documento','Transcripcion Textual')),
-    url_archivo     TEXT        NOT NULL,
-    descripcion     TEXT,
-    fecha_carga     TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    CONSTRAINT fk_evidencia_denuncia
-      FOREIGN KEY (id_denuncia) REFERENCES denuncias(id_denuncia)
-      ON DELETE CASCADE ON UPDATE CASCADE
+    id_evidencia        INTEGER     PRIMARY KEY,
+    id_denuncia         INTEGER     NOT NULL,
+    titulo              TEXT,
+    url_archivo         TEXT        NOT NULL,
+    creado_en           TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    CONSTRAINT fk_evidencia_denuncia FOREIGN KEY (id_denuncia) REFERENCES denuncias(id_denuncia) ON DELETE CASCADE
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_evidencias_denuncia ON evidencias_legales(id_denuncia)`,
-
-  // ===========================================================
-  // FASE 2 — MÓDULO DE CONTROL ESTRATÉGICO Y DOCUMENTAL
-  // ===========================================================
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASE 5 — GESTIÓN GREMIAL (PLANES, ACTAS)
+  // ─────────────────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS planes_gestion (
-    id_plan         INTEGER     PRIMARY KEY,
-    tipo_plan       TEXT        NOT NULL
-                    CHECK (tipo_plan IN ('Trimestral','Semestral','Anual')),
-    periodo         INTEGER     NOT NULL,
-    metas           TEXT        NOT NULL,
-    indicadores     TEXT        NOT NULL,
-    variables       TEXT,
-    fecha_inicio    TEXT        NOT NULL,
-    fecha_fin       TEXT        NOT NULL,
-    registrado_por  INTEGER,
-    CONSTRAINT chk_plan_fechas CHECK (fecha_fin > fecha_inicio),
-    CONSTRAINT fk_plan_registrado
-      FOREIGN KEY (registrado_por) REFERENCES agremiados(id_agremiado)
-      ON DELETE SET NULL ON UPDATE CASCADE
+    id_plan             INTEGER     PRIMARY KEY,
+    titulo              TEXT        NOT NULL,
+    contenido           TEXT,
+    periodo             TEXT,
+    estatus             TEXT        NOT NULL DEFAULT 'Activo'
+                        CHECK (estatus IN ('Activo','Finalizado'))
   )`,
 
   `CREATE TABLE IF NOT EXISTS actas_y_convocatorias (
     id_documento        INTEGER     PRIMARY KEY,
-    tipo_registro       TEXT        NOT NULL
-                        CHECK (tipo_registro IN (
-                          'Acta Constitutiva',
-                          'Modificacion Estatutaria',
-                          'Asamblea',
-                          'Convocatoria'
-                        )),
     titulo              TEXT        NOT NULL,
-    url_documento       TEXT        NOT NULL,
-    fecha_publicacion   TEXT        NOT NULL,
-    fecha_evento        TEXT,
-    es_publico          INTEGER     NOT NULL DEFAULT 1
-                        CHECK (es_publico IN (0, 1))
+    tipo                TEXT        NOT NULL
+                        CHECK (tipo IN ('Acta','Convocatoria')),
+    url_archivo         TEXT,
+    fecha_documento     TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+    publico             INTEGER     NOT NULL DEFAULT 1 CHECK (publico IN (0, 1))
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_actas_tipo ON actas_y_convocatorias(tipo_registro)`,
-
-  // ===========================================================
-  // CMS — MÓDULO DE CONTENIDO DINÁMICO
-  // ===========================================================
-
+  // ───────────────────────────────────────────────────────────────────────────
+  // FASE 6 — CMS Y PORTAL PÚBLICO
+  // ─────────────────────────────────────────────────────────────────────────
   `CREATE TABLE IF NOT EXISTS cms_noticias (
-    id            INTEGER  PRIMARY KEY,
-    titulo        TEXT     NOT NULL,
-    extracto      TEXT     NOT NULL,
-    imagen_url    TEXT,
-    categoria     TEXT     NOT NULL DEFAULT 'Noticias',
-    tag           TEXT,
-    fecha         TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    publicado     INTEGER  NOT NULL DEFAULT 1
-                  CHECK (publicado IN (0, 1)),
-    creado_en     TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    id_noticia      INTEGER  PRIMARY KEY,
+    titulo          TEXT     NOT NULL,
+    contenido       TEXT     NOT NULL,
+    imagen_url      TEXT,
+    publicado       INTEGER  NOT NULL DEFAULT 0 CHECK (publicado IN (0, 1)),
+    creado_en       TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
 
   `CREATE TABLE IF NOT EXISTS cms_cursos (
-    id            INTEGER  PRIMARY KEY,
-    codigo        TEXT     NOT NULL UNIQUE,
-    titulo        TEXT     NOT NULL,
-    subtitulo     TEXT,
-    imagen_url    TEXT,
-    orden         INTEGER  NOT NULL DEFAULT 0,
-    activo        INTEGER  NOT NULL DEFAULT 1
-                  CHECK (activo IN (0, 1))
+    id_cms_curso    INTEGER  PRIMARY KEY,
+    id_curso        INTEGER  REFERENCES cursos(id_curso) ON DELETE CASCADE,
+    slug            TEXT     UNIQUE NOT NULL,
+    destacado       INTEGER  NOT NULL DEFAULT 0 CHECK (destacado IN (0, 1))
   )`,
 
   `CREATE TABLE IF NOT EXISTS cms_convenios (
-    id            INTEGER  PRIMARY KEY,
-    nombre        TEXT     NOT NULL,
-    logo_url      TEXT     NOT NULL,
-    orden         INTEGER  NOT NULL DEFAULT 0,
-    activo        INTEGER  NOT NULL DEFAULT 1
-                  CHECK (activo IN (0, 1))
+    id_convenio     INTEGER  PRIMARY KEY,
+    nombre_aliado   TEXT     NOT NULL,
+    descripcion     TEXT,
+    logo_url        TEXT,
+    link_web        TEXT
   )`,
 
   `CREATE TABLE IF NOT EXISTS cms_directiva (
-    id            INTEGER  PRIMARY KEY,
-    nombre        TEXT     NOT NULL,
-    cargo         TEXT     NOT NULL,
-    foto_url      TEXT,
-    orden         INTEGER  NOT NULL DEFAULT 0,
-    activo        INTEGER  NOT NULL DEFAULT 1
-                  CHECK (activo IN (0, 1))
+    id_miembro      INTEGER  PRIMARY KEY,
+    nombre          TEXT     NOT NULL,
+    cargo           TEXT     NOT NULL,
+    foto_url        TEXT,
+    orden           INTEGER  DEFAULT 0
   )`,
 
   `CREATE TABLE IF NOT EXISTS cms_hitos (
-    id            INTEGER  PRIMARY KEY,
-    anio          TEXT     NOT NULL,
-    titulo        TEXT     NOT NULL,
-    descripcion   TEXT     NOT NULL,
-    orden         INTEGER  NOT NULL DEFAULT 0
+    id_hito         INTEGER  PRIMARY KEY,
+    anio            INTEGER  NOT NULL,
+    titulo          TEXT     NOT NULL,
+    descripcion     TEXT
   )`,
 
   `CREATE TABLE IF NOT EXISTS cms_normativas (
-    id               INTEGER  PRIMARY KEY,
-    titulo           TEXT     NOT NULL,
-    descripcion      TEXT,
-    url_documento    TEXT     NOT NULL,
-    categoria        TEXT,
-    orden            INTEGER  NOT NULL DEFAULT 0,
-    activo           INTEGER  NOT NULL DEFAULT 1
-                     CHECK (activo IN (0, 1)),
-    creado_en        TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
-    actualizado_en   TEXT
+    id_normativa    INTEGER  PRIMARY KEY,
+    titulo          TEXT     NOT NULL,
+    url_archivo     TEXT     NOT NULL,
+    tipo            TEXT     CHECK (tipo IN ('Estatutos','Reglamento','Ley')),
+    creado_en       TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
-
-  `CREATE INDEX IF NOT EXISTS idx_cms_normativas_activo ON cms_normativas(activo)`,
 
   `CREATE TABLE IF NOT EXISTS cms_configuracion (
     clave         TEXT     PRIMARY KEY,
@@ -517,7 +435,15 @@ const statements = [
     actualizado_en  TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
   )`,
 
-  `CREATE INDEX IF NOT EXISTS idx_cms_paginas_actualizado ON cms_paginas(actualizado_en)`
+  `CREATE INDEX IF NOT EXISTS idx_cms_paginas_actualizado ON cms_paginas(actualizado_en)`,
+
+  // Migraciones manuales para campos de redes sociales (agremiados)
+  `ALTER TABLE agremiados ADD COLUMN instagram TEXT`,
+  `ALTER TABLE agremiados ADD COLUMN facebook TEXT`,
+  `ALTER TABLE agremiados ADD COLUMN linkedin TEXT`,
+  `ALTER TABLE agremiados ADD COLUMN twitter TEXT`,
+  `ALTER TABLE agremiados ADD COLUMN website TEXT`,
+  `ALTER TABLE agremiados ADD COLUMN activo INTEGER NOT NULL DEFAULT 1 CHECK (activo IN (0, 1))`
 ]
 
 const RESET_SCHEMA =
@@ -578,408 +504,55 @@ async function dropAllUserTables(): Promise<void> {
   console.log('')
 }
 
-async function tableColumnNames(table: string): Promise<Set<string>> {
-  const { rows } = await db.execute({ sql: `PRAGMA table_info(${table})`, args: [] })
-  return new Set(
-    rows.map((r: Record<string, unknown>) => String(r.name))
-  )
-}
-
-async function tableExists(name: string): Promise<boolean> {
-  const { rows } = await db.execute({
-    sql: `SELECT 1 AS ok FROM sqlite_master WHERE type = 'table' AND name = ? LIMIT 1`,
-    args: [name],
-  })
-  return rows.length > 0
-}
-
-/**
- * Ajusta BDs creadas antes de nuevas columnas (CREATE IF NOT EXISTS no altera tablas viejas).
- */
-async function migrateLegacyColumns(): Promise<void> {
-  if (await tableExists('estudiantes')) {
-    const cols = await tableColumnNames('estudiantes')
-    if (!cols.has('nivel_profesional')) {
-      await db.execute(`ALTER TABLE estudiantes ADD COLUMN nivel_profesional TEXT`)
-      console.log('  · migrate: estudiantes.nivel_profesional')
-    }
-    if (!cols.has('es_corredor_inmobiliario')) {
-      await db.execute(
-        `ALTER TABLE estudiantes ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
-      )
-      console.log('  · migrate: estudiantes.es_corredor_inmobiliario')
-    }
-  }
-
-  if (await tableExists('verificaciones_preinscripciones')) {
-    const cols = await tableColumnNames('verificaciones_preinscripciones')
-    if (!cols.has('nivel_profesional')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN nivel_profesional TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.nivel_profesional')
-    }
-    if (!cols.has('es_corredor_inmobiliario')) {
-      await db.execute(
-        `ALTER TABLE verificaciones_preinscripciones ADD COLUMN es_corredor_inmobiliario INTEGER NOT NULL DEFAULT 0`
-      )
-      console.log('  · migrate: verificaciones_preinscripciones.es_corredor_inmobiliario')
-    }
-  }
-
-  if (await tableExists('inscripciones_cursos')) {
-    const cols = await tableColumnNames('inscripciones_cursos')
-    if (!cols.has('tipo_inscripcion')) {
-      await db.execute(
-        `ALTER TABLE inscripciones_cursos ADD COLUMN tipo_inscripcion TEXT NOT NULL DEFAULT 'cohorte'`
-      )
-      console.log('  · migrate: inscripciones_cursos.tipo_inscripcion')
-    }
-    if (!cols.has('entrevista_fecha')) {
-      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_fecha TEXT`)
-      console.log('  · migrate: inscripciones_cursos.entrevista_fecha')
-    }
-    if (!cols.has('entrevista_hora')) {
-      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_hora TEXT`)
-      console.log('  · migrate: inscripciones_cursos.entrevista_hora')
-    }
-    if (!cols.has('entrevista_lugar')) {
-      await db.execute(`ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_lugar TEXT`)
-      console.log('  · migrate: inscripciones_cursos.entrevista_lugar')
-    }
-    if (!cols.has('entrevista_estatus')) {
-      await db.execute(
-        `ALTER TABLE inscripciones_cursos ADD COLUMN entrevista_estatus TEXT NOT NULL DEFAULT 'Pendiente'`
-      )
-      console.log('  · migrate: inscripciones_cursos.entrevista_estatus')
-    }
-
-    // Nueva migración para el CHECK constraint
-    await migrateInscripcionesEstatusCheck()
-  }
-
-  if (await tableExists('agremiados')) {
-    const cols = await tableColumnNames('agremiados')
-    if (!cols.has('cibir_convalidado')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN cibir_convalidado INTEGER NOT NULL DEFAULT 0`)
-      console.log('  · migrate: agremiados.cibir_convalidado')
-    }
-
-    // Nuevas columnas basadas en el formato extendido
-    if (!cols.has('razon_social')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN razon_social TEXT`)
-      console.log('  · migrate: agremiados.razon_social')
-    }
-    if (!cols.has('nombres')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN nombres TEXT`)
-      console.log('  · migrate: agremiados.nombres')
-    }
-    if (!cols.has('apellidos')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN apellidos TEXT`)
-      console.log('  · migrate: agremiados.apellidos')
-    }
-    if (!cols.has('cedula_personal')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN cedula_personal TEXT`)
-      console.log('  · migrate: agremiados.cedula_personal')
-    }
-    if (!cols.has('direccion')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN direccion TEXT`)
-      console.log('  · migrate: agremiados.direccion')
-    }
-    if (!cols.has('fecha_nacimiento')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN fecha_nacimiento TEXT`)
-      console.log('  · migrate: agremiados.fecha_nacimiento')
-    }
-    if (!cols.has('nivel_academico')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN nivel_academico TEXT`)
-      console.log('  · migrate: agremiados.nivel_academico')
-    }
-    if (!cols.has('notas')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN notas TEXT`)
-      console.log('  · migrate: agremiados.notas')
-    }
-    if (!cols.has('tipo_afiliado')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN tipo_afiliado TEXT NOT NULL DEFAULT 'Natural'`)
-      console.log('  · migrate: agremiados.tipo_afiliado')
-    }
-    if (!cols.has('representante_legal')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN representante_legal TEXT`)
-      console.log('  · migrate: agremiados.representante_legal')
-    }
-    if (!cols.has('id_agremiado_corp')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN id_agremiado_corp INTEGER REFERENCES agremiados(id_agremiado) ON DELETE SET NULL`)
-      console.log('  · migrate: agremiados.id_agremiado_corp')
-    }
-
-    // Migración de estados de agremiados
-    await migrateAgremiadosEstatusCheck()
-
-    // Nuevas columnas de documentos
-    if (!cols.has('url_cedula')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_cedula TEXT`)
-      console.log('  · migrate: agremiados.url_cedula')
-    }
-    if (!cols.has('url_titulo')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_titulo TEXT`)
-      console.log('  · migrate: agremiados.url_titulo')
-    }
-    if (!cols.has('url_cv')) {
-      await db.execute(`ALTER TABLE agremiados ADD COLUMN url_cv TEXT`)
-      console.log('  · migrate: agremiados.url_cv')
-    }
-  }
-
-  if (await tableExists('estudiantes')) {
-    const cols = await tableColumnNames('estudiantes')
-    if (!cols.has('url_cedula')) {
-      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_cedula TEXT`)
-      console.log('  · migrate: estudiantes.url_cedula')
-    }
-    if (!cols.has('url_titulo')) {
-      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_titulo TEXT`)
-      console.log('  · migrate: estudiantes.url_titulo')
-    }
-    if (!cols.has('url_cv')) {
-      await db.execute(`ALTER TABLE estudiantes ADD COLUMN url_cv TEXT`)
-      console.log('  · migrate: estudiantes.url_cv')
-    }
-  }
-
-  if (await tableExists('verificaciones_preinscripciones')) {
-    const cols = await tableColumnNames('verificaciones_preinscripciones')
-    if (!cols.has('url_cedula')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_cedula TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.url_cedula')
-    }
-    if (!cols.has('url_titulo')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_titulo TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.url_titulo')
-    }
-    if (!cols.has('url_cv')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN url_cv TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.url_cv')
-    }
-    if (!cols.has('tipo_afiliado')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN tipo_afiliado TEXT NOT NULL DEFAULT 'Natural'`)
-      console.log('  · migrate: verificaciones_preinscripciones.tipo_afiliado')
-    }
-    if (!cols.has('razon_social')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN razon_social TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.razon_social')
-    }
-    if (!cols.has('representante_legal')) {
-      await db.execute(`ALTER TABLE verificaciones_preinscripciones ADD COLUMN representante_legal TEXT`)
-      console.log('  · migrate: verificaciones_preinscripciones.representante_legal')
-    }
-  }
-
-  // Tabla de invitaciones corporativas
-  if (!(await tableExists('invitaciones_corporativas'))) {
-    console.log('  · migrate: invitaciones_corporativas (creando tabla)')
-    await db.execute(`CREATE TABLE IF NOT EXISTS invitaciones_corporativas (
-      id_invitacion     INTEGER  PRIMARY KEY,
-      id_agremiado_corp INTEGER  NOT NULL,
-      token             TEXT     UNIQUE NOT NULL,
-      nombre_empresa    TEXT     NOT NULL,
-      activo            INTEGER  NOT NULL DEFAULT 1,
-      fecha_expiracion  TEXT,
-      creado_en         TEXT     NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
-    )`)
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_invitaciones_corp ON invitaciones_corporativas(id_agremiado_corp)`)
-    await db.execute(`CREATE INDEX IF NOT EXISTS idx_invitaciones_token ON invitaciones_corporativas(token)`)
-  }
-
-  if (!(await tableExists('cms_normativas'))) {
-    console.log('  · migrate: cms_normativas (creando tabla)')
-    await db.execute(statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS cms_normativas'))!)
-  }
-}
-
-async function migrateInscripcionesEstatusCheck() {
-  const res = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='inscripciones_cursos'")
-  if (res.rows.length === 0) return
-
-  const sql = res.rows[0].sql as string
-  if (sql.includes("'Entrevista'")) return
-
-  console.log('  · migrate: Actualizando CHECK constraint de inscripciones_cursos (recreando tabla)...')
-
-  await db.execute('PRAGMA foreign_keys = OFF')
-
-  try {
-    // 1. Renombrar
-    await db.execute('ALTER TABLE inscripciones_cursos RENAME TO inscripciones_cursos_old')
-
-    // 2. Crear nueva con el esquema correcto
-    const createStmt = statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS inscripciones_cursos'))!
-    await db.execute(createStmt)
-
-    // 3. Mapear columnas comunes para la copia
-    const oldColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos_old)')
-    const oldCols = (oldColsRes.rows as any[]).map(c => c.name)
-    const newColsRes = await db.execute('PRAGMA table_info(inscripciones_cursos)')
-    const newCols = (newColsRes.rows as any[]).map(c => c.name)
-
-    const commonCols = oldCols.filter(c => newCols.includes(c))
-    const colsStr = commonCols.join(', ')
-
-    await db.execute(`
-      INSERT INTO inscripciones_cursos (${colsStr})
-      SELECT ${colsStr} FROM inscripciones_cursos_old
-    `)
-
-    // 4. Recrear índices asociados
-    const tableIndexes = statements.filter(s =>
-      (s.includes('CREATE INDEX') || s.includes('CREATE UNIQUE INDEX')) &&
-      s.includes('ON inscripciones_cursos')
-    )
-    for (const idx of tableIndexes) {
-      await db.execute(idx)
-    }
-
-    // 5. Borrar tabla vieja
-    await db.execute('DROP TABLE inscripciones_cursos_old')
-
-    console.log('  · migrate: inscripciones_cursos actualizada exitosamente.')
-  } catch (err) {
-    console.error('Error en migración de CHECK constraint:', err)
-    // Intentar restaurar si falló
-    await db.execute('DROP TABLE IF EXISTS inscripciones_cursos')
-    const hasOld = await db.execute("SELECT 1 FROM sqlite_master WHERE name='inscripciones_cursos_old'")
-    if (hasOld.rows.length > 0) {
-      await db.execute('ALTER TABLE inscripciones_cursos_old RENAME TO inscripciones_cursos')
-    }
-  } finally {
-    await db.execute('PRAGMA foreign_keys = ON')
-  }
-}
-
-async function migrateAgremiadosEstatusCheck() {
-  const res = await db.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='agremiados'")
-  if (res.rows.length === 0) return
-
-  const sql = res.rows[0].sql as string
-  if (sql.includes("'1_SOLICITUD'")) return
-
-  console.log('  · migrate: Actualizando CHECK constraint de agremiados (recreando tabla)...')
-
-  await db.execute('PRAGMA foreign_keys = OFF')
-
-  try {
-    // 1. Renombrar
-    await db.execute('ALTER TABLE agremiados RENAME TO agremiados_old')
-
-    // 2. Crear nueva con el esquema correcto
-    const createStmt = statements.find(s => s.includes('CREATE TABLE IF NOT EXISTS agremiados'))!
-    await db.execute(createStmt)
-
-    // 3. Mapear columnas comunes para la copia
-    const oldColsRes = await db.execute('PRAGMA table_info(agremiados_old)')
-    const oldCols = (oldColsRes.rows as any[]).map(c => c.name)
-    const newColsRes = await db.execute('PRAGMA table_info(agremiados)')
-    const newCols = (newColsRes.rows as any[]).map(c => c.name)
-
-    const commonCols = oldCols.filter(c => newCols.includes(c))
-    const colsStr = commonCols.join(', ')
-
-    // 4. Copiar datos mapeando estados viejos a nuevos
-    await db.execute(`
-      INSERT INTO agremiados (${colsStr})
-      SELECT 
-        ${commonCols.map(c => {
-      if (c === 'estatus') {
-        return `CASE 
-              WHEN estatus = 'Preinscrito' THEN '1_SOLICITUD'
-              WHEN estatus = 'CIBIR' THEN '9_AFILIACION'
-              ELSE estatus 
-            END`
-      }
-      return c
-    }).join(', ')}
-      FROM agremiados_old
-    `)
-
-    // 5. Recrear índices asociados
-    const tableIndexes = statements.filter(s =>
-      (s.includes('CREATE INDEX') || s.includes('CREATE UNIQUE INDEX')) &&
-      s.includes('ON agremiados')
-    )
-    for (const idx of tableIndexes) {
-      await db.execute(idx)
-    }
-
-    // 6. Borrar tabla vieja
-    await db.execute('DROP TABLE agremiados_old')
-
-    console.log('  · migrate: agremiados actualizada exitosamente.')
-  } catch (err) {
-    console.error('Error en migración de agremiados:', err)
-    // Intentar restaurar si falló
-    await db.execute('DROP TABLE IF EXISTS agremiados')
-    const hasOld = await db.execute("SELECT 1 FROM sqlite_master WHERE name='agremiados_old'")
-    if (hasOld.rows.length > 0) {
-      await db.execute('ALTER TABLE agremiados_old RENAME TO agremiados')
-    }
-  } finally {
-    await db.execute('PRAGMA foreign_keys = ON')
-  }
-}
-
-async function seedSuperAdmin(): Promise<void> {
-  const email = 'admin@admin.com'
-  const password = 'admin12'
-  const roles = '["super_admin", "admin"]'
-  const rol = 'super_admin'
-
-  const { rows } = await db.execute({
-    sql: `SELECT id FROM users WHERE email = ?`,
-    args: [email],
-  })
-
-  if (rows.length === 0) {
-    const hash = await bcrypt.hash(password, 10)
-    await db.execute({
-      sql: `INSERT INTO users (email, password_hash, roles, rol, activo) 
-            VALUES (?, ?, ?, ?, 1)`,
-      args: [email, hash, roles, rol],
-    })
-    console.log(`  · Seed: Super admin creado (${email})`)
-  }
-}
-
-async function initDb(): Promise<void> {
-  console.log('Iniciando creación del esquema en Turso...\n')
+async function run(): Promise<void> {
+  console.log('--- TURSO DB INITIALIZATION ---\n')
 
   if (RESET_SCHEMA) {
     await dropAllUserTables()
   }
 
-  await db.execute('PRAGMA foreign_keys = ON')
-
-  const schemaBatch = statements
-    .filter(s => !s.startsWith('PRAGMA'))
-    .map(sql => ({ sql, args: [] as [] }))
-
-  await db.batch(schemaBatch, 'write')
-
-  await migrateLegacyColumns()
-
-  console.log('Sembrando datos iniciales...\n')
-  await seedSuperAdmin()
-
-  console.log('Esquema creado correctamente.\n')
-  console.log('Tablas disponibles:')
-
-  const { rows } = await db.execute(
-    `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
-  )
-
-  for (const row of rows) {
-    console.log(`  · ${row.name}`)
+  for (const sql of statements) {
+    try {
+      await db.execute(sql)
+      const label = sql.trim().split('\n')[0].replace('`', '').trim()
+      console.log(`  · OK: ${label.substring(0, 60)}${label.length > 60 ? '...' : ''}`)
+    } catch (e: any) {
+      if (e.message?.includes('already exists') || e.message?.includes('duplicate column name')) {
+        // Ignorar si ya existe
+      } else {
+        console.warn(`  · FAIL: ${sql.substring(0, 50)}... -> ${e.message}`)
+      }
+    }
   }
 
-  console.log('\nBase de datos lista.')
+  // SEMILLAS / DATOS INICIALES
+  console.log('\n--- SEEDING INITIAL DATA ---')
+
+  // 1. Admin inicial
+  const adminEmail = 'admin@admin.com'
+  const adminPass = await bcrypt.hash('admin123', 10)
+  try {
+    await db.execute({
+      sql: `INSERT INTO users (email, password_hash, rol, roles) VALUES (?, ?, 'admin', '["admin", "superadmin"]')`,
+      args: [adminEmail, adminPass],
+    })
+    console.log(`  · User ${adminEmail} created.`)
+  } catch (e) {
+    console.log(`  · User ${adminEmail} already exists.`)
+  }
+
+  // 2. Instructor inicial
+  try {
+    await db.execute({
+      sql: `INSERT INTO instructores (id_instructor, nombre, especialidad, email) VALUES (1, 'CIBIR Admin', 'Administración Gremial', 'academia@cibir.com')`,
+      args: [],
+    })
+    console.log(`  · Instructor 1 created.`)
+  } catch (e) {
+    console.log(`  · Instructor 1 already exists.`)
+  }
+
+  console.log('\nDB Initialization complete!\n')
 }
 
-initDb().catch((err) => {
-  console.error('Error al inicializar la base de datos:', err)
-  process.exit(1)
-})
+run().catch(console.error)

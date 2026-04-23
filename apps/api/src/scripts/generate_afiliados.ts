@@ -1,5 +1,4 @@
 /**
- * generate_afiliados.ts (v2)
  * Genera 5 nuevas solicitudes de afiliación para el panel de FORMACIÓN.
  * Inserta en 'estudiantes' e 'inscripciones_cursos' con programa 'AFILIACION'.
  * 
@@ -11,10 +10,10 @@ import { db } from '../lib/db.js'
 
 const TEST_DATA = [
   { nombre: 'Ricardo Montaner', cedula: 'V-11.222.333', email: 'ricardo.m@test.com', tlf: '+58 414 7770011' },
-  { nombre: 'Gaby Espino',     cedula: 'V-19.444.555', email: 'gaby.e@test.com',    tlf: '+58 424 7770022' },
-  { nombre: 'Edgar Ramírez',   cedula: 'V-16.666.777', email: 'edgar.r@test.com',   tlf: '+58 412 7770033' },
-  { nombre: 'Maite Delgado',   cedula: 'V-14.888.999', email: 'maite.d@test.com',   tlf: '+58 416 7770044' },
-  { nombre: 'Oscar D Leon',    cedula: 'V-10.000.111', email: 'oscar.d@test.com',   tlf: '+58 426 7770055' },
+  { nombre: 'Gaby Espino', cedula: 'V-19.444.555', email: 'gaby.e@test.com', tlf: '+58 424 7770022' },
+  { nombre: 'Edgar Ramírez', cedula: 'V-16.666.777', email: 'edgar.r@test.com', tlf: '+58 412 7770033' },
+  { nombre: 'Maite Delgado', cedula: 'V-14.888.999', email: 'maite.d@test.com', tlf: '+58 416 7770044' },
+  { nombre: 'Oscar D Leon', cedula: 'V-10.000.111', email: 'oscar.d@test.com', tlf: '+58 426 7770055' },
 ]
 
 async function run() {

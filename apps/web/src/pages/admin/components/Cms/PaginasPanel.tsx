@@ -60,17 +60,23 @@ export function PaginasPanel() {
       setSaving(false)
       return
     }
-    const data = await api.put(`/api/cms/paginas/${encodeURIComponent(s)}`, { contenido: jsonText })
-    if (!data.success) {
-      setError(data.message || 'Error al guardar')
+    try {
+      const data = await api.put(`/api/cms/paginas/${encodeURIComponent(s)}`, { contenido: jsonText })
+      if (!data.success) {
+        setError(data.message || 'Error al guardar')
+        return
+      }
+      setMsg('Guardado')
+      await loadList()
+      setTimeout(() => setMsg(''), 2000)
+    } catch (error) {
+      console.error(error)
+      setError('Error de conexión con el servidor')
+    } finally {
       setSaving(false)
-      return
     }
-    setMsg('Guardado')
-    await loadList()
-    setSaving(false)
-    setTimeout(() => setMsg(''), 2000)
   }
+
 
   const crearNueva = () => {
     setSlug('')

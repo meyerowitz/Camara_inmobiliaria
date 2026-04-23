@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { formatNombreCard } from '@/utils/formatters'
+
 
 type EstatusAgremiado = 
   | '1_SOLICITUD' | '2_REQUISITOS' | '3_CONFIRMACION' 
@@ -188,7 +190,8 @@ export default function AfiliadosPanel() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-semibold truncate text-slate-800">{a.nombre_completo}</span>
+                    <span className="text-sm font-semibold truncate text-slate-800">{formatNombreCard(a.nombre_completo)}</span>
+
                     <span className={`text-[9px] font-black uppercase tracking-widest ${a.tipo_afiliado === 'Juridico' ? 'text-emerald-600' : 'text-blue-500'}`}>
                       {a.tipo_afiliado === 'Juridico' ? 'Corporativo' : 'Independiente'}
                     </span>
@@ -233,8 +236,12 @@ export default function AfiliadosPanel() {
                     </select>
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 leading-tight">
-                    {selected.tipo_afiliado === 'Juridico' ? (selected.razon_social || selected.nombre_completo) : selected.nombre_completo}
+                    {selected.tipo_afiliado === 'Juridico' 
+                      ? (selected.razon_social || formatNombreCard(selected.nombre_completo)) 
+                      : formatNombreCard(selected.nombre_completo)
+                    }
                   </h3>
+
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{selected.email}</p>
                 </div>
                 <div className="flex items-center gap-2">

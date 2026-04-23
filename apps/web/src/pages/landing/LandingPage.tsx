@@ -41,16 +41,18 @@ export default function LandingPage() {
 
       <NosotrosSection />
 
-      <OrigenesSection />
 
       <AfiliadosSection />
 
       <FormacionSection />
 
+      <NoticiasSection />
+
       <DirectivaSection />
 
+      <OrigenesSection />
+
       <ConveniosSection />
-      <NoticiasSection />
 
       <Footer />
 

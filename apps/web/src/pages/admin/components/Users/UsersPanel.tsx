@@ -11,7 +11,9 @@ import {
   Loader2,
   Search,
   ListFilter,
+  Trash2,
 } from 'lucide-react'
+
 
 const ic = 'shrink-0 opacity-95'
 const icBtn = (active: boolean) => (active ? 'text-white' : 'text-slate-500')
@@ -122,6 +124,7 @@ export default function UsersPanel() {
   }
 
   const [resettingUser, setResettingUser] = useState<SystemUser | null>(null)
+  const [userToDelete, setUserToDelete]   = useState<SystemUser | null>(null)
   const [newPassword, setNewPassword] = useState('')
 
   const handleResetClick = (u: SystemUser) => {
@@ -150,8 +153,33 @@ export default function UsersPanel() {
       setSaving(false)
     }
   }
+  
+  const confirmDelete = async () => {
+    if (!userToDelete) return
+    setSaving(true)
+    try {
+      const r = await fetch(`${API_URL}/api/users/${userToDelete.id}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      })
+      const d = await r.json()
+      if (d.success) {
+        setFeedback({ type: 'ok', msg: 'Usuario eliminado correctamente' })
+        setUserToDelete(null)
+        load()
+      } else {
+        setFeedback({ type: 'err', msg: d.message })
+      }
+    } catch (e) {
+      setFeedback({ type: 'err', msg: 'Error al eliminar usuario' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
 
   const filterBtnCls = (active: boolean) =>
+
     `inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors border ${
       active
         ? 'bg-slate-800 border-slate-800 text-white shadow-sm'
@@ -332,6 +360,41 @@ export default function UsersPanel() {
         </div>
       )}
 
+      {/* Delete confirmation modal */}
+      {userToDelete && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm'>
+          <div className='bg-white rounded-2xl shadow-2xl border border-slate-100 p-8 w-full max-w-sm animate-in fade-in zoom-in duration-200 text-center'>
+            <div className='w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mx-auto mb-4'>
+              <Trash2 size={32} />
+            </div>
+            <h3 className='text-lg font-black text-slate-800 mb-2'>¿Eliminar usuario?</h3>
+            <p className='text-sm text-slate-500 mb-6'>
+              Estás a punto de eliminar a <span className='font-bold text-slate-700'>{userToDelete.email}</span>. Esta acción no se puede deshacer.
+            </p>
+            
+            <div className='flex flex-col gap-2'>
+              <button
+                type='button'
+                disabled={saving}
+                onClick={confirmDelete}
+                className='w-full py-3 bg-rose-500 text-white rounded-xl text-sm font-black hover:bg-rose-600 disabled:opacity-50 shadow-lg shadow-rose-500/25 transition-all flex items-center justify-center gap-2'
+              >
+                {saving ? <Loader2 size={18} className='animate-spin' /> : <Trash2 size={18} />}
+                Eliminar Permanentemente
+              </button>
+              <button 
+                type='button' 
+                onClick={() => setUserToDelete(null)} 
+                className='w-full py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors'
+              >
+                Mantener usuario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* ── Filtros ──────────────────────────────────────────────────────────── */}
       <div className='bg-white border border-slate-100 rounded-2xl px-4 py-3 shadow-sm flex flex-wrap items-center gap-3'>
         {/* Búsqueda */}
@@ -487,14 +550,26 @@ export default function UsersPanel() {
                     </button>
                   </td>
                   <td className='px-5 py-4 text-right'>
-                    <button
-                      type='button'
-                      onClick={() => handleResetClick(u)}
-                      className='inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 hover:border-slate-300 transition shadow-sm'
-                    >
-                      <KeyRound size={14} strokeWidth={2} className='shrink-0 text-slate-500' />
-                      Reset
-                    </button>
+                    <div className='flex justify-end gap-2'>
+                      <button
+                        type='button'
+                        onClick={() => handleResetClick(u)}
+                        className='inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-100 hover:border-slate-300 transition shadow-sm'
+                      >
+                        <KeyRound size={14} strokeWidth={2} className='shrink-0 text-slate-500' />
+                        Reset
+                      </button>
+                      <button
+                        type='button'
+                        onClick={() => setUserToDelete(u)}
+                        className='inline-flex items-center gap-1.5 px-3 py-2 border border-rose-100 text-rose-600 rounded-xl text-xs font-semibold hover:bg-rose-50 hover:border-rose-200 transition shadow-sm'
+                        title='Eliminar usuario'
+                      >
+
+                        <Trash2 size={14} strokeWidth={2} className='shrink-0 text-rose-500' />
+                      </button>
+                    </div>
+
                   </td>
                 </tr>
               ))}

@@ -80,11 +80,12 @@ export const getAfiliadoById = async (req: Request, res: Response): Promise<void
     }
 
     const result = await db.execute({
-      sql: `SELECT id_agremiado, nombre_completo, email, cedula_rif, telefono,
-                   estatus, codigo_cibir, fecha_registro, inscripcion_pagada,
-                   tipo_afiliado, razon_social,
-                   url_cedula, url_titulo, url_cv
-            FROM agremiados WHERE id_agremiado = ?`,
+      sql: `SELECT a.*, 
+                   corp.razon_social as corp_razon_social, 
+                   corp.cedula_rif as corp_rif
+            FROM agremiados a
+            LEFT JOIN agremiados corp ON a.id_agremiado_corp = corp.id_agremiado
+            WHERE a.id_agremiado = ?`,
       args: [Number(id)],
     })
 
@@ -295,17 +296,23 @@ export const getAfiliados = async (req: Request, res: Response) => {
   try {
     const { estatus, tipo_afiliado } = req.query;
 
-    let sql = 'SELECT * FROM agremiados';
+    let sql = `
+      SELECT a.*, 
+             corp.razon_social as corp_razon_social, 
+             corp.cedula_rif as corp_rif
+      FROM agremiados a
+      LEFT JOIN agremiados corp ON a.id_agremiado_corp = corp.id_agremiado
+    `;
     const args: any[] = [];
     const whereClauses: string[] = [];
 
     if (estatus) {
-      whereClauses.push('estatus = ?');
+      whereClauses.push('a.estatus = ?');
       args.push(estatus as string);
     }
     
     if (tipo_afiliado) {
-      whereClauses.push('tipo_afiliado = ?');
+      whereClauses.push('a.tipo_afiliado = ?');
       args.push(tipo_afiliado as string);
     }
 
@@ -500,7 +507,7 @@ export const buscarAfiliadosPublic = async (req: Request, res: Response) => {
       sql: `
       SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, cedula_rif, tipo_afiliado 
       FROM agremiados 
-      WHERE estatus = '9_AFILIACION'
+      WHERE estatus = '9_AFILIACION' AND activo = 1
       ORDER BY nombre_completo ASC
     `,
       args: []
@@ -696,8 +703,23 @@ export const updateAfiliado = async (req: Request, res: Response) => {
       'cedula_personal', 'email', 'telefono', 'razon_social',
       'direccion', 'fecha_nacimiento', 'nivel_academico', 'notas',
       'estatus', 'cibir_convalidado', 'inscripcion_pagada', 'tipo_afiliado',
-      'url_cedula', 'url_titulo', 'url_cv'
+      'url_cedula', 'url_titulo', 'url_cv', 'codigo_cibir', 'id_agremiado_corp',
+      'instagram', 'facebook', 'linkedin', 'twitter', 'website', 'activo'
     ];
+
+    // Validar duplicados si se están cambiando campos únicos
+    const uniqueFields = ['email', 'cedula_rif', 'codigo_cibir'];
+    for (const field of uniqueFields) {
+      if (fields[field]) {
+        const existing = await db.execute({
+          sql: `SELECT id_agremiado FROM agremiados WHERE ${field} = ? AND id_agremiado != ?`,
+          args: [fields[field], id]
+        });
+        if (existing.rows.length > 0) {
+          return res.status(400).json({ success: false, message: `Ya existe otro afiliado con este ${field.replace('_', ' ')}` });
+        }
+      }
+    }
 
     const setParts: string[] = [];
     const args: any[] = [];
@@ -1074,3 +1096,87 @@ export const publicRegistrarPorInvitacion = async (req: Request, res: Response):
     res.status(500).json({ success: false, message: 'Error al procesar el registro' })
   }
 }
+/**
+ * DELETE /api/afiliados/:id
+ * Elimina un registro de agremiado.
+ */
+export const deleteAfiliado = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    // Primero verificar si existe
+    const check = await db.execute({
+      sql: 'SELECT id_agremiado FROM agremiados WHERE id_agremiado = ?',
+      args: [id]
+    });
+
+    if (check.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'Afiliado no encontrado' });
+      return;
+    }
+
+    // Borrar (las foreign keys están configuradas como ON DELETE SET NULL o CASCADE en la mayoría de los casos)
+    await db.execute({
+      sql: 'DELETE FROM agremiados WHERE id_agremiado = ?',
+      args: [id]
+    });
+
+    res.json({ success: true, message: 'Afiliado eliminado correctamente' });
+  } catch (error) {
+    console.error('Error en deleteAfiliado:', error);
+    res.status(500).json({ success: false, message: 'Error interno al eliminar afiliado' });
+  }
+};
+
+/**
+ * POST /api/afiliados
+ * Creación directa de un afiliado por parte del administrador.
+ */
+export const createAfiliado = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { 
+      nombre_completo, nombres, apellidos, razon_social, 
+      cedula_rif, email, tipo_afiliado, estatus, 
+      telefono, direccion, codigo_cibir 
+    } = req.body;
+
+    if (!nombre_completo || !cedula_rif || !email) {
+      res.status(400).json({ success: false, message: 'Nombre, Cédula/RIF y Email son obligatorios.' });
+      return;
+    }
+
+    // Verificar duplicados
+    const existing = await db.execute({
+      sql: 'SELECT id_agremiado FROM agremiados WHERE email = ? OR cedula_rif = ?' + (codigo_cibir ? ' OR codigo_cibir = ?' : ''),
+      args: codigo_cibir ? [email, cedula_rif, codigo_cibir] : [email, cedula_rif]
+    });
+
+    if (existing.rows.length > 0) {
+      res.status(400).json({ success: false, message: 'Ya existe un afiliado con ese email o Cédula/RIF.' });
+      return;
+    }
+
+    const result = await db.execute({
+      sql: `INSERT INTO agremiados (
+        nombre_completo, nombres, apellidos, razon_social, 
+        cedula_rif, email, tipo_afiliado, estatus, 
+        telefono, direccion, codigo_cibir, fecha_registro
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+      args: [
+        nombre_completo, nombres || null, apellidos || null, razon_social || null,
+        cedula_rif, email, tipo_afiliado || 'Natural', estatus || '9_AFILIACION',
+        telefono || null, direccion || null, codigo_cibir || null,
+        new Date().toISOString()
+      ]
+    });
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Afiliado creado correctamente', 
+      data: result.rows[0] 
+    });
+  } catch (error) {
+    console.error('Error en createAfiliado:', error);
+    res.status(500).json({ success: false, message: 'Error interno al crear afiliado' });
+  }
+};

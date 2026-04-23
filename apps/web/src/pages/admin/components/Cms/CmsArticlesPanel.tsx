@@ -27,7 +27,7 @@ const MIN_RIGHT = 260   // px
 const DEFAULT_LEFT = 650 // content column wider, preview narrower by default
 
 export default function CmsArticlesPanel({ externalTab = 'config' }: { externalTab?: CmsTab }) {
-  const [previewVisible, setPreviewVisible] = useState(true)
+  const [previewVisible, setPreviewVisible] = useState(false)
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT)
   const [dividerDragging, setDividerDragging] = useState(false)
   const [detailName, setDetailName] = useState<string | null>(null)
