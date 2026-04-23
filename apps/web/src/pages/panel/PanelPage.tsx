@@ -42,6 +42,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/config/env';
+import { formatNombreCard } from '@/utils/formatters';
 
 // ─── Nav Items por sección ────────────────────────────────────────────────────
 
@@ -104,6 +105,8 @@ const PanelPage = () => {
   const [loadingAgremiado, setLoadingAgremiado] = useState(true);
   const [agremiado, setAgremiado] = useState<{
     nombre_completo: string;
+    nombres: string | null;
+    apellidos: string | null;
     codigo_cibir: string | null;
     estatus: string;
     inscripcion_pagada: number;
@@ -128,7 +131,7 @@ const PanelPage = () => {
 
   useEffect(() => { fetchAgremiado(); }, [user?.id_agremiado, token]);
 
-  const displayName = agremiado?.nombre_completo ?? user?.email?.split('@')[0] ?? 'Usuario';
+  const displayName = agremiado ? formatNombreCard(agremiado.nombres || agremiado.nombre_completo, agremiado.apellidos) : (user?.email?.split('@')[0] ?? 'Usuario');
   const displayCode = agremiado?.codigo_cibir ?? (isAdmin ? 'Administrador' : '—');
   const isActivo = agremiado?.estatus === 'CIBIR';
   const isPaid = agremiado?.inscripcion_pagada === 1;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '@/config/env'
 import { STATIC } from '@/pages/landing/config/staticContent'
+import { formatNombreCard } from '@/utils/formatters'
 import Mision_img from '@/assets/Mision.jpeg'
 
 const s = STATIC.directiva
@@ -44,7 +45,7 @@ export default function DirectivaSection() {
                   />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-[#022c22]">{m.nombre}</h4>
+                  <h4 className="text-xl font-bold text-[#022c22]">{formatNombreCard(m.nombre)}</h4>
                   <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mt-1 opacity-80">{m.cargo}</p>
                 </div>
               </div>

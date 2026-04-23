@@ -1,5 +1,6 @@
 import React from 'react';
 import { Mail, Instagram, Linkedin, Building2, User } from 'lucide-react';
+import { formatNombreCard, getInitials } from '@/utils/formatters';
 
 interface RedesSociales {
   instagram?: string;
@@ -40,12 +41,12 @@ export const AfiliadoCard = ({ afiliado }: { afiliado: AfiliadoData }) => {
              {isJuridico ? (
                <>
                  <Building2 size={10} className="text-emerald-600 dark:text-emerald-400" />
-                 <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-emerald-400/70">Organización</span>
+                 <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-emerald-400/70">Corporativo</span>
                </>
              ) : (
                <>
                  <User size={10} className="text-emerald-600 dark:text-emerald-400" />
-                 <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-emerald-400/70">Profesional</span>
+                 <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-emerald-400/70">Independiente</span>
                </>
              )}
            </div>
@@ -57,24 +58,32 @@ export const AfiliadoCard = ({ afiliado }: { afiliado: AfiliadoData }) => {
         {/* Avatar */}
         <div className="relative mb-3">
           <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500 to-teal-300 rounded-full blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
-          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white dark:border-[#04432f] shadow-md">
-            <img
-              src={afiliado.foto_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200'}
-              alt={`Foto de ${afiliado.nombre_completo}`}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            />
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white dark:border-[#04432f] shadow-md flex items-center justify-center bg-[#022c22]">
+            {afiliado.foto_url ? (
+              <img
+                src={afiliado.foto_url}
+                alt={`Foto de ${afiliado.nombre_completo}`}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+            ) : (
+              <span className="text-white font-black text-2xl uppercase tracking-tighter">
+                {getInitials(afiliado.nombres || afiliado.nombre_completo, afiliado.apellidos)}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Información del Miembro */}
         <div className="space-y-1 mb-5">
           <h3 className="font-bold text-slate-800 dark:text-emerald-50 text-lg leading-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
-            {isJuridico ? (afiliado.razon_social || afiliado.nombre_completo) : afiliado.nombre_completo}
+            {isJuridico 
+              ? (afiliado.razon_social || formatNombreCard(afiliado.nombres || afiliado.nombre_completo, afiliado.apellidos)) 
+              : formatNombreCard(afiliado.nombres || afiliado.nombre_completo, afiliado.apellidos)}
           </h3>
           
           {isJuridico && afiliado.razon_social && (
             <p className="text-[10px] text-slate-400 dark:text-emerald-100/40 font-medium">
-              Representante: {afiliado.nombre_completo}
+              Representante: {formatNombreCard(afiliado.nombres || afiliado.nombre_completo, afiliado.apellidos)}
             </p>
           )}
 

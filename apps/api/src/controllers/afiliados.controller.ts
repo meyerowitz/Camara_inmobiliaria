@@ -293,15 +293,24 @@ export const verificarEmail = async (req: Request, res: Response) => {
 
 export const getAfiliados = async (req: Request, res: Response) => {
   try {
-    const { estatus } = req.query;
+    const { estatus, tipo_afiliado } = req.query;
 
     let sql = 'SELECT * FROM agremiados';
     const args: any[] = [];
+    const whereClauses: string[] = [];
 
-    // Filtrar por estatus si se proporciona en el query string
     if (estatus) {
-      sql += ' WHERE estatus = ?';
+      whereClauses.push('estatus = ?');
       args.push(estatus as string);
+    }
+    
+    if (tipo_afiliado) {
+      whereClauses.push('tipo_afiliado = ?');
+      args.push(tipo_afiliado as string);
+    }
+
+    if (whereClauses.length > 0) {
+      sql += ' WHERE ' + whereClauses.join(' AND ');
     }
     
     // Ordenar por fecha de registro descendente por defecto
@@ -487,16 +496,20 @@ export const buscarAfiliadosPublic = async (req: Request, res: Response) => {
     // REGLA CRÍTICA: Añadida cedula_rif pública
     // REGLA DE FILTRO: Solo agremiados con estatus = 'CIBIR'.
     // Retornamos hasta 1000 afiliados (o todos) para que fuse.js en el frontend haga la búsqueda fuzzy y filtrado local sin saturar DB
-    let sql = `
-      SELECT id_agremiado, nombre_completo, codigo_cibir, cedula_rif 
+    const result = await db.execute({
+      sql: `
+      SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, cedula_rif, tipo_afiliado 
       FROM agremiados 
       WHERE estatus = '9_AFILIACION'
-      ORDER BY nombre_completo ASC 
-      LIMIT 1000
-    `;
-    const args: any[] = [];
+      ORDER BY nombre_completo ASC
+    `,
+      args: []
+    });
 
-    const result = await db.execute({ sql, args });
+    console.log(`[DEBUG] buscarAfiliadosPublic: Encontrados ${result.rows.length} afiliados activos.`);
+    if (result.rows.length > 0) {
+      console.log(`[DEBUG] Tipos encontrados:`, [...new Set(result.rows.map(r => r.tipo_afiliado))]);
+    }
 
     // Transformamos la respuesta para simular foto generica y redes sociales temporalmente 
     const mappedData = result.rows.map((row) => ({

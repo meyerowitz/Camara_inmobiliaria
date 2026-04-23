@@ -25,6 +25,7 @@ import {
 import { API_URL } from '@/config/env';
 import DashboardCard from '@/pages/landing/afiliado/components/DashboardCard';
 import { useAuth } from '@/context/AuthContext';
+import { formatNombreCard } from '@/utils/formatters';
 
 interface Invitacion {
   id_invitacion: number;
@@ -39,6 +40,8 @@ interface Invitacion {
 interface AfiliadoMiembro {
   id_agremiado: number;
   nombre_completo: string;
+  nombres: string | null;
+  apellidos: string | null;
   cedula_rif: string;
   email: string;
   telefono: string;
@@ -324,10 +327,10 @@ export default function WidgetGestionAfiliadosCorp() {
                 <div key={m.id_agremiado} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-black text-xs">
-                      {m.nombre_completo.charAt(0)}
+                      {getInitials(m.nombres || m.nombre_completo, m.apellidos)}
                     </div>
                     <div className="space-y-0.5">
-                      <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{m.nombre_completo}</p>
+                      <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{formatNombreCard(m.nombres || m.nombre_completo, m.apellidos)}</p>
                       <p className="text-[10px] font-medium text-gray-500">{m.email}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${

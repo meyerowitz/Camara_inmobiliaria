@@ -18,6 +18,7 @@ import WidgetFormalizarInscripcion from '@/pages/landing/afiliado/components/Wid
 import AffiliationTimeline from '@/pages/landing/afiliado/components/AffiliationTimeline';
 import { useAuth } from '@/context/AuthContext';
 import { API_URL } from '@/config/env';
+import { formatNombreCard } from '@/utils/formatters';
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Resumen / Inicio' },
@@ -54,7 +55,7 @@ const AfiliadoPage = () => {
     fetchAgremiado();
   }, [user?.id_agremiado, token]);
 
-  const displayName = agremiado?.nombre_completo ?? user?.email?.split('@')[0] ?? 'Afiliado';
+  const displayName = agremiado ? formatNombreCard(agremiado.nombres || agremiado.nombre_completo, agremiado.apellidos) : (user?.email?.split('@')[0] ?? 'Afiliado');
   const displayCode = agremiado?.codigo_cibir ?? '—';
   const isActivo = agremiado?.estatus === '9_AFILIACION';
   const isPaid = agremiado?.inscripcion_pagada === 1;
