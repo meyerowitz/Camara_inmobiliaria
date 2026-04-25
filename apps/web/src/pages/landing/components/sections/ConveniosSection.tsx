@@ -42,9 +42,9 @@ export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, st
     <section id='convenios' className='bg-white py-10 scroll-mt-24 overflow-hidden'>
       <style>{marqueeStyle}</style>
       <div className='max-w-7xl mx-auto px-6 lg:px-20 mb-16'>
-        <div ref={revealTextConvenios} className='space-y-4 reveal-on-scroll -ml-8'>
-          <h2 className='text-5xl lg:text-7xl font-bold text-[#333333] tracking-tighter -ml-4'>
-            {cfg['convenios_marquee_titulo'] || 'Convenios y beneficios'}
+        <div ref={revealTextConvenios} className='space-y-4 reveal-on-scroll lg:-ml-7 ml-0'>
+          <h2 className='text-4xl lg:text-6xl font-bold text-[#333333] tracking-tighter -ml-4'>
+            {cfg['convenios_marquee_titulo'] || 'Convenios y Beneficios'}
           </h2>
         </div>
         <div className='relative mt-16 bg-slate-50 border border-gray-100 rounded-[3rem] py-12 overflow-hidden'>
