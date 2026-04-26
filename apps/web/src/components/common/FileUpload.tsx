@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, FileText, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Upload, X, FileText, CheckCircle2, AlertCircle, Loader2, Image as ImageIcon, FileUp } from 'lucide-react';
 import { API_URL } from '@/config/env';
 
 interface FileUploadProps {
@@ -23,11 +23,25 @@ export default function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
+    let selectedFile: File | undefined;
+    
+    if ('target' in e && (e.target as HTMLInputElement).files) {
+      selectedFile = (e.target as HTMLInputElement).files?.[0];
+    } else if ('dataTransfer' in e) {
+      selectedFile = e.dataTransfer.files?.[0];
+    }
+
     if (!selectedFile) return;
+
+    // Basic validation
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      setError('El archivo es demasiado grande (Máx 5MB)');
+      return;
+    }
 
     // Reset state
     setFile(selectedFile);
@@ -78,7 +92,23 @@ export default function FileUpload({
     }
   };
 
-  const handleRemove = () => {
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileChange(e);
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setFile(null);
     setUploadedUrl(null);
     setError(null);
@@ -89,64 +119,99 @@ export default function FileUpload({
   const isImage = file?.type.startsWith('image/');
 
   return (
-    <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-slate-500 flex justify-between">
-        <span>{label} {required && <span className="text-red-500">*</span>}</span>
-        {uploadedUrl && <span className="text-emerald-600 font-bold">✓ Cargado</span>}
+    <div className="space-y-2.5">
+      <label className="text-[10px] font-black uppercase tracking-[0.15em] ml-1 text-slate-500 flex justify-between items-center">
+        <span>{label} {required && <span className="text-rose-500">*</span>}</span>
+        {uploadedUrl && (
+          <span className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[9px] border border-emerald-100">
+            <CheckCircle2 size={10} /> CARGADO
+          </span>
+        )}
       </label>
 
       <div 
-        className={`relative group transition-all rounded-xl border-2 border-dashed ${
-          uploadedUrl 
-            ? 'border-emerald-500/50 bg-emerald-500/5' 
-            : error 
-              ? 'border-red-500/50 bg-red-500/5'
-              : 'border-white/10 hover:border-emerald-500/30 hover:bg-white/5'
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => !uploadedUrl && !uploading && fileInputRef.current?.click()}
+        className={`relative group transition-all duration-300 rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden ${
+          isDragging
+            ? 'border-emerald-500 bg-emerald-50 ring-4 ring-emerald-500/10'
+            : uploadedUrl 
+              ? 'border-emerald-500/30 bg-emerald-50/30 hover:bg-emerald-50/50' 
+              : error 
+                ? 'border-rose-500/30 bg-rose-50/30'
+                : 'border-slate-200 bg-slate-50/50 hover:border-emerald-400 hover:bg-white hover:shadow-md'
         }`}
       >
         {!file && !uploadedUrl ? (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center gap-4 px-5 py-4 text-left"
-          >
-            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-              <Upload size={20} />
+          <div className="w-full flex flex-col items-center justify-center py-8 px-6 text-center space-y-3">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
+              isDragging ? 'bg-emerald-500 text-white scale-110' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600'
+            }`}>
+              <FileUp size={24} />
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-white/90">Seleccionar archivo</span>
-              <span className="text-[10px] text-white/40 uppercase tracking-tighter">PDF, JPG, PNG (Max 5MB)</span>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-700 group-hover:text-emerald-700 transition-colors">
+                {isDragging ? 'Suelta el archivo aquí' : 'Haz clic o arrastra un archivo'}
+              </p>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">
+                Soporta PDF, JPG, PNG (Máx 5MB)
+              </p>
             </div>
-          </button>
+          </div>
         ) : (
-          <div className="w-full flex items-center gap-4 px-5 py-4">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+          <div className="w-full flex items-center gap-4 px-5 py-5">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+              uploading ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-500 text-white'
+            }`}>
               {uploading ? (
-                <Loader2 size={20} className="animate-spin" />
+                <Loader2 size={24} className="animate-spin" />
               ) : isImage ? (
-                <ImageIcon size={20} />
+                <ImageIcon size={24} />
               ) : (
-                <FileText size={20} />
+                <FileText size={24} />
               )}
             </div>
+            
             <div className="flex flex-col flex-1 min-w-0">
-              <span className="text-sm font-bold text-white truncate">
+              <span className="text-sm font-bold text-slate-800 truncate">
                 {file?.name || 'Archivo cargado'}
               </span>
-              <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">
-                {uploading ? 'Subiendo...' : 'Completado'}
-              </span>
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className={`text-[10px] font-black uppercase tracking-widest ${uploading ? 'text-emerald-500 animate-pulse' : 'text-emerald-600'}`}>
+                  {uploading ? 'Subiendo...' : 'Listo para procesar'}
+                </span>
+                {uploadedUrl && !uploading && (
+                  <a 
+                    href={uploadedUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-[10px] text-blue-600 hover:text-blue-700 font-bold underline uppercase tracking-widest"
+                  >
+                    Ver archivo
+                  </a>
+                )}
+              </div>
             </div>
+
             {!uploading && (
               <button
                 type="button"
                 onClick={handleRemove}
-                className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors"
+                className="p-2 hover:bg-rose-50 rounded-lg text-slate-300 hover:text-rose-500 transition-all"
+                title="Eliminar archivo"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             )}
           </div>
+        )}
+
+        {/* Progress bar simulation for feel */}
+        {uploading && (
+          <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 animate-progress-indefinite w-full" />
         )}
 
         <input
@@ -159,7 +224,7 @@ export default function FileUpload({
       </div>
 
       {error && (
-        <div className="flex items-center gap-1.5 text-red-400 px-1">
+        <div className="flex items-center gap-1.5 text-rose-500 px-1 animate-in slide-in-from-top-1">
           <AlertCircle size={12} />
           <span className="text-[10px] font-bold uppercase tracking-tight">{error}</span>
         </div>
@@ -167,3 +232,4 @@ export default function FileUpload({
     </div>
   );
 }
+

@@ -97,7 +97,7 @@ interface CmsContentProps {
 
 const CmsContent = ({ activeId }: CmsContentProps) => {
   const panel = PANELS[activeId] ?? PANELS['dashboard']
-  return <div className="absolute inset-0 overflow-hidden">{panel}</div>
+  return <div className="absolute inset-0 flex flex-col min-h-0 overflow-hidden">{panel}</div>
 }
 
 export default CmsContent

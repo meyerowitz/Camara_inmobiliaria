@@ -95,10 +95,10 @@ export default function PreaniPage() {
               
               <div className="relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">
-                  ¿Listo para el siguiente nivel profesional?
+                  ¿Listo para dar el siguiente paso?
                 </h3>
-                <p className="text-emerald-200/70 mb-8 max-w-xl mx-auto">
-                  Inicia tu proceso de preinscripción para la próxima cohorte del PREANI.
+                <p className="text-emerald-200/70 mb-8 max-w-xl mx-auto italic">
+                  Completa el siguiente formulario para preinscribirte en el Programa de Estudios Avanzados en Negocios Inmobiliarios (PREANI).
                 </p>
                 <PreinscripcionProgramaForm programaCodigo="PREANI" ctaLabel="Confirmar" />
                 <div className="mt-6">

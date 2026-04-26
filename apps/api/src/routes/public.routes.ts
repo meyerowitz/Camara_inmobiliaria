@@ -1,5 +1,10 @@
 import { Router } from 'express';
-import { buscarAfiliadosPublic, publicValidarInvitacion, publicRegistrarPorInvitacion } from '../controllers/afiliados.controller.js';
+import { 
+  buscarAfiliadosPublic, 
+  getAfiliadoPublicById,
+  publicValidarInvitacion, 
+  publicRegistrarPorInvitacion 
+} from '../controllers/afiliados.controller.js';
 import { 
   publicPreinscribirProgramaPrincipal, 
   publicConfirmarPreinscripcionPrograma, 
@@ -15,6 +20,9 @@ const router = Router();
 
 // GET /api/public/afiliados/buscar
 router.get('/afiliados/buscar', buscarAfiliadosPublic);
+
+// GET /api/public/afiliados/:id
+router.get('/afiliados/:id', getAfiliadoPublicById);
 
 // POST /api/public/preinscripciones
 router.post('/preinscripciones', publicPreinscribirProgramaPrincipal);

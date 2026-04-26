@@ -110,6 +110,13 @@ body { margin: 0; padding: 0; height: 100%; overflow-y: scroll; overflow-x: hidd
     display: inline-flex;
     animation: marquee 30s linear infinite;
   }
+  .animate-progress-indefinite {
+    animation: progress-indefinite 1.5s infinite linear;
+  }
+  @keyframes progress-indefinite {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
   .pause { animation-play-state: paused; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }

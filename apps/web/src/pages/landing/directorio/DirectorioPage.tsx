@@ -153,14 +153,14 @@ const DirectorioPage = () => {
         </section>
 
         {/* Results Section */}
-        <section className="max-w-7xl mx-auto px-6 pt-32 pb-16">
+        <section className="max-w-[1600px] mx-auto px-6 pt-32 pb-16">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 opacity-50">
               <Loader2 size={48} className="animate-spin text-emerald-600 mb-4" />
               <p className="font-bold text-lg text-slate-500">Cargando directorio seguro...</p>
             </div>
           ) : resultados.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6">
               {resultados.map((afiliado) => (
                 <AfiliadoCard key={afiliado.id_agremiado} afiliado={afiliado} />
               ))}

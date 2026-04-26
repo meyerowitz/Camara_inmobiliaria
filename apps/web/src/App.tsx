@@ -29,6 +29,7 @@ import ComprobantePublicoPage from '@/pages/comprobante/ComprobantePublicoPage'
 import MarcoLegalPage from '@/pages/landing/marco-legal/MarcoLegalPage'
 import RequisitosPage from '@/pages/landing/afiliado/RequisitosPage'
 import InvitacionCorporativaPage from '@/pages/landing/afiliado/InvitacionCorporativaPage'
+import AfiliadoProfilePage from '@/pages/landing/directorio/AfiliadoProfilePage'
 
 function PreservingQueryNavigate({ to }: { to: string }) {
   const [searchParams] = useSearchParams()
@@ -61,6 +62,7 @@ export default function App() {
           <Route path='/convenios' element={<Navigate to='/marco-legal/normas-y-procedimientos' replace />} />
           <Route path='/normativas' element={<Navigate to='/marco-legal/leyes-y-decretos' replace />} />
           <Route path='/miembros'      element={<DirectorioPage />} />
+          <Route path='/miembros/:id'  element={<AfiliadoProfilePage />} />
           <Route path='/afiliate'      element={<RequisitosPage />} />
           <Route path='/requisitos'    element={<Navigate to='/afiliate' replace />} />
           <Route path='/comprobante/:codigo' element={<ComprobantePublicoPage />} />

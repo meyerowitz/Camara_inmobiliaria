@@ -2,6 +2,38 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
 import { formatNombreCard } from '@/utils/formatters'
+import { FileText, ExternalLink, Download, Award, GraduationCap } from 'lucide-react'
+
+function DocLink({ label, url, compact = false }: { label: string, url?: string | null, compact?: boolean }) {
+  if (!url) return (
+    <div className={`flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/30 ${compact ? 'py-2' : ''}`}>
+      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{label}</span>
+      <span className="text-[10px] text-slate-300 italic font-medium">No cargado</span>
+    </div>
+  )
+
+  return (
+    <a 
+      href={url} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className={`flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:border-emerald-200 hover:shadow-sm transition-all group ${compact ? 'py-2' : ''}`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+          <FileText size={16} />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</span>
+          <span className="text-[10px] font-bold text-slate-600 truncate">Ver documento</span>
+        </div>
+      </div>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-emerald-500 transition-colors">
+        <ExternalLink size={14} />
+      </div>
+    </a>
+  )
+}
 
 
 type EstatusAgremiado = 
@@ -31,6 +63,10 @@ type Agremiado = {
   inscripcion_pagada: number
   fecha_registro: string
   fecha_ultimo_cambio_estatus: string | null
+  url_titulo?: string | null
+  url_cv?: string | null
+  url_especializaciones?: string | null
+  url_cursos_extras?: string | null
 }
 
 export default function AfiliadosPanel() {
@@ -118,9 +154,9 @@ export default function AfiliadosPanel() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-[360px_1fr] grid-rows-1 h-full w-full overflow-hidden relative">
       {/* List */}
-      <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden w-full sm:w-[360px] flex-shrink-0">
+      <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden min-h-0">
         <div className="p-4 border-b border-gray-100 space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-slate-800">Afiliados / Agremiados (CIBIR)</h3>
@@ -172,7 +208,7 @@ export default function AfiliadosPanel() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide divide-y divide-gray-50">
+        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
           {loading ? (
             <div className="p-4 text-center text-xs text-slate-400 font-semibold uppercase tracking-widest mt-10">Cargando...</div>
           ) : error ? (
@@ -211,7 +247,7 @@ export default function AfiliadosPanel() {
       </div>
 
       {/* Detail */}
-      <div className="flex-1 min-w-0 bg-gray-50 hidden sm:flex sm:flex-col">
+      <div className="bg-gray-50 overflow-hidden relative min-h-0 hidden sm:block">
         {!selected ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-300">
             <p className="text-sm font-medium">Selecciona un afiliado</p>
@@ -221,7 +257,7 @@ export default function AfiliadosPanel() {
             <p className="text-sm font-medium">Cargando detalle...</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto scrollbar-hide h-full">
+          <div className="absolute inset-0 overflow-y-auto p-4 sm:p-6">
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0 flex-1">
@@ -340,6 +376,70 @@ export default function AfiliadosPanel() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Documentation Section */}
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 flex flex-col gap-5">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Documentación y Soportes</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DocLink 
+                  label="Resumen Curricular (CV)" 
+                  url={selected.url_cv} 
+                />
+                <DocLink 
+                  label="Título Profesional" 
+                  url={selected.url_titulo} 
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Especializaciones / Postgrados</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(() => {
+                    try {
+                      const urls = JSON.parse(selected.url_especializaciones || '[]') as string[]
+                      if (urls.length === 0) return (
+                        <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                          <span className="text-[10px] text-slate-400 font-medium italic">No se cargaron especializaciones</span>
+                        </div>
+                      )
+                      return urls.map((url, i) => (
+                        <DocLink key={i} label={`Soporte Postgrado #${i+1}`} url={url} compact />
+                      ))
+                    } catch (e) {
+                      return <p className="text-[10px] text-rose-500 italic">Error al cargar soportes</p>
+                    }
+                  })()}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Otros Cursos / Talleres</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {(() => {
+                    try {
+                      const urls = JSON.parse(selected.url_cursos_extras || '[]') as string[]
+                      if (urls.length === 0) return (
+                        <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                          <span className="text-[10px] text-slate-400 font-medium italic">No se cargaron certificados adicionales</span>
+                        </div>
+                      )
+                      return urls.map((url, i) => (
+                        <DocLink key={i} label={`Soporte Curso #${i+1}`} url={url} compact />
+                      ))
+                    } catch (e) {
+                      return <p className="text-[10px] text-rose-500 italic">Error al cargar soportes</p>
+                    }
+                  })()}
+                </div>
+              </div>
+
+              {!selected.url_cv && !selected.url_titulo && !selected.url_especializaciones && !selected.url_cursos_extras && (
+                <div className="p-4 bg-slate-50 rounded-xl text-center">
+                  <p className="text-xs text-slate-400 italic">No hay documentos cargados</p>
+                </div>
+              )}
             </div>
 
             {/* Process Management */}

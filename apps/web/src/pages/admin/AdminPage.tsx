@@ -93,7 +93,7 @@ const AdminPage = () => {
   }, [])
 
   return (
-    <div ref={containerRef} className="flex h-screen bg-gray-50 overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 flex bg-gray-50 overflow-hidden w-full h-full">
 
       {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
       <CmsAside
@@ -150,7 +150,7 @@ const AdminPage = () => {
           subtitle={meta.subtitle}
           onMenuOpen={() => setMobileMenuOpen(true)}
         />
-        <main className="relative flex-1 overflow-hidden">
+        <main className="relative flex-1 min-h-0 overflow-hidden">
           <CmsContent activeId={activeId} />
         </main>
       </div>

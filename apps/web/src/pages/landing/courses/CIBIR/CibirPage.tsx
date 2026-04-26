@@ -236,10 +236,10 @@ export default function Cibir() {
 
               <div className="relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">
-                  ¿Quieres convertirte en un Profesional Certificado?
+                  Inicia tu Formación Inmobiliaria
                 </h3>
                 <p className="text-emerald-200/70 mb-8 max-w-xl mx-auto italic">
-                  No pierdas la oportunidad de formarte con los líderes del gremio. La próxima cohorte del CIBIR te está esperando.
+                  Completa el siguiente formulario para preinscribirte en el Curso Introductorio a los Bienes Raíces (CIBIR) y dar el primer paso en tu carrera profesional.
                 </p>
               </div>
               <PreinscripcionProgramaForm programaCodigo="CIBIR" ctaLabel="Confirmar" />

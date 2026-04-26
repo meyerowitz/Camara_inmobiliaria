@@ -184,7 +184,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
         {isJuridico && (
           <>
             {/* Banner informativo corporativo */}
-            <div className="flex gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-left">
               <Info size={16} className="text-emerald-400 mt-0.5 shrink-0" />
               <p className="text-[11px] leading-relaxed text-emerald-100/80">
                 <span className="font-black text-emerald-300 block mb-0.5 uppercase tracking-wide">Flujo Corporativo</span>
@@ -368,18 +368,6 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
           </div>
         )}
 
-        <div className="bg-emerald-400/5 border border-emerald-400/20 rounded-xl p-4 flex gap-3">
-          <div className="w-10 h-10 rounded-lg bg-emerald-400/10 flex items-center justify-center text-emerald-400 flex-shrink-0">
-            <Info size={20} />
-          </div>
-          <div>
-            <h4 className="text-[10px] font-black uppercase tracking-wider text-emerald-400 mb-1">Información Importante</h4>
-            <p className="text-[11px] text-emerald-100/60 leading-tight">
-              Tras completar este formulario, recibirás un correo electrónico para validar tu cuenta y 
-              <span className="text-white font-bold"> cargar tus documentos obligatorios (Cédula y Título)</span>.
-            </p>
-          </div>
-        </div>
 
         <p className="text-[9px] text-center uppercase tracking-[0.2em] font-bold text-emerald-100/40">
           Cámara Inmobiliaria • Todos los derechos reservados • 2026

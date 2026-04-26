@@ -229,9 +229,9 @@ const PanelPage = () => {
 
     if (activeTab === 'Directorio de Miembros') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><MiembrosPanel /></div>;
     if (activeTab === 'Control de Acceso') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><UsersPanel /></div>;
-    if (activeTab === 'Administradores') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] p-6 overflow-hidden"><SuperAdminUsersPanel /></div>;
-    if (activeTab === 'Análisis y Métricas') return <div className="col-span-1 lg:col-span-3 min-h-[600px]"><AnalyticsPanel /></div>;
-    if (activeTab === 'Gestión de Formación') return <div className="col-span-1 lg:col-span-3 bg-white border border-gray-100 rounded-3xl shadow-xs min-h-[600px] overflow-hidden"><FormacionPanel /></div>;
+    if (activeTab === 'Administradores') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs p-6 overflow-hidden"><SuperAdminUsersPanel /></div>;
+    if (activeTab === 'Análisis y Métricas') return <div className="col-span-1 lg:col-span-3 h-full"><AnalyticsPanel /></div>;
+    if (activeTab === 'Gestión de Formación') return <div className="col-span-1 lg:col-span-3 h-full bg-white border border-gray-100 rounded-3xl shadow-xs overflow-hidden"><FormacionPanel /></div>;
 
     // 3. Sección CMS (Incrustada)
     if (activeTab.startsWith('CMS ·') || ['Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea'].includes(activeTab)) {

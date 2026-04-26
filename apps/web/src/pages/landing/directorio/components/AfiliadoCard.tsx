@@ -1,6 +1,7 @@
 import React from 'react';
 import { Mail, Instagram, Linkedin, Building2, User } from 'lucide-react';
 import { formatNombreCard, getInitials } from '@/utils/formatters';
+import { Link } from 'react-router-dom';
 
 interface RedesSociales {
   instagram?: string;
@@ -18,19 +19,30 @@ export interface AfiliadoData {
   cedula_rif: string;
   cedula_personal?: string;
   foto_url: string;
+  email: string;
+  telefono?: string;
   direccion?: string;
   fecha_nacimiento?: string;
   nivel_academico?: string;
   notas?: string;
   tipo_afiliado?: 'Natural' | 'Juridico';
   redes_sociales: RedesSociales;
+  website?: string;
+  descripcion?: string;
+  fecha_registro?: string;
+  fecha_inicio_servicio?: string;
+  mostrar_direccion_publica?: number | boolean;
+  direccion_publica?: string;
 }
 
 export const AfiliadoCard = ({ afiliado }: { afiliado: AfiliadoData }) => {
   const isJuridico = afiliado.tipo_afiliado === 'Juridico';
 
   return (
-    <div className="relative overflow-hidden bg-white dark:bg-[#04432f] rounded-[1.5rem] p-5 shadow-sm border border-slate-200 dark:border-emerald-500/20 hover:border-emerald-500 dark:hover:border-emerald-400 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1">
+    <Link 
+      to={`/miembros/${afiliado.id_agremiado}`}
+      className="relative overflow-hidden bg-white dark:bg-[#04432f] rounded-[1.5rem] p-5 shadow-sm border border-slate-200 dark:border-emerald-500/20 hover:border-emerald-500 dark:hover:border-emerald-400 hover:shadow-xl transition-all duration-500 group hover:-translate-y-1 block"
+    >
       {/* Elemento decorativo de fondo */}
       <div className="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-700" />
       
@@ -105,6 +117,6 @@ export const AfiliadoCard = ({ afiliado }: { afiliado: AfiliadoData }) => {
            </button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };

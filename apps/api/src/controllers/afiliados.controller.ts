@@ -543,6 +543,57 @@ export const buscarAfiliadosPublic = async (req: Request, res: Response) => {
   }
 };
 
+export const getAfiliadoPublicById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const result = await db.execute({
+      sql: `
+        SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, 
+               cedula_rif, tipo_afiliado, cedula_personal, email, telefono, direccion, 
+               fecha_nacimiento, nivel_academico, notas, instagram, facebook, linkedin, 
+               twitter, website, fecha_registro, estatus, activo, descripcion, redes_sociales,
+               fecha_inicio_servicio, mostrar_direccion_publica, direccion_publica
+        FROM agremiados 
+        WHERE id_agremiado = ? AND estatus = '9_AFILIACION' AND activo = 1
+      `,
+      args: [Number(id)]
+    });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Miembro no encontrado o no activo' });
+    }
+
+    const row = result.rows[0];
+    
+    let parsedRedes = {
+        instagram: row.instagram || '',
+        linkedin: row.linkedin || '',
+        facebook: row.facebook || '',
+        twitter: row.twitter || ''
+    };
+    
+    if (row.redes_sociales) {
+        try {
+            parsedRedes = { ...parsedRedes, ...JSON.parse(row.redes_sociales as string) };
+        } catch(e) {}
+    }
+
+    const mappedData = {
+      ...row,
+      foto_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(row.nombre_completo as string)}&background=047857&color=fff&size=200`,
+      redes_sociales: parsedRedes
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: mappedData
+    });
+  } catch (error) {
+    console.error('Error en getAfiliadoPublicById:', error);
+    return res.status(500).json({ success: false, message: 'Error al obtener el perfil público' });
+  }
+};
+
 // ==========================================
 // NUEVO ENDPOINT PARA LA UI DE CIBIR (Tabs)
 // ==========================================
@@ -703,7 +754,7 @@ export const updateAfiliado = async (req: Request, res: Response) => {
       'cedula_personal', 'email', 'telefono', 'razon_social',
       'direccion', 'fecha_nacimiento', 'nivel_academico', 'notas',
       'estatus', 'cibir_convalidado', 'inscripcion_pagada', 'tipo_afiliado',
-      'url_cedula', 'url_titulo', 'url_cv', 'codigo_cibir', 'id_agremiado_corp',
+      'url_titulo', 'url_cv', 'url_especializaciones', 'url_cursos_extras', 'codigo_cibir', 'id_agremiado_corp',
       'instagram', 'facebook', 'linkedin', 'twitter', 'website', 'activo'
     ];
 

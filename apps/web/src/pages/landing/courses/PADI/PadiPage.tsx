@@ -83,9 +83,9 @@ export default function PadiPage() {
 
             <div className="relative z-10 p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] bg-[#022c22]/95 backdrop-blur-sm text-white text-center space-y-8 overflow-hidden border border-white/5">
               <div className="relative z-10">
-                <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">¿Quieres certificarte como Profesional?</h3>
-                <p className="text-emerald-200/70 mb-8 max-w-xl mx-auto">
-                  Inicia tu proceso de preinscripción para nuestra próxima cohorte. Fórmate con los mejores especialistas del sector inmobiliario.
+                <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">Inicia tu Formación Avanzada</h3>
+                <p className="text-emerald-200/70 mb-8 max-w-xl mx-auto italic">
+                  Completa el siguiente formulario para preinscribirte en el Programa Avanzado de Desarrollo Inmobiliario (PADI) y llevar tu carrera al siguiente nivel.
                 </p>
                 <PreinscripcionProgramaForm programaCodigo="PADI" ctaLabel="Confirmar" />
                 <div className="mt-6">

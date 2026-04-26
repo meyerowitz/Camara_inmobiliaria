@@ -49,11 +49,16 @@ async function upsertEstudianteByEmail(params: {
   tipo?: string | null
   nivelProfesional?: 'Bachiller' | 'Universitario' | 'Postgrado' | null
   esCorredorInmobiliario?: boolean | null
-  url_cedula?: string | null
   url_titulo?: string | null
   url_cv?: string | null
+  url_especializaciones?: string | null
+  url_cursos_extras?: string | null
 }): Promise<{ id_estudiante: number }> {
-  const { nombreCompleto, cedulaRif, email, telefono, tipo, nivelProfesional, esCorredorInmobiliario, url_cedula, url_titulo, url_cv } = params
+  const { 
+    nombreCompleto, cedulaRif, email, telefono, tipo, 
+    nivelProfesional, esCorredorInmobiliario, 
+    url_titulo, url_cv, url_especializaciones, url_cursos_extras 
+  } = params
 
   const existing = await db.execute({
     sql: `SELECT id_estudiante FROM estudiantes WHERE email = ? LIMIT 1`,
@@ -69,9 +74,10 @@ async function upsertEstudianteByEmail(params: {
                 tipo = COALESCE(?, tipo),
                 nivel_profesional = COALESCE(?, nivel_profesional),
                 es_corredor_inmobiliario = COALESCE(?, es_corredor_inmobiliario),
-                url_cedula = COALESCE(?, url_cedula),
                 url_titulo = COALESCE(?, url_titulo),
                 url_cv = COALESCE(?, url_cv),
+                url_especializaciones = COALESCE(?, url_especializaciones),
+                url_cursos_extras = COALESCE(?, url_cursos_extras),
                 actualizado_en = ?
             WHERE id_estudiante = ?`,
       args: [
@@ -81,9 +87,10 @@ async function upsertEstudianteByEmail(params: {
         tipo ?? null,
         nivelProfesional ?? null,
         esCorredorInmobiliario == null ? null : Number(esCorredorInmobiliario),
-        url_cedula ?? null,
         url_titulo ?? null,
         url_cv ?? null,
+        url_especializaciones ?? null,
+        url_cursos_extras ?? null,
         new Date().toISOString(),
         id,
       ],
@@ -93,8 +100,9 @@ async function upsertEstudianteByEmail(params: {
 
   const inserted = await db.execute({
     sql: `INSERT INTO estudiantes
-            (cedula_rif, nombre_completo, email, telefono, tipo, nivel_profesional, es_corredor_inmobiliario, url_cedula, url_titulo, url_cv)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id_estudiante`,
+            (cedula_rif, nombre_completo, email, telefono, tipo, nivel_profesional, 
+             es_corredor_inmobiliario, url_titulo, url_cv, url_especializaciones, url_cursos_extras)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id_estudiante`,
     args: [
       cedulaRif ?? null,
       nombreCompleto,
@@ -103,9 +111,10 @@ async function upsertEstudianteByEmail(params: {
       tipo ?? 'Regular',
       nivelProfesional ?? null,
       Number(esCorredorInmobiliario ?? false),
-      url_cedula ?? null,
       url_titulo ?? null,
       url_cv ?? null,
+      url_especializaciones ?? null,
+      url_cursos_extras ?? null,
     ],
   })
   return { id_estudiante: inserted.rows[0].id_estudiante as number }
@@ -122,11 +131,18 @@ export async function crearVerificacionPreinscripcionPrograma(params: {
   esCorredorInmobiliario?: boolean | null
   razonSocial?: string | null
   representanteLegal?: string | null
-  url_cedula?: string | null
   url_titulo?: string | null
+  url_cv?: string | null
+  url_especializaciones?: string | null
+  url_cursos_extras?: string | null
   id_agremiado_corp?: number | null
 }): Promise<{ token: string; fechaExpiracion: string }> {
-  const { nombreCompleto, cedulaRif, email, telefono, programaCodigo, tipoAfiliado, nivelProfesional, esCorredorInmobiliario, razonSocial, representanteLegal, url_cedula, url_titulo, id_agremiado_corp } = params
+  const { 
+    nombreCompleto, cedulaRif, email, telefono, programaCodigo, 
+    tipoAfiliado, nivelProfesional, esCorredorInmobiliario, 
+    razonSocial, representanteLegal, url_titulo, url_cv, 
+    url_especializaciones, url_cursos_extras, id_agremiado_corp 
+  } = params
 
   const expiracion = new Date()
   expiracion.setHours(expiracion.getHours() + 24)
@@ -143,8 +159,8 @@ export async function crearVerificacionPreinscripcionPrograma(params: {
     sql: `INSERT INTO verificaciones_preinscripciones
             (token_verificacion, nombre_completo, cedula_rif, email, telefono, programa_codigo, tipo_afiliado,
              nivel_profesional, es_corredor_inmobiliario, razon_social, representante_legal,
-             url_cedula, url_titulo, id_agremiado_corp, fecha_expiracion)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             url_titulo, url_cv, url_especializaciones, url_cursos_extras, id_agremiado_corp, fecha_expiracion)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       token,
       nombreCompleto,
@@ -157,8 +173,10 @@ export async function crearVerificacionPreinscripcionPrograma(params: {
       esCorredorInmobiliario == null ? null : Number(esCorredorInmobiliario),
       razonSocial ?? null,
       representanteLegal ?? null,
-      url_cedula ?? null,
       url_titulo ?? null,
+      url_cv ?? null,
+      url_especializaciones ?? null,
+      url_cursos_extras ?? null,
       id_agremiado_corp ?? null,
       fechaExpiracion
     ],
@@ -181,9 +199,10 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
     const cedulaRif = typeof req.body?.cedulaRif === 'string' ? req.body.cedulaRif.trim() : null
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
     const telefono = typeof req.body?.telefono === 'string' ? req.body.telefono.trim() : null
-    const url_cedula = typeof req.body?.url_cedula === 'string' ? req.body.url_cedula.trim() : null
     const url_titulo = typeof req.body?.url_titulo === 'string' ? req.body.url_titulo.trim() : null
     const url_cv = typeof req.body?.url_cv === 'string' ? req.body.url_cv.trim() : null
+    const url_especializaciones = typeof req.body?.url_especializaciones === 'string' ? req.body.url_especializaciones.trim() : null
+    const url_cursos_extras = typeof req.body?.url_cursos_extras === 'string' ? req.body.url_cursos_extras.trim() : null
 
     if (!programaCodigo) {
       res.status(400).json({ success: false, message: 'programaCodigo inválido. Use PADI/PEGI/PREANI/CIBIR/AFILIACION.' })
@@ -265,8 +284,10 @@ export const publicPreinscribirProgramaPrincipal = async (req: Request, res: Res
       esCorredorInmobiliario,
       razonSocial,
       representanteLegal,
-      url_cedula,
       url_titulo,
+      url_cv,
+      url_especializaciones,
+      url_cursos_extras,
     })
 
     await enviarCorreoConfirmacionPreinscripcionPrograma({
@@ -326,9 +347,10 @@ export const publicConfirmarPreinscripcionPrograma = async (req: Request, res: R
     const telefono = registro.telefono ? String(registro.telefono).trim() : null
     const nivelProfesional = normalizeNivelProfesional(registro.nivel_profesional)
     const esCorredorInmobiliario = normalizeEsCorredorInmobiliario(registro.es_corredor_inmobiliario)
-    const url_cedula = registro.url_cedula ? String(registro.url_cedula).trim() : null
     const url_titulo = registro.url_titulo ? String(registro.url_titulo).trim() : null
     const url_cv = registro.url_cv ? String(registro.url_cv).trim() : null
+    const url_especializaciones = registro.url_especializaciones ? String(registro.url_especializaciones).trim() : null
+    const url_cursos_extras = registro.url_cursos_extras ? String(registro.url_cursos_extras).trim() : null
     const isAfiliacion = programaCodigo === 'AFILIACION'
 
     if (!programaCodigo || !email || !nombreCompleto) {
@@ -350,9 +372,10 @@ export const publicConfirmarPreinscripcionPrograma = async (req: Request, res: R
       tipo: 'Regular',
       nivelProfesional: req.body?.nivelProfesional ? normalizeNivelProfesional(req.body.nivelProfesional) : nivelProfesional,
       esCorredorInmobiliario: req.body?.esCorredorInmobiliario !== undefined ? normalizeEsCorredorInmobiliario(req.body.esCorredorInmobiliario) : esCorredorInmobiliario,
-      url_cedula: req.body?.url_cedula || url_cedula,
       url_titulo: req.body?.url_titulo || url_titulo,
       url_cv: req.body?.url_cv || url_cv,
+      url_especializaciones: req.body?.url_especializaciones || url_especializaciones,
+      url_cursos_extras: req.body?.url_cursos_extras || url_cursos_extras,
     })
 
     // Si ya existe preinscripción/inscripción, marcar como éxito idempotente.
@@ -830,8 +853,10 @@ export const publicGetVerificacionPreinscripcionByToken = async (req: Request, r
         telefono: registro.telefono,
         nivelProfesional: registro.nivel_profesional,
         esCorredorInmobiliario: registro.es_corredor_inmobiliario,
-        url_cedula: registro.url_cedula,
         url_titulo: registro.url_titulo,
+        url_cv: registro.url_cv,
+        url_especializaciones: registro.url_especializaciones,
+        url_cursos_extras: registro.url_cursos_extras,
       } 
     })
   } catch (error) {
@@ -901,9 +926,10 @@ export const adminListPreinscripciones = async (req: Request, res: Response): Pr
           e.cedula_rif as estudiante_cedula_rif,
           e.nivel_profesional as estudiante_nivel_profesional,
           e.es_corredor_inmobiliario as estudiante_es_corredor_inmobiliario,
-          e.url_cedula as estudiante_url_cedula,
           e.url_titulo as estudiante_url_titulo,
-          e.url_cv as estudiante_url_cv
+          e.url_cv as estudiante_url_cv,
+          e.url_especializaciones as estudiante_url_especializaciones,
+          e.url_cursos_extras as estudiante_url_cursos_extras
         FROM inscripciones_cursos ic
         JOIN estudiantes e ON e.id_estudiante = ic.id_estudiante
         WHERE ${whereParts.join(' AND ')}
@@ -1156,17 +1182,20 @@ export const adminFinalizarEntrevista = async (req: Request, res: Response): Pro
             sql: `INSERT INTO agremiados (
                     nombre_completo, email, cedula_rif, telefono, 
                     estatus, id_agremiado_corp, nivel_academico,
-                    url_cedula, url_titulo, url_cv, fecha_registro
-                  ) VALUES (?, ?, ?, ?, '3_CONFIRMACION', ?, ?, ?, ?, ?, ?)
+                    url_titulo, url_cv, url_especializaciones, url_cursos_extras, fecha_registro
+                  ) VALUES (?, ?, ?, ?, '3_CONFIRMACION', ?, ?, ?, ?, ?, ?, ?)
                   ON CONFLICT(email) DO UPDATE SET
                     id_agremiado_corp = excluded.id_agremiado_corp,
                     estatus = '3_CONFIRMACION',
-                    url_cedula = excluded.url_cedula,
-                    url_titulo = excluded.url_titulo`,
+                    url_titulo = excluded.url_titulo,
+                    url_cv = excluded.url_cv,
+                    url_especializaciones = excluded.url_especializaciones,
+                    url_cursos_extras = excluded.url_cursos_extras`,
             args: [
               est.nombre_completo, est.email, est.cedula_rif || null, est.telefono || null,
               row.id_agremiado_corp || null, est.nivel_profesional || null,
-              est.url_cedula || null, est.url_titulo || null, est.url_cv || null,
+              est.url_titulo || null, est.url_cv || null,
+              est.url_especializaciones || null, est.url_cursos_extras || null,
               now
             ]
           });
@@ -1300,17 +1329,20 @@ export const adminAprobarPreinscripcionDirecta = async (req: Request, res: Respo
             sql: `INSERT INTO agremiados (
                     nombre_completo, email, cedula_rif, telefono, 
                     estatus, id_agremiado_corp, nivel_academico,
-                    url_cedula, url_titulo, url_cv, fecha_registro
-                  ) VALUES (?, ?, ?, ?, '3_CONFIRMACION', ?, ?, ?, ?, ?, ?)
+                    url_titulo, url_cv, url_especializaciones, url_cursos_extras, fecha_registro
+                  ) VALUES (?, ?, ?, ?, '3_CONFIRMACION', ?, ?, ?, ?, ?, ?, ?)
                   ON CONFLICT(email) DO UPDATE SET
                     id_agremiado_corp = excluded.id_agremiado_corp,
                     estatus = '3_CONFIRMACION',
-                    url_cedula = excluded.url_cedula,
-                    url_titulo = excluded.url_titulo`,
+                    url_titulo = excluded.url_titulo,
+                    url_cv = excluded.url_cv,
+                    url_especializaciones = excluded.url_especializaciones,
+                    url_cursos_extras = excluded.url_cursos_extras`,
             args: [
               est.nombre_completo, est.email, est.cedula_rif || null, est.telefono || null,
               row.id_agremiado_corp || null, est.nivel_profesional || null,
-              est.url_cedula || null, est.url_titulo || null, est.url_cv || null,
+              est.url_titulo || null, est.url_cv || null,
+              est.url_especializaciones || null, est.url_cursos_extras || null,
               now
             ]
           });
@@ -1462,7 +1494,7 @@ export const adminListEstudiantes = async (req: Request, res: Response): Promise
 
     const result = await db.execute({
       sql: `
-        SELECT id_estudiante, id_agremiado, cedula_rif, nombre_completo, email, telefono, tipo, creado_en, actualizado_en, url_cedula, url_titulo, url_cv
+        SELECT id_estudiante, id_agremiado, cedula_rif, nombre_completo, email, telefono, tipo, creado_en, actualizado_en, url_titulo, url_cv, url_especializaciones, url_cursos_extras
         FROM estudiantes
         ${where}
         ORDER BY creado_en DESC

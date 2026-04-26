@@ -63,9 +63,10 @@ const statements = [
     representante_legal         TEXT,
     fecha_registro              TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     fecha_ultimo_cambio_estatus TEXT,
-    url_cedula                  TEXT,
     url_titulo                  TEXT,
     url_cv                      TEXT,
+    url_especializaciones       TEXT, -- JSON
+    url_cursos_extras           TEXT, -- JSON
     instagram                   TEXT,
     facebook                    TEXT,
     linkedin                    TEXT,
@@ -104,9 +105,10 @@ const statements = [
     nivel_profesional TEXT        CHECK (nivel_profesional IS NULL OR nivel_profesional IN ('Bachiller','TSU','Universitario','Postgrado')),
     es_corredor_inmobiliario INTEGER CHECK (es_corredor_inmobiliario IS NULL OR es_corredor_inmobiliario IN (0, 1)),
     tipo              TEXT        NOT NULL DEFAULT 'Regular' CHECK (tipo IN ('Regular','Invitado','Agremiado')),
-    url_cedula        TEXT,
     url_titulo        TEXT,
     url_cv            TEXT,
+    url_especializaciones TEXT, -- JSON
+    url_cursos_extras     TEXT, -- JSON
     creado_en         TEXT        NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
     CONSTRAINT fk_estudiante_agremiado FOREIGN KEY (id_agremiado) REFERENCES agremiados(id_agremiado) ON DELETE SET NULL
   )`,
@@ -141,9 +143,10 @@ const statements = [
     -- Campos exclusivos para Corporativo
     razon_social        TEXT,
     representante_legal TEXT,
-    url_cedula          TEXT,
     url_titulo          TEXT,
     url_cv              TEXT,
+    url_especializaciones TEXT, -- JSON
+    url_cursos_extras     TEXT, -- JSON
     id_agremiado_corp   INTEGER, -- Link a la empresa que invita
     fecha_expiracion    TEXT NOT NULL,
     creado_en           TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))

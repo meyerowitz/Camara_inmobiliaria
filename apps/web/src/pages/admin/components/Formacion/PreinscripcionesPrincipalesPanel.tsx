@@ -20,9 +20,10 @@ type Row = {
   entrevista_fecha?: string
   entrevista_hora?: string
   entrevista_lugar?: string
-  estudiante_url_cedula?: string
   estudiante_url_titulo?: string
   estudiante_url_cv?: string
+  estudiante_url_especializaciones?: string
+  estudiante_url_cursos_extras?: string
 }
 
 export default function PreinscripcionesPrincipalesPanel({
@@ -196,16 +197,16 @@ export default function PreinscripcionesPrincipalesPanel({
   }
   const getStatusStyles = (s: Estatus) => {
     if (s === 'Preinscrito') return 'bg-amber-50 text-amber-600'
-    if (s === 'Entrevista') return 'bg-[#E6FBF3] text-[#00D084]'
+    if (s === 'Entrevista') return 'bg-blue-50 text-blue-600'
     if (s === 'Inscrito') return 'bg-emerald-50 text-emerald-600'
     if (s === 'Rechazado') return 'bg-red-50 text-red-500'
     return 'bg-slate-100 text-slate-500'
   }
 
   return (
-    <div className="flex h-full overflow-hidden relative">
+    <div className="grid grid-cols-1 sm:grid-cols-[340px_1fr] grid-rows-1 h-full w-full overflow-hidden relative">
       {/* List */}
-      <div className={['flex flex-col bg-white border-r border-gray-100 overflow-hidden w-full sm:w-[340px] flex-shrink-0', selected ? 'hidden sm:flex' : 'flex'].join(' ')}>
+      <div className={['flex flex-col bg-white border-r border-gray-100 overflow-hidden min-h-0', selected ? 'hidden sm:flex' : 'flex'].join(' ')}>
 
         <div className="px-3 pt-3 pb-2 border-b border-gray-100 flex flex-col gap-2">
           {/* Buscar aspirante */}
@@ -254,7 +255,7 @@ export default function PreinscripcionesPrincipalesPanel({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide divide-y divide-gray-50">
+        <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
           {loading ? (
             <div className="p-4 text-center text-xs text-slate-400 font-semibold uppercase tracking-widest mt-10">Cargando...</div>
           ) : error ? (
@@ -287,9 +288,9 @@ export default function PreinscripcionesPrincipalesPanel({
         </div>
       </div>
 
-      <div className={['flex-1 min-w-0 bg-gray-50', selected ? 'flex flex-col' : 'hidden sm:flex sm:flex-col'].join(' ')}>
+      <div className={['bg-gray-50 overflow-hidden relative min-h-0', selected ? 'block' : 'hidden sm:block'].join(' ')}>
         {selected ? (
-          <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto scrollbar-hide h-full">
+          <div className="absolute inset-0 overflow-y-auto p-4 sm:p-6">
             <button
               onClick={() => setSelected(null)}
               className="sm:hidden flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors self-start"
@@ -336,43 +337,90 @@ export default function PreinscripcionesPrincipalesPanel({
             </div>
 
             {/* Documentos */}
-            {(selected.estudiante_url_cedula || selected.estudiante_url_titulo || selected.estudiante_url_cv) && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+            {(selected.estudiante_url_titulo || selected.estudiante_url_cv || selected.estudiante_url_especializaciones || selected.estudiante_url_cursos_extras) && (
+              <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-4">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Documentación Adjunta</span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {selected.estudiante_url_cedula && (
-                    <a 
-                      href={selected.estudiante_url_cedula} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                      Ver Cédula
-                    </a>
-                  )}
-                  {selected.estudiante_url_titulo && (
-                    <a 
-                      href={selected.estudiante_url_titulo} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                      Ver Título
-                    </a>
-                  )}
-                  {selected.estudiante_url_cv && (
-                    <a 
-                      href={selected.estudiante_url_cv} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-slate-200 transition-colors"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                      Ver CV
-                    </a>
-                  )}
+                
+                <div className="flex flex-col gap-4">
+                  {/* Documentos Principales */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {selected.estudiante_url_titulo ? (
+                      <a 
+                        href={selected.estudiante_url_titulo} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 transition-colors"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
+                        Ver Título
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-dashed border-slate-200">
+                        Título no cargado
+                      </div>
+                    )}
+                    {selected.estudiante_url_cv ? (
+                      <a 
+                        href={selected.estudiante_url_cv} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
+                        Ver CV
+                      </a>
+                    ) : (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-dashed border-slate-200">
+                        CV no cargado
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Especializaciones */}
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Especializaciones / Postgrados</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(() => {
+                        try {
+                          const list = JSON.parse(selected.estudiante_url_especializaciones || '[]')
+                          if (!Array.isArray(list) || list.length === 0) return (
+                            <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                              <span className="text-[10px] text-slate-400 font-medium italic">Sin especializaciones adjuntas</span>
+                            </div>
+                          )
+                          return list.map((url, idx) => (
+                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-100 transition-colors border border-slate-100">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
+                              Especialización #{idx + 1}
+                            </a>
+                          ))
+                        } catch (e) { return null }
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* Otros Cursos */}
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Otros Cursos y Certificados</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(() => {
+                        try {
+                          const list = JSON.parse(selected.estudiante_url_cursos_extras || '[]')
+                          if (!Array.isArray(list) || list.length === 0) return (
+                            <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
+                              <span className="text-[10px] text-slate-400 font-medium italic">Sin certificados adicionales</span>
+                            </div>
+                          )
+                          return list.map((url, idx) => (
+                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-100 transition-colors border border-slate-100">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
+                              Curso Extra #{idx + 1}
+                            </a>
+                          ))
+                        } catch (e) { return null }
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -406,9 +454,9 @@ export default function PreinscripcionesPrincipalesPanel({
               )}
               {selected.estatus === 'Entrevista' && (
                 <div className="flex flex-col gap-3">
-                  <div className="bg-[#E6FBF3] border border-[#00D084]/20 rounded-xl p-3">
-                    <p className="text-[11px] font-bold text-[#00D084] uppercase tracking-wider mb-1">Cita Programada</p>
-                    <p className="text-xs text-[#00B870]">
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                    <p className="text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-1">Cita Programada</p>
+                    <p className="text-xs text-blue-700">
                       {selected.entrevista_fecha} a las {selected.entrevista_hora} <br />
                       <span className="opacity-70">{selected.entrevista_lugar}</span>
                     </p>
@@ -422,7 +470,7 @@ export default function PreinscripcionesPrincipalesPanel({
                     </button>
                     <button
                       onClick={() => setShowModalAgendar(true)}
-                      className="px-4 py-2.5 rounded-xl border border-[#00D084]/20 text-[#00D084] text-sm font-semibold hover:bg-emerald-50 transition-colors"
+                      className="px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 text-sm font-semibold hover:bg-blue-100 transition-colors"
                     >
                       Reprogramar
                     </button>
