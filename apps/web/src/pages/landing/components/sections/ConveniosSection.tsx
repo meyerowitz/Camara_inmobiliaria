@@ -3,15 +3,21 @@ import { API_URL } from '@/config/env'
 import { useScrollReveal } from '@/hooks/useScrollReveal'
 
 const FALLBACK_CONVENIOS = [
-  { id: 1, nombre: 'Convenio 1', logo_url: '#' },
-  { id: 2, nombre: 'Convenio 2', logo_url: '#' },
-  { id: 3, nombre: 'Convenio 3', logo_url: '#' },
-  { id: 4, nombre: 'Convenio 4', logo_url: '#' },
+  { id: 1, nombre: 'UCAB', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIgmOl4EASpo1hjggjQq_xP61myeh_nkr9w&s' },
 ]
 
+
 function isImageUrl(url: string): boolean {
-  return /\.(png|jpe?g|webp|gif|svg)(\?|#|$)/i.test(url)
+  if (!url || url === '#') return false
+  return (
+    /\.(png|jpe?g|webp|gif|svg|avif)(\?|#|$)/i.test(url) ||
+    url.includes('google.com/s2/favicons') ||
+    url.includes('encrypted-tbn0.gstatic.com') ||
+    url.includes('images.unsplash.com') ||
+    url.startsWith('data:image/')
+  )
 }
+
 
 export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, string> }) {
   const [convenios, setConvenios] = useState(FALLBACK_CONVENIOS)
@@ -60,9 +66,9 @@ export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, st
                   rel='noopener noreferrer'
                   className='mx-4 lg:mx-6 flex-shrink-0 group transition-all duration-500'
                 >
-                  <div className='h-32 lg:h-40 w-56 lg:w-80 rounded-2xl overflow-hidden flex items-center justify-center grayscale opacity-60 group-hover:opacity-100 group-hover:grayscale-0 group-hover:scale-[1.02] transition-all duration-500'>
+                  <div className='h-32 lg:h-40 w-56 lg:w-80 rounded-2xl overflow-hidden flex items-center justify-center group-hover:scale-[1.02] transition-all duration-500'>
                     {isImageUrl(item.logo_url) ? (
-                      <img src={item.logo_url} alt={item.nombre} className='w-full h-full object-cover' />
+                      <img src={item.logo_url} alt={item.nombre} className='w-full h-full object-contain p-4' />
                     ) : (
                       <span className='text-3xl lg:text-4xl' aria-hidden>📄</span>
                     )}

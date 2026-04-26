@@ -15,6 +15,8 @@ const DirectorioPage = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
+  const [filterType, setFilterType] = useState<'Todos' | 'Natural' | 'Juridico'>('Todos');
+
   useEffect(() => {
     const fetchAfiliados = async () => {
       try {
@@ -41,11 +43,31 @@ const DirectorioPage = () => {
 
   const resultados = useMemo(() => {
     const query = searchQuery.trim();
-    if (!query) {
-      return afiliados;
+    let base = query ? fuse.search(query).map(result => result.item) : afiliados;
+
+    if (filterType !== 'Todos') {
+      base = base.filter(a => {
+        // Normalización extrema
+        const itemType = String(a.tipo_afiliado || 'Natural').toLowerCase().trim();
+        const targetType = String(filterType).toLowerCase().trim();
+        return itemType === targetType;
+      });
     }
-    return fuse.search(query).map(result => result.item);
-  }, [searchQuery, afiliados, fuse]);
+
+    return base;
+  }, [searchQuery, afiliados, fuse, filterType]);
+
+  // Depuración: contar tipos reales en la data
+  const stats = useMemo(() => {
+    const counts: Record<string, number> = { Natural: 0, Juridico: 0, Otros: 0 };
+    afiliados.forEach(a => {
+      const t = a.tipo_afiliado;
+      if (t === 'Natural') counts.Natural++;
+      else if (t === 'Juridico') counts.Juridico++;
+      else counts.Otros++;
+    });
+    return counts;
+  }, [afiliados]);
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-500 ${darkMode ? 'dark bg-[#022c22] text-slate-100' : 'bg-slate-50 text-slate-800'}`}>
@@ -69,8 +91,8 @@ const DirectorioPage = () => {
               Verifica y contacta a los profesionales inmobiliarios certificados que forman parte de nuestra cámara.
             </p>
 
-            {/* Buscador */}
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-36 w-full max-w-2xl px-6">
+            {/* Buscador y Filtros */}
+            <div className="absolute left-1/2 -translate-x-1/2 -bottom-44 w-full max-w-2xl px-6 space-y-6">
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none z-10">
                   <Search className="text-slate-400 group-focus-within:text-emerald-600 transition-colors" size={24} />
@@ -82,13 +104,48 @@ const DirectorioPage = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="block w-full pl-16 pr-24 py-5 rounded-[2rem] bg-white dark:bg-[#04432f] shadow-xl shadow-slate-200/50 dark:shadow-2xl text-slate-800 dark:text-emerald-50 font-bold placeholder-slate-400 outline-none border-2 border-transparent focus:border-emerald-500 transition-all text-lg relative z-0"
                 />
-                {searchQuery.trim() && (
-                  <div className="absolute inset-y-0 right-4 flex items-center z-10">
-                    <span className="text-xs font-bold text-slate-500 dark:text-emerald-200 bg-slate-50 dark:bg-[#022c22] px-3 py-1.5 rounded-full border border-slate-200 dark:border-emerald-500/20">
-                      {resultados.length}
-                    </span>
-                  </div>
-                )}
+                <div className="absolute inset-y-0 right-4 flex items-center z-10">
+                   <div className="flex items-center gap-2">
+                     {filterType !== 'Todos' && (
+                        <span className="text-[10px] font-black uppercase tracking-tighter bg-emerald-500 text-white px-2 py-1 rounded-md">
+                          {filterType === 'Natural' ? 'Independientes' : 'Corporativos'}
+                        </span>
+                     )}
+                     <span className="text-xs font-bold text-slate-500 dark:text-emerald-200 bg-slate-50 dark:bg-[#022c22] px-3 py-1.5 rounded-full border border-slate-200 dark:border-emerald-500/20">
+                       {resultados.length}
+                     </span>
+                   </div>
+                </div>
+              </div>
+
+              {/* Filtros de Tipo */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
+                  {[
+                    { id: 'Todos', label: 'Todos' },
+                    { id: 'Natural', label: 'Independientes' },
+                    { id: 'Juridico', label: 'Corporativos' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setFilterType(f.id as any)}
+                      className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+                        filterType === f.id
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 scale-105'
+                          : 'bg-white dark:bg-[#04432f] text-slate-500 dark:text-emerald-100/50 border border-slate-200 dark:border-emerald-500/10 hover:border-emerald-500/30'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Debug Info (Visible en desarrollo) */}
+                <div className="flex gap-4 text-[9px] font-bold text-slate-400 dark:text-emerald-500/40 uppercase tracking-tighter">
+                  <span>Ind: {stats.Natural}</span>
+                  <span>Corp: {stats.Juridico}</span>
+                  {stats.Otros > 0 && <span className="text-amber-500">Sin tipo: {stats.Otros}</span>}
+                </div>
               </div>
             </div>
 
@@ -96,7 +153,7 @@ const DirectorioPage = () => {
         </section>
 
         {/* Results Section */}
-        <section className="max-w-7xl mx-auto px-6 pt-24 pb-16">
+        <section className="max-w-7xl mx-auto px-6 pt-32 pb-16">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 opacity-50">
               <Loader2 size={48} className="animate-spin text-emerald-600 mb-4" />
@@ -114,13 +171,27 @@ const DirectorioPage = () => {
                 <Users size={32} className="text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-2xl font-black text-slate-800 dark:text-emerald-50 mb-2">
-                {searchQuery.trim() ? 'No se encontraron resultados' : 'Directorio vacío'}
+                {searchQuery.trim() 
+                  ? 'No se encontraron resultados' 
+                  : filterType !== 'Todos' 
+                    ? `Sin miembros ${filterType === 'Natural' ? 'Independientes' : 'Corporativos'}`
+                    : 'Directorio vacío'}
               </h3>
               <p className="text-slate-500 dark:text-emerald-100/70 font-medium max-w-md mx-auto">
                 {searchQuery.trim() 
                   ? <>No pudimos encontrar coincidencias para "<strong>{searchQuery}</strong>". Revisa la ortografía o intenta buscar por Código o Cédula/RIF.</>
-                  : 'Actualmente no hay profesionales certificados registrados en esta lista pública.'}
+                  : filterType !== 'Todos'
+                    ? `Actualmente no hay miembros de tipo ${filterType === 'Natural' ? 'Independiente' : 'Corporativo'} registrados con estatus de Afiliación.`
+                    : 'Actualmente no hay profesionales certificados registrados en esta lista pública.'}
               </p>
+              {filterType !== 'Todos' && (
+                <button 
+                  onClick={() => setFilterType('Todos')}
+                  className="mt-6 text-emerald-600 font-bold text-sm hover:underline"
+                >
+                  Ver todos los miembros
+                </button>
+              )}
             </div>
           )}
         </section>

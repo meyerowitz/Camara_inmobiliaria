@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { formatNombreCard } from '@/utils/formatters'
+
+
 
 type ProgramaCodigo = 'PADI' | 'PEGI' | 'PREANI' | 'CIBIR' | 'AFILIACION'
 type Estatus = 'Preinscrito' | 'Entrevista' | 'Inscrito' | 'Rechazado' | 'Cancelado'
@@ -269,8 +272,9 @@ export default function PreinscripcionesPrincipalesPanel({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className={['text-sm font-semibold truncate', selected?.id_inscripcion === r.id_inscripcion ? 'text-[#00B870]' : 'text-slate-800'].join(' ')}>
-                    {r.estudiante_nombre}
+                    {formatNombreCard(r.estudiante_nombre)}
                   </span>
+
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getStatusStyles(r.estatus)}`}>
                     {mapStatusUI(r.estatus)}
                   </span>
@@ -298,7 +302,8 @@ export default function PreinscripcionesPrincipalesPanel({
                 {selected.estudiante_nombre.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-bold text-slate-900 leading-tight">{selected.estudiante_nombre}</h3>
+                <h3 className="text-sm font-bold text-slate-900 leading-tight">{formatNombreCard(selected.estudiante_nombre)}</h3>
+
                 <p className="text-xs text-slate-400 mt-0.5 truncate">{selected.estudiante_cedula_rif || 'Sin documento'}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -509,7 +514,8 @@ export default function PreinscripcionesPrincipalesPanel({
               <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
               <div className="relative z-10">
                 <h3 className="text-2xl font-black tracking-tight">Veredicto Final</h3>
-                <p className="text-slate-400 text-sm mt-1 font-medium">Aspirante: <span className="text-white font-bold">{selected.estudiante_nombre}</span></p>
+                <p className="text-slate-400 text-sm mt-1 font-medium">Aspirante: <span className="text-white font-bold">{formatNombreCard(selected.estudiante_nombre)}</span></p>
+
               </div>
               <button
                 onClick={() => setShowModalFinalizar(false)}

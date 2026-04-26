@@ -312,17 +312,28 @@ export const ConfigPanel = () => {
   // ── Save all ─────────────────────────────────────────────────────────────
   const saveAll = async () => {
     setSaving(true)
-    const entries = ALL_CONFIG_KEYS.map(k => ({
-      clave: k.clave,
-      valor: localForms[k.clave] || '',
-      descripcion: k.descripcion,
-    }))
-    await api.post('/api/cms/config/batch', entries)
-    setSavedForms({ ...localForms })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    try {
+      const entries = ALL_CONFIG_KEYS.map(k => ({
+        clave: k.clave,
+        valor: localForms[k.clave] || '',
+        descripcion: k.descripcion,
+      }))
+      const res = await api.post('/api/cms/config/batch', entries)
+      if (res.success) {
+        setSavedForms({ ...localForms })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2500)
+      } else {
+        alert(res.message || 'Error al guardar la configuración')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Error de conexión con el servidor')
+    } finally {
+      setSaving(false)
+    }
   }
+
 
   // ── Field change ─────────────────────────────────────────────────────────
   const handleChange = useCallback((clave: string, value: string) => {

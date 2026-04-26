@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { API_URL } from '@/config/env';
 import { useAuth } from '@/context/AuthContext';
 import Swal from 'sweetalert2';
+import { formatNombreCard } from '@/utils/formatters';
+
 import { uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared';
 
 interface CursoDB {
@@ -530,7 +532,8 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
                           {r.estudiante_nombre?.charAt(0)}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 leading-tight">{r.estudiante_nombre}</span>
+                          <span className="font-bold text-slate-800 leading-tight">{formatNombreCard(r.estudiante_nombre)}</span>
+
                           <span className="text-[10px] font-semibold text-slate-400 lowercase">{r.estudiante_email}</span>
                         </div>
                       </div>

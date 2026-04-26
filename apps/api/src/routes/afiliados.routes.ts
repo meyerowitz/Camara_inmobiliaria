@@ -1,11 +1,14 @@
 import { Router } from 'express';
-import { registerAfiliado, getAfiliados, getAfiliadoById, getMisCertificados, aprobarAfiliado, getSolicitudesCibir, rechazarAfiliado, verificarEmail, formalizarInscripcion, updateEstatusAfiliado, updateAfiliado, generarInvitacionCorporativa, listarInvitacionesCorporativas, revocarInvitacionCorporativa, listarAfiliadosCorporativos, registrarMiembroDirecto } from '../controllers/afiliados.controller.js';
+import { registerAfiliado, getAfiliados, getAfiliadoById, getMisCertificados, aprobarAfiliado, getSolicitudesCibir, rechazarAfiliado, verificarEmail, formalizarInscripcion, updateEstatusAfiliado, updateAfiliado, generarInvitacionCorporativa, listarInvitacionesCorporativas, revocarInvitacionCorporativa, listarAfiliadosCorporativos, registrarMiembroDirecto, deleteAfiliado, createAfiliado } from '../controllers/afiliados.controller.js';
 import { requireAuth, requireRole } from '../middlewares/auth.middleware.js';
 
 const router = Router();
 
 // GET /api/afiliados
 router.get('/', requireAuth, requireRole('admin', 'super_admin'), getAfiliados);
+
+// POST /api/afiliados (Direct Creation)
+router.post('/', requireAuth, requireRole('admin', 'super_admin'), createAfiliado);
 
 // GET /api/afiliados/cibir/solicitudes
 router.get('/cibir/solicitudes', requireAuth, requireRole('admin', 'super_admin'), getSolicitudesCibir);
@@ -27,6 +30,9 @@ router.post('/formalizar', requireAuth, formalizarInscripcion);
 
 // PATCH /api/afiliados/:id — Actualización general del afiliado
 router.patch('/:id', requireAuth, requireRole('admin', 'super_admin'), updateAfiliado);
+
+// DELETE /api/afiliados/:id
+router.delete('/:id', requireAuth, requireRole('admin', 'super_admin'), deleteAfiliado);
 
 // PATCH /api/afiliados/:id/estatus — Actualización granular del proceso de 9 pasos
 router.patch('/:id/estatus', requireAuth, requireRole('admin', 'super_admin'), updateEstatusAfiliado);

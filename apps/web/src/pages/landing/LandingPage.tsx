@@ -40,6 +40,7 @@ export default function LandingPage() {
       </div>
 
       <NosotrosSection />
+      
       <FormacionSection />
       
 
@@ -47,10 +48,13 @@ export default function LandingPage() {
 
       <OrigenesSection />
 
+      <NoticiasSection />
+
       <DirectivaSection />
 
+      <OrigenesSection />
+
       <ConveniosSection />
-      <NoticiasSection />
 
       <Footer />
 

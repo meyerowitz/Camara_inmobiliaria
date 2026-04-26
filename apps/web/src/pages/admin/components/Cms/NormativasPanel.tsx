@@ -29,6 +29,10 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
   const [isEditing, setIsEditing] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
+
+
 
   const tabs = ['Todas', 'Leyes y Decretos', 'Reglamentos y Estatutos', 'Normas y Procedimientos', 'Actas de Asamblea', 'Otros']
 
@@ -62,7 +66,14 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
       activo: item.activo === 1 || item.activo === true,
     })
     setIsEditing(true)
+    if (item.url_documento) {
+      const fileName = item.url_documento.split('/').pop() || 'documento.pdf'
+      setUploadedFileName(fileName)
+    } else {
+      setUploadedFileName(null)
+    }
   }
+
   const openNew = () => {
     setSelectedId('new')
     setForm({ 
@@ -74,16 +85,31 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
       activo: true 
     })
     setIsEditing(true)
+    setUploadedFileName(null)
   }
+
   const save = async () => {
     setSaving(true)
-    if (selectedId === 'new') await api.post('/api/cms/normativas', form)
-    else await api.put(`/api/cms/normativas/${selectedId}`, form)
-    setSaving(false)
-    setSelectedId(null)
-    setIsEditing(false)
-    load()
+    try {
+      const res = selectedId === 'new' 
+        ? await api.post('/api/cms/normativas', form)
+        : await api.put(`/api/cms/normativas/${selectedId}`, form)
+
+      if (res.success) {
+        setSelectedId(null)
+        setIsEditing(false)
+        load()
+      } else {
+        alert(res.message || 'Error al guardar el documento')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Error de conexión con el servidor')
+    } finally {
+      setSaving(false)
+    }
   }
+
   const remove = async (id: string | number) => {
     if (!confirm('¿Eliminar este documento legal?')) return
     await api.delete(`/api/cms/normativas/${id}`)
@@ -100,14 +126,17 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
     setUploadError(null)
     setUploading(true)
     try {
+      setUploadedFileName(file.name)
       const publicUrl = await uploadFileSupabase(file, 'normativas')
       setForm((p) => ({ ...p, url_documento: publicUrl }))
     } catch (e) {
+      setUploadedFileName(null)
       setUploadError(e instanceof Error ? e.message : 'Error al subir archivo')
     } finally {
       setUploading(false)
     }
   }
+
 
   const filteredItems = activeTab === 'Todas' ? items : items.filter(it => it.categoria === activeTab)
 
@@ -115,9 +144,10 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
     <div className="flex flex-col gap-6 bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-50 pb-4 mb-2">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-            <FileText size={20} />
+          <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
+            <FileText size={20} strokeWidth={2.5} />
           </div>
+
           <div>
             <h3 className="text-base font-black text-slate-800 leading-tight">
               {selectedId === 'new' ? 'Nuevo documento' : 'Editar documento'}
@@ -177,26 +207,52 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                   if (file) uploadFile(file)
                 }}
                 disabled={uploading}
+                onDragEnter={() => setIsDraggingOver(true)}
+                onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true) }}
+                onDragLeave={() => setIsDraggingOver(false)}
+                onDrop={() => setIsDraggingOver(false)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
               />
-              <div className={`flex flex-col items-center justify-center py-6 px-4 border-2 border-dashed rounded-xl transition-all ${
-                uploading ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 group-hover:border-emerald-400 group-hover:bg-emerald-50/10'
+              <div className={`flex flex-col items-center justify-center py-6 px-4 border-2 border-dashed rounded-xl transition-all duration-200 ${
+                uploading 
+                  ? 'border-emerald-200 bg-emerald-50/30' 
+                  : isDraggingOver
+                    ? 'border-emerald-500 bg-emerald-100 scale-[1.02] shadow-xl shadow-emerald-500/10'
+                    : form.url_documento 
+                      ? 'border-emerald-400 bg-emerald-50/50' 
+                      : 'border-slate-200 group-hover:border-emerald-400 group-hover:bg-emerald-50/10'
               }`}>
+
                 {uploading ? (
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[11px] font-bold text-emerald-700">Subiendo archivo...</span>
                   </div>
+                ) : form.url_documento ? (
+                  <div className="flex flex-col items-center gap-1 text-center animate-in fade-in zoom-in duration-300">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-1 shadow-md shadow-emerald-200 ring-4 ring-emerald-50">
+                      <CheckCircle size={22} strokeWidth={3} />
+                    </div>
+                    <p className="text-[11px] font-black text-emerald-700 uppercase tracking-tight">¡Documento listo!</p>
+                    {uploadedFileName && (
+                      <p className="text-[10px] text-slate-500 font-bold truncate max-w-[200px] bg-white px-2 py-0.5 rounded-lg border border-emerald-100 mt-1">
+                        {uploadedFileName}
+                      </p>
+                    )}
+                    <p className="text-[9px] text-emerald-600/60 font-bold mt-1 uppercase tracking-widest">Haga clic para cambiar</p>
+                  </div>
+
                 ) : (
                   <>
                     <Upload size={20} className="text-slate-400 group-hover:text-emerald-500 transition-colors mb-2" />
                     <p className="text-[11px] font-bold text-slate-600 group-hover:text-emerald-700">
-                      Haga clic o arrastre para {form.url_documento ? 'reemplazar' : 'subir'} el PDF
+                      Haga clic o arrastre para subir el PDF
                     </p>
                     <p className="text-[9px] text-slate-400 mt-1 uppercase tracking-wider">Solo archivos .pdf</p>
                   </>
                 )}
               </div>
+
             </div>
             {uploadError && <p className="text-[10px] font-bold text-red-500 animate-pulse">{uploadError}</p>}
           </div>
@@ -313,9 +369,10 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
           onNew={openNew}
           renderRow={(item, sel) => (
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-lg shrink-0" aria-hidden>
-                📄
-              </span>
+              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                <FileText size={18} strokeWidth={2.5} />
+              </div>
+
               <div className="flex flex-col min-w-0">
                 <span className={['text-sm font-semibold truncate', sel ? 'text-[#00B870]' : 'text-slate-800'].join(' ')}>{item.titulo}</span>
                 <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">{item.categoria || 'Sin categoría'}</span>
@@ -339,10 +396,22 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                 href={item.url_documento}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:underline break-all"
+                className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-red-200 hover:shadow-sm transition-all"
               >
-                {item.url_documento}
+                <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform">
+                  <FileText size={24} strokeWidth={2.5} />
+                </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-xs font-black text-slate-700 uppercase tracking-tight">Archivo PDF</span>
+                  <span className="text-[10px] text-slate-400 truncate max-w-[280px]">
+                    {item.url_documento.split('/').pop() || 'Ver documento legal'}
+                  </span>
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-500 group-hover:border-red-100 transition-colors">
+                   <FolderSearch size={16} />
+                </div>
               </a>
+
               <p className="text-xs text-slate-400">Orden: {item.orden} · {item.activo === 1 || item.activo === true ? 'Activo' : 'Oculto'}</p>
             </div>
           )}

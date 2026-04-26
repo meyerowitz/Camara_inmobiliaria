@@ -22,7 +22,29 @@ export const HitosPanel = () => {
   useEffect(() => { load() }, [load])
   const openEdit = (item: HitoItem) => { setSelectedId(item.id); setForm({ anio: item.anio, titulo: item.titulo, descripcion: item.descripcion, orden: item.orden }); setIsEditing(true) }
   const openNew = () => { setSelectedId('new'); setForm({ anio: '', titulo: '', descripcion: '', orden: items.length }); setIsEditing(true) }
-  const save = async () => { setSaving(true); if (selectedId === 'new') await api.post('/api/cms/hitos', form); else await api.put(`/api/cms/hitos/${selectedId}`, form); setSaving(false); setSelectedId(null); setIsEditing(false); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
+  const save = async () => {
+    setSaving(true)
+    try {
+      const res = selectedId === 'new' 
+        ? await api.post('/api/cms/hitos', form)
+        : await api.put(`/api/cms/hitos/${selectedId}`, form)
+
+      if (res.success) {
+        setSelectedId(null)
+        setIsEditing(false)
+        load()
+        setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500)
+      } else {
+        alert(res.message || 'Error al guardar el hito')
+      }
+    } catch (error) {
+      console.error(error)
+      alert('Error de conexión con el servidor')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const remove = async (id: string | number) => { if (!confirm('¿Eliminar?')) return; await api.delete(`/api/cms/hitos/${id}`); setSelectedId(null); setIsEditing(false); load(); setTimeout(() => sendToPreview({ type: 'refresh_data' }), 500) }
   const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(p => ({ ...p, [k]: e.target.type === 'number' ? Number(e.target.value) : e.target.value }))
 

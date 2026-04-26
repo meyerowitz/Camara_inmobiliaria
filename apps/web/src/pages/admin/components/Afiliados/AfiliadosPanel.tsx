@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { formatNombreCard } from '@/utils/formatters'
+
 
 type EstatusAgremiado = 
   | '1_SOLICITUD' | '2_REQUISITOS' | '3_CONFIRMACION' 
@@ -40,6 +42,7 @@ export default function AfiliadosPanel() {
   }, [token])
 
   const [estatus, setEstatus] = useState<'Todos' | EstatusAgremiado>('Todos')
+  const [filterTipo, setFilterTipo] = useState<'Todos' | 'Natural' | 'Juridico'>('Todos')
   const [items, setItems] = useState<Agremiado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -52,6 +55,8 @@ export default function AfiliadosPanel() {
     try {
       const qs = new URLSearchParams()
       if (estatus !== 'Todos') qs.set('estatus', estatus)
+      if (filterTipo !== 'Todos') qs.set('tipo_afiliado', filterTipo)
+      
       const res = await fetch(`${API_URL}/api/afiliados?${qs.toString()}`, { headers: authHeaders })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.message || 'Error cargando afiliados')
@@ -90,13 +95,13 @@ export default function AfiliadosPanel() {
       })
       if (res.ok) {
         await loadDetail(selected.id_agremiado)
-        if (['estatus', 'nombre_completo', 'codigo_cibir'].includes(field)) await load()
+        if (['estatus', 'nombre_completo', 'codigo_cibir', 'tipo_afiliado'].includes(field)) await load()
       }
     } catch (err) { console.error(err) }
   }
 
   useEffect(() => { load() }, []) // initial
-  useEffect(() => { load() }, [estatus]) // reload on filter
+  useEffect(() => { load() }, [estatus, filterTipo]) // reload on filter
 
   const procesar = async (id: number, action: 'aprobar' | 'rechazar') => {
     setError('')
@@ -116,16 +121,19 @@ export default function AfiliadosPanel() {
     <div className="flex h-full overflow-hidden">
       {/* List */}
       <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden w-full sm:w-[360px] flex-shrink-0">
-        <div className="p-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-slate-800">Afiliados / Agremiados (CIBIR)</h3>
-          <p className="text-xs text-slate-400 mt-0.5">Gestión de candidatos, aprobaciones y estatus.</p>
-          <div className="mt-3 flex gap-2">
+        <div className="p-4 border-b border-gray-100 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-800">Afiliados / Agremiados (CIBIR)</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Gestión de candidatos, aprobaciones y estatus.</p>
+          </div>
+          
+          <div className="flex flex-col gap-2">
             <select
               value={estatus}
               onChange={(e) => setEstatus(e.target.value as any)}
-              className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm text-slate-700"
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 text-[11px] font-bold text-slate-700 bg-slate-50"
             >
-              <option value="Todos">Todos</option>
+              <option value="Todos">Todos los estados</option>
               <optgroup label="Proceso de Afiliación">
                 <option value="1_SOLICITUD">1. Solicitud</option>
                 <option value="2_REQUISITOS">2. Requisitos</option>
@@ -143,12 +151,24 @@ export default function AfiliadosPanel() {
                 <option value="Rechazado">Rechazado</option>
               </optgroup>
             </select>
-            <button
-              onClick={load}
-              className="px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-colors"
-            >
-              Refrescar
-            </button>
+
+            <div className="flex gap-2">
+              <select
+                value={filterTipo}
+                onChange={(e) => setFilterTipo(e.target.value as any)}
+                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-[11px] font-bold text-slate-700 bg-slate-50"
+              >
+                <option value="Todos">Todos los tipos</option>
+                <option value="Natural">Independientes</option>
+                <option value="Juridico">Corporativos</option>
+              </select>
+              <button
+                onClick={load}
+                className="px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-[11px] font-bold hover:bg-slate-200 transition-colors"
+              >
+                Refrescar
+              </button>
+            </div>
           </div>
         </div>
 
@@ -169,8 +189,14 @@ export default function AfiliadosPanel() {
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold truncate text-slate-800">{a.nombre_completo}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-semibold truncate text-slate-800">{formatNombreCard(a.nombre_completo)}</span>
+
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${a.tipo_afiliado === 'Juridico' ? 'text-emerald-600' : 'text-blue-500'}`}>
+                      {a.tipo_afiliado === 'Juridico' ? 'Corporativo' : 'Independiente'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
                     {a.estatus.replace(/_/g, ' ')}
                   </span>
                 </div>
@@ -210,8 +236,12 @@ export default function AfiliadosPanel() {
                     </select>
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 leading-tight">
-                    {selected.tipo_afiliado === 'Juridico' ? (selected.razon_social || selected.nombre_completo) : selected.nombre_completo}
+                    {selected.tipo_afiliado === 'Juridico' 
+                      ? (selected.razon_social || formatNombreCard(selected.nombre_completo)) 
+                      : formatNombreCard(selected.nombre_completo)
+                    }
                   </h3>
+
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{selected.email}</p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -3,6 +3,7 @@ import { UserPlus, ShieldCheck } from 'lucide-react';
 import DashboardCard from '@/pages/landing/afiliado/components/DashboardCard';
 import PreinscripcionProgramaForm from '@/pages/landing/components/PreinscripcionProgramaForm';
 import { useAuth } from '@/context/AuthContext';
+import { formatNombreCard } from '@/utils/formatters';
 
 const WidgetSolicitudAfiliacion = () => {
   const { user } = useAuth();
@@ -41,7 +42,7 @@ const WidgetSolicitudAfiliacion = () => {
             ctaLabel="Enviar Solicitud de Afiliación"
             initialData={{
               email: user?.email || '',
-              nombreCompleto: user?.nombre_completo || '',
+              nombreCompleto: formatNombreCard(user?.nombre_completo) || '',
               cedulaRif: user?.cedula_rif || '',
               telefono: user?.telefono || '',
               nivelProfesional: user?.nivel_profesional || '',

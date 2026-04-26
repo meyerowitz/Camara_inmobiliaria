@@ -5,10 +5,39 @@ export const API = API_URL
 
 export const api = {
   get: (path: string) => fetch(`${API}${path}`).then(r => r.json()),
-  post: <T,>(path: string, body: T) => fetch(`${API}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()),
-  put: <T,>(path: string, body: T) => fetch(`${API}${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json()),
-  delete: (path: string) => fetch(`${API}${path}`, { method: 'DELETE' }).then(r => r.json()),
+  post: <T,>(path: string, body: T) => {
+    const token = localStorage.getItem('ciebo_token')
+    return fetch(`${API}${path}`, { 
+      method: 'POST', 
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }, 
+      body: JSON.stringify(body) 
+    }).then(r => r.json())
+  },
+  put: <T,>(path: string, body: T) => {
+    const token = localStorage.getItem('ciebo_token')
+    return fetch(`${API}${path}`, { 
+      method: 'PUT', 
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }, 
+      body: JSON.stringify(body) 
+    }).then(r => r.json())
+  },
+  delete: (path: string) => {
+    const token = localStorage.getItem('ciebo_token')
+    return fetch(`${API}${path}`, { 
+      method: 'DELETE',
+      headers: {
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    }).then(r => r.json())
+  },
 }
+
 
 export const uploadFileSupabase = async (file: File, folder: string): Promise<string> => {
   const token = localStorage.getItem('ciebo_token')
@@ -50,18 +79,18 @@ export const FormField = ({ label, children }: { label: string; children: React.
   </div>
 )
 
-export const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+export const Input = ({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input
     {...props}
-    className="text-sm rounded-xl border border-gray-200 px-3 py-2 text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] transition-all bg-white"
+    className={["text-sm rounded-xl border border-gray-200 px-3 py-2 text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] transition-all bg-white", className].join(' ')}
   />
 )
 
-export const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+export const Textarea = ({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
   <textarea
     {...props}
-    rows={3}
-    className="text-sm rounded-xl border border-gray-200 px-3 py-2 text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] transition-all resize-none bg-white"
+    rows={props.rows || 3}
+    className={["text-sm rounded-xl border border-gray-200 px-3 py-2 text-slate-700 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] transition-all resize-none bg-white", className].join(' ')}
   />
 )
 
@@ -69,31 +98,32 @@ interface BtnProps {
   onClick?: () => void;
   children: React.ReactNode;
   disabled?: boolean;
+  className?: string;
 }
 
-export const BtnPrimary = ({ onClick, children, disabled }: BtnProps) => (
+export const BtnPrimary = ({ onClick, children, disabled, className }: BtnProps) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className="px-4 py-2 rounded-xl bg-[#00D084] text-white text-xs font-semibold hover:bg-[#00B870] active:scale-95 transition-all disabled:opacity-50"
+    className={["px-4 py-2 rounded-xl bg-[#00D084] text-white text-xs font-semibold hover:bg-[#00B870] active:scale-95 transition-all disabled:opacity-50", className].join(' ')}
   >
     {children}
   </button>
 )
 
-export const BtnDanger = ({ onClick, children }: BtnProps) => (
+export const BtnDanger = ({ onClick, children, className }: BtnProps) => (
   <button
     onClick={onClick}
-    className="px-3 py-1.5 rounded-xl bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 active:scale-95 transition-all"
+    className={["px-3 py-1.5 rounded-xl bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 active:scale-95 transition-all", className].join(' ')}
   >
     {children}
   </button>
 )
 
-export const BtnSecondary = ({ onClick, children }: BtnProps) => (
+export const BtnSecondary = ({ onClick, children, className }: BtnProps) => (
   <button
     onClick={onClick}
-    className="px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 active:scale-95 transition-all"
+    className={["px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold hover:bg-slate-200 active:scale-95 transition-all", className].join(' ')}
   >
     {children}
   </button>

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { formatNombreCard } from '@/utils/formatters'
+
 
 type Estudiante = {
   id_estudiante: number
@@ -143,7 +145,8 @@ export default function EstudiantesRegularesPanel() {
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold truncate text-slate-800">{e.nombre_completo}</span>
+                  <span className="text-sm font-semibold truncate text-slate-800">{formatNombreCard(e.nombre_completo)}</span>
+
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                     #{e.id_estudiante}
                   </span>
@@ -173,7 +176,8 @@ export default function EstudiantesRegularesPanel() {
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 leading-tight">{detail.estudiante.nombre_completo}</h3>
+                  <h3 className="text-sm font-bold text-slate-900 leading-tight">{formatNombreCard(detail.estudiante.nombre_completo)}</h3>
+
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{detail.estudiante.email}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{detail.estudiante.telefono || 'Teléfono: —'}</p>
                 </div>
