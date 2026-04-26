@@ -21,7 +21,7 @@ export default function LandingPage() {
   const [darkMode, setDarkMode] = useState(false)
 
   return (
-    <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-slate-50'} transition-colors duration-300`}>
+    <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-[#022c22]'} transition-colors duration-300`}>
       <SEO
         title="Camara Inmobiliaria de Bolivar"
         description="Página oficial de la Cámara Inmobiliaria del Estado Bolívar (CIBIR). Encuentra las mejores inmobiliarias en Bolívar, profesionales certificados y formación de vanguardia."
@@ -40,25 +40,23 @@ export default function LandingPage() {
       </div>
 
       <NosotrosSection />
-
+      <FormacionSection />
 
       <AfiliadosSection />
 
-      <FormacionSection />
+      <OrigenesSection />
 
       <NoticiasSection />
 
       <DirectivaSection />
 
-      <OrigenesSection />
-
       <ConveniosSection />
 
       <Footer />
 
-      {/* MODALS */}
-      {isModalSesionOpen && <LoginModal onClose={() => setIsSesionModalOpen(false)} />}
-      {isModalRegisterOpen && <RegisterModal onClose={() => setIsRegisterModalOpen(false)} />}
-    </div>
+  {/* MODALS */ }
+  { isModalSesionOpen && <LoginModal onClose={() => setIsSesionModalOpen(false)} /> }
+  { isModalRegisterOpen && <RegisterModal onClose={() => setIsRegisterModalOpen(false)} /> }
+    </div >
   )
 }

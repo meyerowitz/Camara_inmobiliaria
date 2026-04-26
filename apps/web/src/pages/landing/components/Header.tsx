@@ -1,4 +1,4 @@
-import bgBolivar from '@/assets/Pzo.jpg'
+import bgBolivar from '@/assets/Pzo.png'
 import { Link } from 'react-router-dom'
 import { useCachedConfig } from '@/hooks/useCachedConfig'
 import { STATIC } from '@/pages/landing/config/staticContent'
@@ -19,7 +19,7 @@ export default function Header({ darkMode }: { darkMode?: boolean }) {
       <div
         className='absolute inset-0 z-0 animate-bg-zoom'
         style={{
-          backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.68), rgba(2, 44, 34, 0.68)), url(${cfg['hero_img'] || bgBolivar})`,
+          backgroundImage: `linear-gradient(rgba(2, 99, 76, 0.49), rgba(2, 102, 79, 0.35)), url(${cfg['hero_img'] || bgBolivar})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'

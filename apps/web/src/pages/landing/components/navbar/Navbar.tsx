@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import logo from '@/assets/Logo.png'
+import logo from '@/assets/Logo3.png'
 import LoginModal from '@/pages/landing/components/LoginModal'
 import NavItem from './NavItem'
 import { NAV_ITEMS } from './navData'
@@ -24,26 +24,23 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
   return (
     <>
       <nav
-        className={`${darkMode ? 'dark bg-[#011a14]/95 border-white/5' : 'bg-[#022c22]/95 border-[#04432f]/60'
-          } relative flex items-center justify-between px-6 py-3 lg:px-12 backdrop-blur-md sticky top-0 z-50 border-b transition-colors duration-300`}
+        className={`${
+        darkMode ? "dark bg-[#011a14]/90 border-white/10" : " bg-[#011a14]/90 border-white/10"
+      } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
       >
         {/* 1. ZONA IZQUIERDA: LOGO */}
-        <div className="relative z-10 flex-shrink-0">
+        <div className="relative z-10 shrink-0">
           <Link to='/' className='flex items-center gap-3 hover:opacity-80 transition-opacity'>
-            <img 
-              src={logo} 
-              alt='Cámara Inmobiliaria del Estado Bolívar (CIBIR) - Logo' 
-              className='h-10 w-auto object-contain' 
+            <img
+              src={logo}
+              alt='Cámara Inmobiliaria del Estado Bolívar (CIBIR) - Logo'
+              className='h-25 w-auto object-contain'
             />
-            <div className='hidden sm:block leading-tight'>
-              <p className='text-white font-bold text-sm tracking-widest uppercase'>Cámara Inmobiliaria</p>
-              <p className='text-emerald-500 text-[10px] font-bold'>Estado Bolívar</p>
-            </div>
           </Link>
         </div>
 
         {/* 2. ZONA CENTRAL: ENLACES DEL MENÚ (Desktop) */}
-        <div className='hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 gap-8 text-[11px] font-bold uppercase tracking-wider text-emerald-100/90 dark:text-emerald-100/80 w-max z-0'>
+        <div className='hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 gap-8 text-[11px] font-bold uppercase tracking-wider text-white dark:text-white w-max z-0'>
           {NAV_ITEMS.map((item, index) => (
             <NavItem key={index} item={item} />
           ))}
@@ -78,13 +75,11 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
           ) : (
             /* --- ESTADO: SIN SESIÓN --- */
             <>
+              {/* Botón de Login estilo Componente B */}
               <button
                 onClick={() => setShowLoginModal(true)}
-                className='hidden md:flex items-center gap-1.5 px-4 py-2 text-emerald-200 text-xs font-bold hover:text-white hover:bg-emerald-800/40 rounded-full transition-all'
+                className='px-6 py-2 bg-emerald-500 text-white dark:text-[#022c22] rounded-full text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/30 transition-all'
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                </svg>
                 {labelLogin}
               </button>
             </>
@@ -113,12 +108,12 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
       </nav>
 
       {/* MOBILE DRAWER */}
-      <div 
+      <div
         className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 xl:hidden ${isMobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
-      
-      <div 
+
+      <div
         className={`fixed inset-y-0 right-0 z-[70] w-[85%] max-w-sm bg-[#022c22] shadow-2xl transition-transform duration-300 ease-in-out xl:hidden ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
@@ -140,10 +135,10 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
           <div className="flex-grow overflow-y-auto p-6 space-y-6">
             {NAV_ITEMS.map((item, idx) => (
               <div key={idx} className="space-y-4">
-                <Link 
+                <Link
                   to={item.items ? '#' : item.Tpath}
                   onClick={() => !item.items && setIsMobileMenuOpen(false)}
-                  className="block text-emerald-100 text-lg font-black uppercase tracking-wider"
+                  className="block text-white text-lg font-black uppercase tracking-wider"
                 >
                   {item.title}
                 </Link>

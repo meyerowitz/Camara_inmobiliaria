@@ -27,32 +27,34 @@ export default function NosotrosSection() {
 
         <div ref={revealCards} className='grid md:grid-cols-3 gap-8 lg:gap-12 reveal-on-scroll' style={{ transitionDelay: '0.2s' }}>
           {s.cards.map((card, i) => (
-            <Link key={i} to={card.path} className='group cursor-pointer block'>
-              <div className='relative aspect-[4/5] overflow-hidden rounded-[2.5rem] mb-6 shadow-2xl shadow-emerald-900/10 border border-slate-100'>
-                <img
-                  src={card.img}
-                  alt={card.title}
-                  className='w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 group-hover:scale-110 transition-all duration-1000 ease-in-out'
-                />
-                <div className='absolute inset-0 bg-gradient-to-t from-[#022c22]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700' />
-              </div>
-              <div className='bg-[#022c22] group-hover:bg-emerald-600 text-white p-6 rounded-2xl flex items-center justify-between gap-3 transition-all duration-500 shadow-xl shadow-emerald-900/20 group-hover:-translate-y-2'>
-                <span className='font-black uppercase tracking-widest text-xs'>
-                  {card.title}
-                </span>
-                <div className='w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-white group-hover:text-[#022c22] transition-colors'>
-                  <svg
-                    className='w-4 h-4 transition-transform duration-500 group-hover:translate-x-0.5'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth='3' d='M14 5l7 7m0 0l-7 7m7-7H3' />
-                  </svg>
+              <Link
+                key={i}
+                to={card.path}
+                className="group cursor-pointer block" >
+                <div key={i} className="group cursor-pointer">
+                  {/* Contenedor de Imagen */}
+                  <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
+                    <img
+                      src={card.img}
+                      alt={card.title}
+                      className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
+                    />
+                    {/* Overlay sutil hover */}
+                    <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  </div>
+
+                  {/* Botón Inferior Estilo Card */}
+                  <div className="bg-emerald-600 group-hover:bg-emerald-500 text-white p-5 rounded-2xl flex items-center justify-between transition-colors duration-300 shadow-lg shadow-emerald-600/20">
+                    <span className="font-bold uppercase tracking-wider text-sm">
+                      {card.title}
+                    </span>
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                      <span className="text-xl">→</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
         </div>
       </div>
     </section>
