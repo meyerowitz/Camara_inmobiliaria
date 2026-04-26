@@ -18,15 +18,14 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const labelLogin = 'Acceder'
+  const labelLogin = 'Iniciar Sesión'
   const labelSalir = 'Salir'
 
   return (
     <>
       <nav
-        className={`${
-        darkMode ? "dark bg-[#011a14]/90 border-white/10" : " bg-[#011a14]/90 border-white/10"
-      } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
+        className={`${darkMode ? "dark bg-[#011a14]/90 border-white/10" : " bg-[#011a14]/90 border-white/10"
+          } flex items-center justify-between px-6 py-1 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
       >
         {/* 1. ZONA IZQUIERDA: LOGO */}
         <div className="relative z-10 shrink-0">
