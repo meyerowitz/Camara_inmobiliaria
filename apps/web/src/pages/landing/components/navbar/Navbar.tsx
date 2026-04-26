@@ -25,7 +25,7 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
     <>
       <nav
         className={`${
-        darkMode ? "dark bg-[#011a14]/90 border-white/10" : " bg-[#011a14]/90 border-white/10"
+        darkMode ? "dark bg-[#011a14]/90 border-white/10" : 'bg-linear-to-b from-[#034232] to-[#022c22]/98 border-b border-white/10'
       } flex items-center justify-between px-6 py-5 lg:px-20 backdrop-blur-md sticky top-0 z-50 border-b`}
       >
         {/* 1. ZONA IZQUIERDA: LOGO */}
