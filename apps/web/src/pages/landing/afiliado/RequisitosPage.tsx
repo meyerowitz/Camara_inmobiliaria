@@ -118,7 +118,7 @@ export default function RequisitosPage() {
                 Tu Camino a la <span className="text-emerald-600">Excelencia</span>
               </h2>
               <p className="text-slate-500 text-lg max-w-2xl mx-auto font-medium">
-                Un proceso transparente y eficiente diseñado para integrarte al gremio más fuerte.
+                Una ruta estratégica de profesionalización diseñada para integrarte a la red inmobiliaria de mayor prestigio y respaldo institucional.
               </p>
             </div>
 

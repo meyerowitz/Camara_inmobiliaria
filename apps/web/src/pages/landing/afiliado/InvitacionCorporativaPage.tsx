@@ -12,7 +12,7 @@ const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
   { value: 'TSU', label: 'Técnico Superior (TSU)', icon: Briefcase },
   { value: 'Universitario', label: 'Universitario', icon: GraduationCap },
-  { value: 'Postgrado', label: 'Postgrado / Especialización', icon: Award },
+  { value: 'Postgrado', label: 'Postgrado', icon: Award },
 ]
 
 const BOX_H = 'h-[58px]'
@@ -22,6 +22,7 @@ type Status = 'loading' | 'form' | 'success' | 'error'
 export default function InvitacionCorporativaPage() {
   const { token } = useParams<{ token: string }>()
 
+  const [darkMode, setDarkMode] = useState(false)
   const [status, setStatus] = useState<Status>('loading')
   const [empresa, setEmpresa] = useState<{ nombreEmpresa: string; idEmpresa: number } | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -98,7 +99,7 @@ export default function InvitacionCorporativaPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Navbar />
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
 
       {/* Hero */}
       <section className="bg-[#022c22] pt-28 pb-14 text-center">

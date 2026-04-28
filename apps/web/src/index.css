@@ -35,8 +35,8 @@
   color-scheme: light;
 }
 
-html { overflow: hidden; height: 100%; scroll-behavior: smooth; }
-body { margin: 0; padding: 0; height: 100%; overflow-y: scroll; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+html { height: 100%; }
+body { margin: 0; padding: 0; min-height: 100%; -webkit-font-smoothing: antialiased; }
 #root { min-height: 100%; }
 
 /* ── CMS Animations ────────────────────────────────────────────────────────── */

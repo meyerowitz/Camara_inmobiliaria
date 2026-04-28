@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 
 interface NavItem {
@@ -236,7 +236,7 @@ const SidebarContent = ({
   // Auto-expand CMS group if any child is active
   // Auto-expand CMS group if any child (even nested) is active
   const getAllIds = (items: NavItem[]): string[] => {
-    let ids: string[] = []
+    const ids: string[] = []
     items.forEach(i => {
       ids.push(i.id)
       if (i.children) ids.push(...getAllIds(i.children))

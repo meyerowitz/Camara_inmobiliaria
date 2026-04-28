@@ -44,7 +44,7 @@ const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
   { value: 'TSU', label: 'Técnico Superior (TSU)', icon: Briefcase },
   { value: 'Universitario', label: 'Universitario', icon: GraduationCap },
-  { value: 'Postgrado', label: 'Postgrado / Especialización', icon: Award },
+  { value: 'Postgrado', label: 'Postgrado', icon: Award },
 ]
 
 const BOX_H = "h-[58px]"

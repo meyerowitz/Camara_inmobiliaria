@@ -95,6 +95,7 @@ export default function EquipoDirectivo() {
     if (cached) {
       setDirectiva(cached)
       setLoading(false)
+      window.scrollTo(0, 0)
       return
     }
 
@@ -111,7 +112,10 @@ export default function EquipoDirectivo() {
         }
       })
       .catch(err => console.error('Error fetching directiva:', err))
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        window.scrollTo(0, 0)
+      })
   }, [])
 
   // Escucha evento de invalidación emitido desde el panel CMS
@@ -137,7 +141,7 @@ export default function EquipoDirectivo() {
   }, [])
 
   return (
-    <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
+    <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30'>
       <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <header className='relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[40vh] bg-cover animate-header-bg' style={{ backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.85), rgba(2, 44, 34, 0.85)), url(${bgBolivar})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
         <div className='text-center space-y-4'>

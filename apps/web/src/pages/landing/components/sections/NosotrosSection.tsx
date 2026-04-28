@@ -10,7 +10,7 @@ export default function NosotrosSection() {
   const revealCards = useScrollReveal()
 
   return (
-    <section id='nosotros' className='scroll-mt-24 bg-white text-slate-900 rounded-t-[4rem] px-6 lg:px-20 py-24 border-b border-gray-100 relative z-10 -mt-12'>
+    <section id='nosotros' className='scroll-mt-24 bg-white text-slate-900 px-6 lg:px-20 py-24 border-b border-gray-100 relative z-10 -mt-12'>
       <div className='max-w-6xl mx-auto text-center space-y-12'>
         <div ref={revealTitle} className='space-y-4 reveal-on-scroll'>
           <p className='text-emerald-600 font-black uppercase tracking-[0.3em] text-xs'>
@@ -27,34 +27,34 @@ export default function NosotrosSection() {
 
         <div ref={revealCards} className='grid md:grid-cols-3 gap-8 lg:gap-12 reveal-on-scroll' style={{ transitionDelay: '0.2s' }}>
           {s.cards.map((card, i) => (
-              <Link
-                key={i}
-                to={card.path}
-                className="group cursor-pointer block" >
-                <div key={i} className="group cursor-pointer">
-                  {/* Contenedor de Imagen */}
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
-                    <img
-                      src={card.img}
-                      alt={card.title}
-                      className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
-                    />
-                    {/* Overlay sutil hover */}
-                    <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  </div>
+            <Link
+              key={i}
+              to={card.path}
+              className="group cursor-pointer block" >
+              <div key={i} className="group cursor-pointer">
+                {/* Contenedor de Imagen */}
+                <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] mb-4 shadow-2xl shadow-emerald-900/10">
+                  <img
+                    src={card.img}
+                    alt={card.title}
+                    className="w-full h-full object-cover  group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700 ease-in-out"
+                  />
+                  {/* Overlay sutil hover */}
+                  <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                </div>
 
-                  {/* Botón Inferior Estilo Card */}
-                  <div className="bg-emerald-600 group-hover:bg-emerald-500 text-white p-5 rounded-2xl flex items-center justify-between transition-colors duration-300 shadow-lg shadow-emerald-600/20">
-                    <span className="font-bold uppercase tracking-wider text-sm">
-                      {card.title}
-                    </span>
-                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                      <span className="text-xl">→</span>
-                    </div>
+                {/* Botón Inferior Estilo Card */}
+                <div className="bg-emerald-600 group-hover:bg-emerald-500 text-white p-5 rounded-2xl flex items-center justify-between transition-colors duration-300 shadow-lg shadow-emerald-600/20">
+                  <span className="font-bold uppercase tracking-wider text-sm">
+                    {card.title}
+                  </span>
+                  <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                    <span className="text-xl">→</span>
                   </div>
                 </div>
-              </Link>
-            ))}
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

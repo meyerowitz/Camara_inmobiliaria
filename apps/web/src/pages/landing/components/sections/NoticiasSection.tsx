@@ -37,7 +37,7 @@ export default function NoticiasSection() {
   }, [scroll])
 
   return (
-    <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden rounded-b-[4rem]'>
+    <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden'>
       <div className='max-w-8xl mx-auto flex justify-between items-end mb-12'>
         <div>
           <h2 className='text-4xl lg:text-5xl font-bold text-[#022c22] tracking-tighter'>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '@/context/AuthContext'
-import logo from '@/assets/Logo.png'
+import logo from '@/assets/Logo2.png'
 import ForgotPasswordModal from '@/pages/landing/components/ForgotPasswordModal'
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
@@ -47,13 +47,11 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
         <div className='p-10 sm:p-12'>
           {/* Título e Icono Sutil */}
           <div className='mb-10 flex flex-col items-center text-center'>
-            <div className='w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mb-6 overflow-hidden'>
+            <div className='mb-8 flex flex-col items-center'>
               <img
                 src={logo}
                 alt="Logo"
-                className='h-12 w-auto object-contain 
-                filter brightness-0 
-                [filter:invert(48%)_sepia(79%)_saturate(2476%)_hue-rotate(134deg)_brightness(94%)_contrast(92%)]'
+                className='h-32 w-auto object-contain transition-transform hover:scale-105 duration-300'
               />
             </div>
             <h2 className='text-3xl font-black text-slate-900 tracking-tight'>
@@ -117,7 +115,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
                 disabled={loading}
                 className='w-full py-4 bg-[#022c22] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-900 transition-all active:scale-[0.98] disabled:opacity-50'
               >
-                {loading ? 'Verificando...' : 'Acceder'}
+                {loading ? 'Verificando...' : 'Iniciar Sesión'}
               </button>
             </div>
           </form>

@@ -72,7 +72,7 @@ export const LandingPreviewPane = ({
     // Small delay so the iframe has time to settle
     const t = setTimeout(() => scrollNow(sectionAnchor), 200)
     return () => clearTimeout(t)
-  }, [sectionAnchor, iframeReady]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sectionAnchor, iframeReady])  
 
   return (
     <div

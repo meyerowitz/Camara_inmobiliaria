@@ -9,7 +9,7 @@ const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
   { value: 'TSU', label: 'Técnico Superior (TSU)', icon: Briefcase },
   { value: 'Universitario', label: 'Universitario', icon: GraduationCap },
-  { value: 'Postgrado', label: 'Postgrado / Especialización', icon: Award },
+  { value: 'Postgrado', label: 'Postgrado', icon: Award },
 ]
 
 const INPUT_H = "h-[62px]" // Altura unificada
@@ -20,8 +20,9 @@ export default function VerificarPreinscripcionProgramaPage() {
   const [status, setStatus] = useState<'loading' | 'verifying' | 'form' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('Verificando tu enlace...')
   const [userData, setUserData] = useState<any>(null)
+  const [darkMode, setDarkMode] = useState(false)
   const [showNivelDropdown, setShowNivelDropdown] = useState(false)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     url_titulo: '',
@@ -70,7 +71,7 @@ export default function VerificarPreinscripcionProgramaPage() {
   const handleConfirmar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
-    
+
     if (!formData.url_cv) {
       alert('Por favor, carga tu Resumen Curricular.')
       return
@@ -86,7 +87,7 @@ export default function VerificarPreinscripcionProgramaPage() {
       const res = await fetch(`${API_URL}/api/public/preinscripciones/confirmar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           token,
           url_titulo: formData.url_titulo,
           url_cv: formData.url_cv,
@@ -101,13 +102,13 @@ export default function VerificarPreinscripcionProgramaPage() {
     finally { setSubmitLoading(false); }
   }
 
-  const selectedNivel = NIVELES.find(n => n.value === formData.nivelProfesional)
+  const selectedNivel = NIVELES.find(n => n.value === userData?.nivel_profesional)
   const programaLabel = userData?.programaCodigo === 'AFILIACION' ? 'la Cámara Inmobiliaria' : (userData?.programaCodigo || 'CIEBO')
   const tituloLabel = userData?.programaCodigo === 'AFILIACION' ? 'Solicitud de Afiliación' : `Programa ${userData?.programaCodigo}`
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Navbar />
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <section className="relative bg-[#022c22] pt-28 pb-16 overflow-hidden text-center">
         <div className="relative z-10 max-w-4xl mx-auto px-6">
           <div className="flex items-center justify-center gap-3 mb-8">
@@ -119,8 +120,8 @@ export default function VerificarPreinscripcionProgramaPage() {
             {status === 'success' ? '¡Todo Listo!' : (isAfiliacion ? 'Validación de Afiliado' : 'Completa tu Perfil')}
           </h1>
           <p className="text-white/90 text-sm max-w-lg mx-auto">
-            {status === 'form' && userData 
-              ? <>Hola <span className="text-white font-bold">{userData.nombreCompleto}</span>, falta poco para finalizar tu <span className="text-emerald-400 font-bold">{isAfiliacion ? 'solicitud de afiliación' : `inscripción al programa ${programaLabel}`}</span>.</> 
+            {status === 'form' && userData
+              ? <>Hola <span className="text-white font-bold">{userData.nombreCompleto}</span>, falta poco para finalizar tu <span className="text-emerald-400 font-bold">{isAfiliacion ? 'solicitud de afiliación' : `inscripción al programa ${programaLabel}`}</span>.</>
               : message
             }
           </p>
@@ -152,21 +153,21 @@ export default function VerificarPreinscripcionProgramaPage() {
                   <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Estos documentos son indispensables para validar tu perfil y continuar con la solicitud.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FileUpload 
-                    label="Resumen Curricular (CV)" 
-                    accept=".pdf" 
-                    folder="cvs" 
-                    required 
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cv: url }))} 
-                    onClear={() => setFormData(prev => ({ ...prev, url_cv: '' }))} 
+                  <FileUpload
+                    label="Resumen Curricular (CV)"
+                    accept=".pdf"
+                    folder="cvs"
+                    required
+                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cv: url }))}
+                    onClear={() => setFormData(prev => ({ ...prev, url_cv: '' }))}
                   />
-                  <FileUpload 
-                    label={isJuridico ? 'RIF Empresa' : 'Título Académico'} 
-                    accept="image/*,.pdf" 
-                    folder="titulos" 
-                    required 
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_titulo: url }))} 
-                    onClear={() => setFormData(prev => ({ ...prev, url_titulo: '' }))} 
+                  <FileUpload
+                    label={isJuridico ? 'RIF Empresa' : 'Título Académico'}
+                    accept="image/*,.pdf"
+                    folder="titulos"
+                    required
+                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_titulo: url }))}
+                    onClear={() => setFormData(prev => ({ ...prev, url_titulo: '' }))}
                   />
                 </div>
               </div>
@@ -184,25 +185,25 @@ export default function VerificarPreinscripcionProgramaPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {formData.url_especializaciones.map((url, idx) => (
                       <div key={idx} className="relative group p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                         <div className="flex flex-col min-w-0">
-                           <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
-                           <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
-                         </div>
-                         <button 
-                           type="button" 
-                           onClick={() => setFormData(prev => ({ ...prev, url_especializaciones: prev.url_especializaciones.filter((_, i) => i !== idx) }))}
-                           className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
-                         >
-                           <XCircle size={16} />
-                         </button>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, url_especializaciones: prev.url_especializaciones.filter((_, i) => i !== idx) }))}
+                          className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
+                        >
+                          <XCircle size={16} />
+                        </button>
                       </div>
                     ))}
-                    <FileUpload 
-                      label="Cargar nueva especialización" 
-                      accept="image/*,.pdf" 
-                      folder="especializaciones" 
-                      onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_especializaciones: [...prev.url_especializaciones, url] }))} 
-                      onClear={() => {}} 
+                    <FileUpload
+                      label="Cargar nueva especialización"
+                      accept="image/*,.pdf"
+                      folder="especializaciones"
+                      onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_especializaciones: [...prev.url_especializaciones, url] }))}
+                      onClear={() => { }}
                     />
                   </div>
                 </div>
@@ -220,25 +221,25 @@ export default function VerificarPreinscripcionProgramaPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {formData.url_cursos_extras.map((url, idx) => (
                     <div key={idx} className="relative group p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                       <div className="flex flex-col min-w-0">
-                         <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
-                         <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
-                       </div>
-                       <button 
-                         type="button" 
-                         onClick={() => setFormData(prev => ({ ...prev, url_cursos_extras: prev.url_cursos_extras.filter((_, i) => i !== idx) }))}
-                           className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
-                       >
-                         <XCircle size={16} />
-                       </button>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, url_cursos_extras: prev.url_cursos_extras.filter((_, i) => i !== idx) }))}
+                        className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
+                      >
+                        <XCircle size={16} />
+                      </button>
                     </div>
                   ))}
-                  <FileUpload 
-                    label="Cargar nuevo curso" 
-                    accept="image/*,.pdf" 
-                    folder="cursos_extras" 
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cursos_extras: [...prev.url_cursos_extras, url] }))} 
-                    onClear={() => {}} 
+                  <FileUpload
+                    label="Cargar nuevo curso"
+                    accept="image/*,.pdf"
+                    folder="cursos_extras"
+                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cursos_extras: [...prev.url_cursos_extras, url] }))}
+                    onClear={() => { }}
                   />
                 </div>
               </div>
@@ -257,7 +258,7 @@ export default function VerificarPreinscripcionProgramaPage() {
                   {isAfiliacion ? 'Solicitud Enviada' : '¡Preinscripción Exitosa!'}
                 </h2>
                 <p className="text-slate-500 max-w-md mx-auto leading-relaxed">
-                  {isAfiliacion 
+                  {isAfiliacion
                     ? 'Tus documentos han sido cargados correctamente. La Cámara revisará tu perfil y se pondrá en contacto contigo para los siguientes pasos de tu afiliación.'
                     : 'Hemos recibido tus documentos. Te enviaremos un correo con los detalles de la entrevista y el proceso de admisión al programa.'
                   }

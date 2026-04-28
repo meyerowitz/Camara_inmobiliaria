@@ -36,6 +36,8 @@ const AfiliadoPage = () => {
 
   const [agremiado, setAgremiado] = useState<{
     nombre_completo: string;
+    nombres: string | null;
+    apellidos: string | null;
     codigo_cibir: string | null;
     estatus: string;
     inscripcion_pagada: number;

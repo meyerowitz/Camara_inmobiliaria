@@ -19,8 +19,8 @@ export const PREANI: ChamberPageData = {
   icon: BookOpen,
   blocks: [
     {
-      heading: 'El Estándar Gremial en Venezuela',
-      body: 'PREANI es el programa de formación profesional estrella de la Cámara Inmobiliaria de Venezuela. Está diseñado para elevar la calidad, ética y conocimientos técnicos de los profesionales inmobiliarios a nivel nacional, garantizando que todo corredor certificado cumpla con altos estándares académicos y legales.'
+      heading: 'Referente de Excelencia Profesional',
+      body: 'PREANI es el programa de formación profesional estrella de la Cámara Inmobiliaria de Venezuela. Está diseñado para elevar la calidad, ética y conocimientos técnicos de los profesionales inmobiliarios a nivel nacional, garantizando que todo corredor certificado cumpla con los más altos estándares académicos y legales.'
     },
     {
       heading: 'Módulos de Estudio',
@@ -29,7 +29,7 @@ export const PREANI: ChamberPageData = {
         'Marco Legal Inmobiliario y Contratos',
         'Avalúos y Tasaciones Básicas',
         'Marketing Inmobiliario y Negociación',
-        'Ética Gremial y Responsabilidad Social',
+        'Ética Profesional y Responsabilidad Social',
         'Finanzas Inmobiliarias y Ley de Arrendamientos'
       ]
     }
@@ -164,7 +164,7 @@ export const NORMATIVAS: ChamberPageData = {
   blocks: [
     {
       heading: 'Estatutos Vigentes',
-      body: 'El gremio se rige bajo un estricto Código de Ética que regula la competencia leal, el cobro estandarizado de honorarios y la protección al consumidor final.'
+      body: 'Nuestra institución se rige bajo un estricto Código de Ética que regula la competencia leal, el cobro estandarizado de honorarios y la protección al consumidor final.'
     },
     {
       heading: 'Leyes Asociadas',
@@ -210,7 +210,7 @@ export const EVENTOS: ChamberPageData = {
   blocks: [
     {
       heading: 'Próximos Encuentros',
-      body: 'Manténgase al día con la agenda gremial. Anualmente llevamos a cabo la Cumbre Inmobiliaria, foros sobre economía venezolana y desayunos de networking entre gerentes de corretaje para maximizar alianzas en exclusividad.'
+      body: 'Manténgase al día con la agenda institucional. Anualmente llevamos a cabo la Cumbre Inmobiliaria, foros sobre economía venezolana y desayunos de networking entre gerentes de corretaje para maximizar alianzas en exclusividad.'
     }
   ]
 };

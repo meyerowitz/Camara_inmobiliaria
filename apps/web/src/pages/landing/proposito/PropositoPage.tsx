@@ -52,7 +52,7 @@ export default function Proposito() {
             className="text-emerald-100/60 max-w-2xl mx-auto font-medium animate-header-text uppercase tracking-widest text-[10px] sm:text-sm"
             style={{ animationDelay: "0.6s", opacity: 0 }}
           >
-            Pilares fundamentales para el desarrollo del gremio
+            Pilares fundamentales para el desarrollo del sector inmobiliario
           </p>
         </div>
       </header>

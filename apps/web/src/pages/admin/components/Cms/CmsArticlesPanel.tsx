@@ -7,7 +7,7 @@ import { NormativasPanel } from '@/pages/admin/components/Cms/NormativasPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
 export type CmsTab = 'noticias' | 'normativas' | 'directiva' | 'config' | 'paginas' 
-  | 'leyes' | 'reglamentos' | 'normas' | 'actas'
+  | 'leyes' | 'reglamentos' | 'normas' | 'actas' | 'cursos' | 'hitos'
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
@@ -20,6 +20,8 @@ const SECTION_ANCHORS: Record<CmsTab, string> = {
   reglamentos: '',
   normas: '',
   actas: '',
+  cursos: '',
+  hitos: '',
 }
 
 const MIN_LEFT = 360   // px

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  Users, 
-  Link as LinkIcon, 
-  Plus, 
-  Trash2, 
-  Copy, 
-  CheckCircle, 
+import {
+  Users,
+  Link as LinkIcon,
+  Plus,
+  Trash2,
+  Copy,
+  CheckCircle,
   ExternalLink,
   Loader2,
   AlertCircle,
@@ -25,7 +25,7 @@ import {
 import { API_URL } from '@/config/env';
 import DashboardCard from '@/pages/landing/afiliado/components/DashboardCard';
 import { useAuth } from '@/context/AuthContext';
-import { formatNombreCard } from '@/utils/formatters';
+import { formatNombreCard, getInitials } from '@/utils/formatters';
 
 interface Invitacion {
   id_invitacion: number;
@@ -55,7 +55,7 @@ const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
   { value: 'TSU', label: 'Técnico Superior (TSU)', icon: Briefcase },
   { value: 'Universitario', label: 'Universitario', icon: GraduationCap },
-  { value: 'Postgrado', label: 'Postgrado / Especialización', icon: Award },
+  { value: 'Postgrado', label: 'Postgrado', icon: Award },
 ];
 
 export default function WidgetGestionAfiliadosCorp() {
@@ -118,9 +118,9 @@ export default function WidgetGestionAfiliadosCorp() {
     try {
       const res = await fetch(`${API_URL}/api/afiliados/${user.id_agremiado}/invitacion`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ diasExpiracion: 30 })
       });
@@ -152,9 +152,9 @@ export default function WidgetGestionAfiliadosCorp() {
     try {
       const res = await fetch(`${API_URL}/api/afiliados/${user.id_agremiado}/registrar-miembro`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           nombreCompleto: modalForm.nombreCompleto.trim(),
@@ -333,9 +333,8 @@ export default function WidgetGestionAfiliadosCorp() {
                       <p className="text-xs font-black text-gray-900 uppercase tracking-tight">{formatNombreCard(m.nombres || m.nombre_completo, m.apellidos)}</p>
                       <p className="text-[10px] font-medium text-gray-500">{m.email}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                          m.estatus === '9_AFILIACION' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${m.estatus === '9_AFILIACION' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                          }`}>
                           {m.estatus === '9_AFILIACION' ? 'Activo' : m.estatus}
                         </span>
                         <span className="text-[9px] text-gray-400 font-medium">Registrado: {new Date(m.fecha_registro).toLocaleDateString()}</span>

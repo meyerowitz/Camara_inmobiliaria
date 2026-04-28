@@ -36,7 +36,7 @@ const CibirHero = () => (
         className="text-lg font-medium leading-relaxed max-w-2xl mb-10 animate-header-text text-white/75"
         style={{ animationDelay: '0.6s', opacity: 0 }}
       >
-        Liderando el desarrollo inmobiliario sustentable y fomentando la profesionalización del sector para construir un gremio más fuerte y ético.
+        Liderando el desarrollo inmobiliario sustentable y fomentando la excelencia para consolidar una comunidad profesional ética, innovadora y de referencia.
       </p>
       <div className="flex flex-col sm:flex-row gap-4 animate-header-text" style={{ animationDelay: '0.8s', opacity: 0 }}>
         <a

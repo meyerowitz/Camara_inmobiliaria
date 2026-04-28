@@ -29,6 +29,8 @@ const DirectorioPage = () => {
         console.error('Error cargando el directorio:', error);
       } finally {
         setLoading(false);
+        // Force scroll to top after loading finishes and page grows
+        window.scrollTo(0, 0);
       }
     };
     fetchAfiliados();
@@ -186,7 +188,11 @@ const DirectorioPage = () => {
               </p>
               {filterType !== 'Todos' && (
                 <button 
-                  onClick={() => setFilterType('Todos')}
+                  onClick={() => {
+                    setFilterType('Todos');
+                    setSearchQuery('');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
                   className="mt-6 text-emerald-600 font-bold text-sm hover:underline"
                 >
                   Ver todos los miembros
