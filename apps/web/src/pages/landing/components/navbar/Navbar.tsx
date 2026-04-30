@@ -47,12 +47,10 @@ const Navbar = ({
               className="h-16 w-auto object-contain"
             />
             <div className="hidden sm:block leading-tight">
-              <p className="text-white font-bold text-sm tracking-widest uppercase">
+              <p className="text-white font-bold text-base tracking-widest uppercase">
                 Cámara Inmobiliaria
               </p>
-              <p className="text-emerald-500 text-[14px] font-bold">
-                de Bolívar
-              </p>
+              <p className="text-white text-base font-bold">de Bolívar</p>
             </div>
           </Link>
         </div>
