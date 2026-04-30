@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { API_URL } from '@/config/env'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 
 const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
@@ -288,9 +289,7 @@ export default function InvitacionCorporativaPage() {
         )}
       </main>
 
-      <footer className="bg-[#011a14] py-10 text-center border-t border-white/5">
-        <p className="text-gray-600 text-[10px] uppercase tracking-[0.2em]">CÁMARA INMOBILIARIA • 2026</p>
-      </footer>
+      <Footer />
     </div>
   )
 }

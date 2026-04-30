@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 import actaPDF from '@/pages/landing/courses/CIV/acta.pdf'
 
 const useScrollReveal = () => {
@@ -88,9 +89,7 @@ export default function CodigoEtica() {
           </div>
         </div>
       </main>
-      <footer className='bg-[#011a14] px-6 lg:px-20 py-12 text-center'>
-        <p className='text-gray-600 text-[10px] uppercase tracking-[0.2em]'>© 2026 Cámara Inmobiliaria del Estado Bolívar</p>
-      </footer>
+      <Footer />
     </div>
   )
 }

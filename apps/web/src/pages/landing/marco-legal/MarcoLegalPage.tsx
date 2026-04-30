@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import bgBolivar from '@/assets/Pzo.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 import { API_URL } from '@/config/env'
 
 interface NormativaPublic {
   id: number
   titulo: string
   descripcion: string | null
-  url_documento: string
+  url_archivo: string
   categoria: string | null
   orden: number
 }
@@ -133,7 +134,7 @@ export default function MarcoLegalPage() {
                   <div className="flex flex-col flex-grow gap-3">
                     <div className="w-full h-40 rounded-2xl bg-slate-50 border-2 border-slate-100 overflow-hidden shrink-0 group-hover:border-emerald-200 transition-colors shadow-inner">
                       <iframe
-                        src={buildPdfPreviewUrl(item.url_documento)}
+                        src={buildPdfPreviewUrl(item.url_archivo)}
                         title={`Vista previa de ${item.titulo}`}
                         className="w-[calc(100%+40px)] h-[calc(100%+80px)] -mt-[56px] -ml-[20px] pointer-events-none bg-white"
                         scrolling="no"
@@ -148,9 +149,9 @@ export default function MarcoLegalPage() {
                       <p className="text-xs md:text-sm text-slate-600 line-clamp-4 leading-relaxed">{item.descripcion}</p>
                     ) : null}
                   </div>
-
+ 
                   <a
-                    href={item.url_documento}
+                    href={item.url_archivo}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#022c22] text-white text-[10px] md:text-xs font-black uppercase tracking-widest px-5 py-3 hover:bg-emerald-600 transition-colors"
@@ -189,12 +190,7 @@ export default function MarcoLegalPage() {
           </div>
         )}
       </main>
-
-      <footer className="bg-[#011a14] px-4 sm:px-6 lg:px-20 py-8 md:py-12 text-center relative z-10">
-        <p className="text-slate-500 text-[9px] md:text-xs uppercase tracking-[0.2em] font-medium">
-          © 2026 Cámara Inmobiliaria del Estado Bolívar • RIF J-30462520-0
-        </p>
-      </footer>
+      <Footer />
     </div>
   )
 }

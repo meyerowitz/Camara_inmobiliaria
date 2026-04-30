@@ -25,8 +25,8 @@ export const NAV_ITEMS = [
   {
     title: 'Formación',
     items: [
-      { label: 'PREANI', path: '/preani' },
       { label: 'CIBIR', path: '/cibir' },
+      { label: 'PREANI', path: '/preani' },
       { label: 'PEGI', path: '/pegi' },
       { label: 'PADI', path: '/padi' },
     ],

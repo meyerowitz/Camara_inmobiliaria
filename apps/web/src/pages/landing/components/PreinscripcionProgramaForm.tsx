@@ -65,10 +65,12 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
     rifPrefix: 'J',
     rifNumber: '',
     representanteLegal: '',
+    cedulaRepresentante: '',
+    emailRepresentante: '',
     emailEmpresa: '',
   })
-  const [tipoAfiliado, setTipoAfiliado] = useState<'Natural' | 'Juridico'>('Natural')
-  const isJuridico = programaCodigo === 'AFILIACION' && tipoAfiliado === 'Juridico'
+  const [tipoAfiliado, setTipoAfiliado] = useState<'Natural' | 'Corporativo'>('Natural')
+  const isCorporativo = programaCodigo === 'AFILIACION' && tipoAfiliado === 'Corporativo'
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -85,22 +87,25 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
     setErrorMsg('')
 
     // Para Natural: validar nivel profesional
-    if (!isJuridico && !formData.nivelProfesional) {
+    if (!isCorporativo && !formData.nivelProfesional) {
       setErrorMsg('Por favor, selecciona tu nivel profesional.')
       return
     }
 
     setLoading(true)
     try {
-      const body = isJuridico
+      const body = isCorporativo
         ? {
             programaCodigo,
-            tipoAfiliado: 'Juridico',
+            tipoAfiliado: 'Corporativo',
             nombreCompleto: formData.razonSocial.trim(),
+            razonSocial: formData.razonSocial.trim(),
             cedulaRif: `${formData.rifPrefix}-${formData.rifNumber.replace(/\D/g, '')}`,
             email: formData.emailEmpresa,
             telefono: `${formData.phonePrefix}${formData.telefono.replace(/\D/g, '')}`,
             representanteLegal: formData.representanteLegal.trim(),
+            cedulaRepresentante: formData.cedulaRepresentante.trim(),
+            emailRepresentante: formData.emailRepresentante.trim(),
           }
         : {
             programaCodigo,
@@ -135,10 +140,10 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
           <CheckCircle2 size={34} />
         </div>
         <h3 className="text-2xl font-black text-white uppercase tracking-tighter">
-          {isJuridico ? '¡Empresa Registrada!' : '¡Paso 1 Completado!'}
+          {isCorporativo ? '¡Empresa Registrada!' : '¡Paso 1 Completado!'}
         </h3>
         <p className="text-sm text-emerald-100/80 max-w-sm leading-relaxed">
-          {isJuridico
+          {isCorporativo
             ? <>Revisaremos la solicitud de <span className="font-bold text-white">{formData.razonSocial}</span>. Una vez aprobada, podrás invitar a tus afiliados por correo.</>
             : <>Revisa tu bandeja de entrada en <span className="font-bold text-white">{formData.email}</span>. Te enviamos un enlace para continuar con los documentos.</>
           }
@@ -160,7 +165,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
             <div className="grid grid-cols-2 gap-2 bg-white/5 p-1 rounded-xl border border-white/10 h-[52px]">
               {([
                 { val: 'Natural', label: 'Independiente', icon: User },
-                { val: 'Juridico', label: 'Corporativo', icon: Building2 },
+                { val: 'Corporativo', label: 'Corporativo', icon: Building2 },
               ] as const).map(({ val, label, icon: Icon }) => (
                 <button
                   key={val}
@@ -181,7 +186,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
         {/* ══════════════════════════════════
             FORMULARIO CORPORATIVO
         ══════════════════════════════════ */}
-        {isJuridico && (
+        {isCorporativo && (
           <>
             {/* Banner informativo corporativo */}
             <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-left">
@@ -222,24 +227,39 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
                 </div>
               </div>
 
-              {/* Representante Legal */}
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Nombre del Representante Legal</label>
-                <div className="relative group">
-                  <UserCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-                  <input type="text" name="representanteLegal" required value={formData.representanteLegal} onChange={handleChange} placeholder="Ej. Carlos Mendoza" className={`w-full pl-11 pr-5 ${BOX_H} bg-white rounded-xl outline-none border border-slate-200 text-slate-800 focus:border-emerald-500 shadow-sm text-sm font-medium`} />
+              {/* Representante Legal + Cédula + Email */}
+              <div className="space-y-4 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Nombre del Representante Legal</label>
+                  <div className="relative group">
+                    <UserCheck size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <input type="text" name="representanteLegal" required value={formData.representanteLegal} onChange={handleChange} placeholder="Ej. Carlos Mendoza" className={`w-full pl-11 pr-5 ${BOX_H} bg-white rounded-xl outline-none border border-slate-200 text-slate-800 focus:border-emerald-500 shadow-sm text-sm font-medium`} />
+                  </div>
                 </div>
-              </div>
-
-              {/* Teléfono */}
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Teléfono de Contacto</label>
-                <div className={`flex border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500 shadow-sm ${BOX_H}`}>
-                  <button type="button" onClick={() => setShowCountryDropdown(!showCountryDropdown)} className="bg-slate-50 border-r border-slate-200 px-4 h-full flex items-center gap-2 text-sm font-black text-slate-700">
-                    <span>{COUNTRIES.find(c => c.code === formData.phonePrefix)?.flag}</span>
-                    <span>{formData.phonePrefix}</span>
-                  </button>
-                  <input type="tel" name="telefono" required value={formData.telefono} onChange={handleChange} placeholder="4XX 0000000" className="flex-1 px-5 h-full bg-white outline-none text-sm font-medium text-slate-800" />
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Cédula del Representante</label>
+                  <div className="relative group">
+                    <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <input type="text" name="cedulaRepresentante" required value={formData.cedulaRepresentante} onChange={handleChange} placeholder="00000000" className={`w-full pl-11 pr-5 ${BOX_H} bg-white rounded-xl outline-none border border-slate-200 text-slate-800 focus:border-emerald-500 shadow-sm text-sm font-medium`} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Correo del Representante</label>
+                  <div className="relative group">
+                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <input type="email" name="emailRepresentante" required value={formData.emailRepresentante} onChange={handleChange} placeholder="personal@representante.com" className={`w-full pl-11 pr-5 ${BOX_H} bg-white rounded-xl outline-none border border-slate-200 text-slate-800 focus:border-emerald-500 shadow-sm text-sm font-medium`} />
+                  </div>
+                </div>
+                {/* Teléfono (Ahora dentro del grid del representante) */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest ml-1 text-emerald-100/60">Teléfono del Representante</label>
+                  <div className={`flex border border-slate-200 rounded-xl overflow-hidden focus-within:border-emerald-500 shadow-sm ${BOX_H}`}>
+                    <button type="button" onClick={() => setShowCountryDropdown(!showCountryDropdown)} className="bg-slate-50 border-r border-slate-200 px-4 h-full flex items-center gap-2 text-sm font-black text-slate-700">
+                      <span>{COUNTRIES.find(c => c.code === formData.phonePrefix)?.flag}</span>
+                      <span>{formData.phonePrefix}</span>
+                    </button>
+                    <input type="tel" name="telefono" required value={formData.telefono} onChange={handleChange} placeholder="4XX 0000000" className="flex-1 px-5 h-full bg-white outline-none text-sm font-medium text-slate-800" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -249,7 +269,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
         {/* ══════════════════════════════════
             FORMULARIO INDEPENDIENTE (Natural o no-Afiliacion)
         ══════════════════════════════════ */}
-        {!isJuridico && (
+        {!isCorporativo && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Nombre */}
             <div className="space-y-2">
@@ -295,7 +315,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
         )}
 
         {/* NIVEL PROFESIONAL + CORREDOR — Solo para no-corporativos */}
-        {!isJuridico && (
+        {!isCorporativo && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
             {/* Dropdown Custom Nivel */}
             <div className="space-y-2 relative">
@@ -356,7 +376,7 @@ export default function PreinscripcionProgramaForm({ programaCodigo, ctaLabel, i
         <button type="submit" disabled={loading} className={`w-full ${BOX_H} rounded-xl flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 shadow-xl bg-emerald-600 text-white hover:bg-[#022c22] disabled:opacity-50 font-black uppercase tracking-widest text-xs`}>
           {loading
             ? <Loader2 size={18} className="animate-spin" />
-            : isJuridico
+            : isCorporativo
               ? <><Building2 size={16} />Registrar Empresa<ArrowRight size={14} /></>
               : (ctaLabel ?? 'Enviar Solicitud')
           }

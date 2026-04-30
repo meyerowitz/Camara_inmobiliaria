@@ -4,6 +4,7 @@ import {
   adminAgendarEntrevista,
   adminFinalizarEntrevista,
   adminGetEstudiante,
+  adminGetEstudianteDocumentos,
   adminListCursos,
   adminCreateCurso,
   adminUpdateCurso,
@@ -38,6 +39,9 @@ router.get('/estudiantes', adminListEstudiantes)
 
 // GET /api/academia/estudiantes/:id
 router.get('/estudiantes/:id', adminGetEstudiante)
+
+// GET /api/academia/estudiantes/:id/documentos
+router.get('/estudiantes/:id/documentos', adminGetEstudianteDocumentos)
 
 // POST /api/academia/cursos/:id_curso/asignar
 router.post('/cursos/:id_curso/asignar', adminAsignarEstudianteACurso)

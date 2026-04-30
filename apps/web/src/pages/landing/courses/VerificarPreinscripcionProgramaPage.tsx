@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CheckCircle2, XCircle, Loader2, Home, FileText, ChevronDown, ShieldCheck, ArrowRight, GraduationCap, School, Award, Briefcase, Check } from 'lucide-react'
+import { CheckCircle2, Loader2, ArrowRight, Home, GraduationCap, Briefcase, Award, School, ChevronDown, XCircle, FileText, AlertCircle, Calendar, ShieldCheck, Check } from 'lucide-react'
 import { API_URL } from '@/config/env'
 import FileUpload from '@/components/common/FileUpload'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 
 const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },
@@ -25,11 +26,16 @@ export default function VerificarPreinscripcionProgramaPage() {
 
   // Form state
   const [formData, setFormData] = useState({
+    nivelProfesional: '' as 'Bachiller' | 'TSU' | 'Universitario' | 'Postgrado' | '',
     url_titulo: '',
     url_cv: '',
-    url_especializaciones: [] as string[],
-    url_cursos_extras: [] as string[],
+    especializaciones: [] as { nombre: string; url: string; fecha: string }[],
+    cursos_extras: [] as { nombre: string; url: string; fecha: string }[],
   })
+  const [pendingCursoNombre, setPendingCursoNombre] = useState('')
+  const [pendingCursoFecha, setPendingCursoFecha] = useState('')
+  const [pendingEspecializacionNombre, setPendingEspecializacionNombre] = useState('')
+  const [pendingEspecializacionFecha, setPendingEspecializacionFecha] = useState('')
   const [submitLoading, setSubmitLoading] = useState(false)
 
   useEffect(() => {
@@ -46,10 +52,11 @@ export default function VerificarPreinscripcionProgramaPage() {
           setUserData(json.data)
           setFormData(prev => ({
             ...prev,
-            url_titulo: json.data.url_titulo || '',
-            url_cv: json.data.url_cv || '',
-            url_especializaciones: json.data.url_especializaciones ? JSON.parse(json.data.url_especializaciones) : [],
-            url_cursos_extras: json.data.url_cursos_extras ? JSON.parse(json.data.url_cursos_extras) : [],
+            nivelProfesional: (json.data.nivelProfesional as any) || '',
+            url_titulo: '',
+            url_cv: '',
+            especializaciones: [],
+            cursos_extras: [],
           }))
           setStatus('form')
         } else {
@@ -65,19 +72,25 @@ export default function VerificarPreinscripcionProgramaPage() {
   }, [token])
 
   const isAfiliacion = userData?.programaCodigo === 'AFILIACION'
-  const isJuridico = isAfiliacion && userData?.tipoAfiliado === 'Juridico'
-  const isUniversitario = userData?.nivel_profesional === 'Universitario' || userData?.nivel_profesional === 'Postgrado'
+  const isCorporativo = isAfiliacion && ['Juridico', 'Corporativo'].includes(userData?.tipoAfiliado)
+  const isPostgrado = formData.nivelProfesional === 'Postgrado'
+  const currentNivel = NIVELES.find(n => n.value === formData.nivelProfesional)
 
   const handleConfirmar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) return
 
-    if (!formData.url_cv) {
+    if (!isCorporativo && !formData.url_cv) {
       alert('Por favor, carga tu Resumen Curricular.')
       return
     }
     if (!formData.url_titulo) {
-      alert('Por favor, carga tu Título Académico.')
+      alert(isCorporativo ? 'Por favor, carga el RIF de la Empresa.' : 'Por favor, carga tu Título Académico.')
+      return
+    }
+
+    if (formData.nivelProfesional === 'Postgrado' && formData.especializaciones.length === 0) {
+      alert('Como indicaste que tienes nivel de Postgrado, es obligatorio cargar al menos un soporte de especialización o maestría.')
       return
     }
 
@@ -89,10 +102,11 @@ export default function VerificarPreinscripcionProgramaPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
+          nivelProfesional: formData.nivelProfesional,
           url_titulo: formData.url_titulo,
           url_cv: formData.url_cv,
-          url_especializaciones: JSON.stringify(formData.url_especializaciones),
-          url_cursos_extras: JSON.stringify(formData.url_cursos_extras),
+          especializaciones: JSON.stringify(formData.especializaciones),
+          cursos_extras: JSON.stringify(formData.cursos_extras),
         }),
       })
       const json = await res.json()
@@ -143,108 +157,323 @@ export default function VerificarPreinscripcionProgramaPage() {
               <div className="space-y-2">
                 <h2 className="text-xl font-black text-[#022c22] uppercase tracking-tight">Carga de Documentación</h2>
                 <p className="text-slate-500 text-xs leading-relaxed">
-                  Para finalizar tu proceso, por favor adjunta los archivos solicitados a continuación. Asegúrate de que sean legibles y estén en formato <span className="font-bold text-slate-700">PDF, JPG o PNG</span> (máx. 5MB por archivo).
+                  Para finalizar tu proceso, por favor verifica tu nivel académico y adjunta los archivos solicitados.
                 </p>
               </div>
+
+              {/* Selector de Nivel Académico */}
+              <div className="space-y-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3 mb-1"><div className="w-1 h-6 rounded-full bg-blue-600" /><div><h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#022c22]">Nivel Académico Alcanzado</h3></div></div>
+                    <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Confirma tu grado de instrucción actual.</p>
+                  </div>
+
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowNivelDropdown(!showNivelDropdown)}
+                      className={`w-full px-5 flex items-center justify-between bg-white border-2 transition-all duration-300 rounded-2xl ${showNivelDropdown ? 'border-blue-500 ring-4 ring-blue-500/10' : 'border-slate-100 hover:border-blue-300'} ${INPUT_H}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {currentNivel ? (
+                          <>
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                              <currentNivel.icon size={18} />
+                            </div>
+                            <span className="text-sm font-bold text-slate-700">{currentNivel.label}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm font-bold text-slate-400 italic">Selecciona tu nivel académico...</span>
+                        )}
+                      </div>
+                      <ChevronDown size={20} className={`text-slate-400 transition-transform duration-300 ${showNivelDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showNivelDropdown && (
+                      <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-2 grid grid-cols-1 gap-1">
+                          {NIVELES.map((nivel) => (
+                            <button
+                              key={nivel.value}
+                              type="button"
+                              onClick={() => {
+                                setFormData(prev => ({ ...prev, nivelProfesional: nivel.value as any }))
+                                setShowNivelDropdown(false)
+                              }}
+                              className={`flex items-center gap-4 p-3 rounded-xl transition-all ${formData.nivelProfesional === nivel.value ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-600'}`}
+                            >
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${formData.nivelProfesional === nivel.value ? 'bg-white/20' : 'bg-slate-100'}`}>
+                                <nivel.icon size={20} />
+                              </div>
+                              <div className="flex flex-col items-start">
+                                <span className="text-sm font-bold">{nivel.label}</span>
+                                {formData.nivelProfesional === nivel.value && <span className="text-[10px] opacity-80 font-black uppercase tracking-widest">Seleccionado</span>}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
 
               <div className="space-y-6">
                 <div className="space-y-1">
                   <div className="flex items-center gap-3 mb-1"><div className="w-1 h-6 rounded-full bg-emerald-600" /><div><h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#022c22]">Documentación Obligatoria</h3></div></div>
                   <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Estos documentos son indispensables para validar tu perfil y continuar con la solicitud.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FileUpload
-                    label="Resumen Curricular (CV)"
-                    accept=".pdf"
-                    folder="cvs"
-                    required
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cv: url }))}
-                    onClear={() => setFormData(prev => ({ ...prev, url_cv: '' }))}
-                  />
-                  <FileUpload
-                    label={isJuridico ? 'RIF Empresa' : 'Título Académico'}
-                    accept="image/*,.pdf"
-                    folder="titulos"
-                    required
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_titulo: url }))}
-                    onClear={() => setFormData(prev => ({ ...prev, url_titulo: '' }))}
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FileUpload
+                  label="Resumen Curricular (CV)"
+                  accept=".pdf"
+                  folder="cvs"
+                  required
+                  onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cv: url }))}
+                  onClear={() => setFormData(prev => ({ ...prev, url_cv: '' }))}
+                />
+                <FileUpload
+                  label={isCorporativo ? 'RIF Empresa' : 'Título Académico'}
+                  accept="image/*,.pdf"
+                  folder="titulos"
+                  required
+                  onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_titulo: url }))}
+                  onClear={() => setFormData(prev => ({ ...prev, url_titulo: '' }))}
+                />
+              </div>
               </div>
 
-              {/* Sección de Especializaciones (Solo si es Universitario) */}
-              {isUniversitario && (
+              {/* Sección de Especializaciones (Solo si es Postgrado) */}
+              {isPostgrado && (
                 <div className="space-y-6 pt-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-3 mb-1"><div className="w-1 h-6 rounded-full bg-blue-600" /><div><h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#022c22]">Especializaciones / Postgrados</h3></div></div>
                       <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Si posees estudios adicionales de postgrado, puedes adjuntarlos aquí.</p>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-full">Opcional</span>
+                    <span className="text-[10px] font-bold text-rose-500 uppercase bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100">Obligatorio</span>
+
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {formData.url_especializaciones.map((url, idx) => (
-                      <div key={idx} className="relative group p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, url_especializaciones: prev.url_especializaciones.filter((_, i) => i !== idx) }))}
-                          className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
-                        >
-                          <XCircle size={16} />
-                        </button>
+                  <div className="space-y-4">
+                    {/* Lista de especializaciones cargadas */}
+                    {formData.especializaciones.length > 0 && (
+                      <div className="space-y-2">
+                        {formData.especializaciones.map((esp, idx) => (
+                          <div key={idx} className="group flex items-center gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-xl">
+                            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                              <FileText size={14} className="text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <input
+                                type="text"
+                                value={esp.nombre}
+                                onChange={(e) => setFormData(prev => ({
+                                  ...prev,
+                                  especializaciones: prev.especializaciones.map((item, i) =>
+                                    i === idx ? { ...item, nombre: e.target.value } : item
+                                  )
+                                }))}
+                                placeholder="Título obtenido..."
+                                className="w-full text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:ring-0 placeholder:text-slate-400 truncate"
+                              />
+                              <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                  <Calendar size={10} className="text-slate-400" />
+                                  <input 
+                                    type="date" 
+                                    value={esp.fecha}
+                                    onChange={(e) => setFormData(prev => ({
+                                      ...prev,
+                                      especializaciones: prev.especializaciones.map((item, i) =>
+                                        i === idx ? { ...item, fecha: e.target.value } : item
+                                      )
+                                    }))}
+                                    className="text-[10px] font-medium text-slate-500 bg-transparent border-none p-0 focus:ring-0 w-24"
+                                  />
+                                </div>
+                                <a href={esp.url} target="_blank" rel="noopener noreferrer"
+                                  className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">
+                                  Ver archivo
+                                </a>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, especializaciones: prev.especializaciones.filter((_, i) => i !== idx) }))}
+                              className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors shrink-0"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    <FileUpload
-                      label="Cargar nueva especialización"
-                      accept="image/*,.pdf"
-                      folder="especializaciones"
-                      onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_especializaciones: [...prev.url_especializaciones, url] }))}
-                      onClear={() => { }}
-                    />
+                    )}
+
+                    {/* Input nombre + Fecha + Uploader para nueva especialización */}
+                    <div className="space-y-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nombre del Postgrado</label>
+                          <input
+                            type="text"
+                            value={pendingEspecializacionNombre}
+                            onChange={(e) => setPendingEspecializacionNombre(e.target.value)}
+                            placeholder="Especialidad (ej: Maestría en Finanzas)..."
+                            className="w-full h-10 px-4 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 placeholder:text-slate-400 bg-white transition"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Fecha de Finalización</label>
+                          <div className="relative">
+                            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                              type="date"
+                              value={pendingEspecializacionFecha}
+                              onChange={(e) => setPendingEspecializacionFecha(e.target.value)}
+                              className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400 bg-white transition"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <FileUpload
+                        key={formData.especializaciones.length}
+                        label="Cargar soporte del postgrado"
+                        accept="image/*,.pdf"
+                        folder="especializaciones"
+                        onUploadSuccess={(url) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            especializaciones: [...prev.especializaciones, { 
+                              nombre: pendingEspecializacionNombre.trim() || `Postgrado #${prev.especializaciones.length + 1}`, 
+                              url,
+                              fecha: pendingEspecializacionFecha 
+                            }]
+                          }))
+                          setPendingEspecializacionNombre('')
+                          setPendingEspecializacionFecha('')
+                        }}
+                        onClear={() => { }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Sección de Otros Cursos */}
               <div className="space-y-6 pt-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3 mb-1"><div className="w-1 h-6 rounded-full bg-amber-500" /><div><h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#022c22]">Otros Cursos Realizados</h3></div></div>
-                    <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Certificados de cursos, talleres o seminarios relevantes.</p>
-                  </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-full">Opcional</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {formData.url_cursos_extras.map((url, idx) => (
-                    <div key={idx} className="relative group p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-slate-600 truncate">Soporte #{idx + 1}</span>
-                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">Ver archivo</a>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, url_cursos_extras: prev.url_cursos_extras.filter((_, i) => i !== idx) }))}
-                        className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"
-                      >
-                        <XCircle size={16} />
-                      </button>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3 mb-1"><div className="w-1 h-6 rounded-full bg-amber-500" /><div><h3 className="text-xs font-black uppercase tracking-[0.2em] text-[#022c22]">Otros Cursos Realizados</h3></div></div>
+                      <p className="text-[10px] text-slate-400 font-medium ml-4 italic">Certificados de cursos, talleres o seminarios relevantes.</p>
                     </div>
-                  ))}
-                  <FileUpload
-                    label="Cargar nuevo curso"
-                    accept="image/*,.pdf"
-                    folder="cursos_extras"
-                    onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_cursos_extras: [...prev.url_cursos_extras, url] }))}
-                    onClear={() => { }}
-                  />
-                </div>
-              </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-0.5 rounded-full">Opcional</span>
+                  </div>
 
-              <button type="submit" disabled={submitLoading || !formData.url_cv || !formData.url_titulo} className={`w-full font-black rounded-xl flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 shadow-xl bg-emerald-600 text-white disabled:opacity-60 uppercase tracking-widest text-xs ${INPUT_H}`}>
+                  {/* Lista de cursos cargados */}
+                  {formData.cursos_extras.length > 0 && (
+                    <div className="space-y-2">
+                      {formData.cursos_extras.map((curso, idx) => (
+                        <div key={idx} className="group flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                            <FileText size={14} className="text-amber-600" />
+                          </div>
+                           <div className="flex-1 min-w-0 space-y-1">
+                            <input
+                              type="text"
+                              value={curso.nombre}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                cursos_extras: prev.cursos_extras.map((c, i) =>
+                                  i === idx ? { ...c, nombre: e.target.value } : c
+                                )
+                              }))}
+                              placeholder="Nombre del curso..."
+                              className="w-full text-xs font-bold text-slate-700 bg-transparent border-none outline-none focus:ring-0 placeholder:text-slate-400 truncate"
+                            />
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <Calendar size={10} className="text-slate-400" />
+                                <input 
+                                  type="date" 
+                                  value={curso.fecha}
+                                  onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    cursos_extras: prev.cursos_extras.map((c, i) =>
+                                      i === idx ? { ...c, fecha: e.target.value } : c
+                                    )
+                                  }))}
+                                  className="text-[10px] font-medium text-slate-500 bg-transparent border-none p-0 focus:ring-0 w-24"
+                                />
+                              </div>
+                              <a href={curso.url} target="_blank" rel="noopener noreferrer"
+                                className="text-[9px] text-blue-500 font-bold hover:underline uppercase tracking-widest">
+                                Ver archivo
+                              </a>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, cursos_extras: prev.cursos_extras.filter((_, i) => i !== idx) }))}
+                            className="p-1.5 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors shrink-0"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Input nombre + Fecha + Uploader para nuevo curso */}
+                  <div className="space-y-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nombre del Curso</label>
+                        <input
+                          type="text"
+                          value={pendingCursoNombre}
+                          onChange={(e) => setPendingCursoNombre(e.target.value)}
+                          placeholder="Nombre del curso (ej: Valuación Inmobiliaria UCAB)..."
+                          className="w-full h-10 px-4 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-blue-400 placeholder:text-slate-400 bg-white transition"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Fecha del Certificado</label>
+                        <div className="relative">
+                          <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="date"
+                            value={pendingCursoFecha}
+                            onChange={(e) => setPendingCursoFecha(e.target.value)}
+                            className="w-full h-10 pl-10 pr-4 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-400/40 focus:border-blue-400 bg-white transition"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <FileUpload
+                      key={formData.cursos_extras.length}
+                      label="Cargar certificado del curso"
+                      accept="image/*,.pdf"
+                      folder="cursos_extras"
+                      onUploadSuccess={(url) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          cursos_extras: [...prev.cursos_extras, { 
+                            nombre: pendingCursoNombre.trim() || `Curso #${prev.cursos_extras.length + 1}`, 
+                            url,
+                            fecha: pendingCursoFecha 
+                          }]
+                        }))
+                        setPendingCursoNombre('')
+                        setPendingCursoFecha('')
+                      }}
+                      onClear={() => {}}
+                    />
+                  </div>
+                </div>
+
+
+
+              <button type="submit" disabled={submitLoading || !formData.url_cv || !formData.url_titulo || (formData.nivelProfesional === 'Postgrado' && formData.especializaciones.length === 0)} className={`w-full font-black rounded-xl flex items-center justify-center gap-3 transition-all hover:-translate-y-0.5 shadow-xl bg-emerald-600 text-white disabled:opacity-60 uppercase tracking-widest text-xs ${INPUT_H}`}>
                 {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <>Finalizar Registro<ArrowRight size={16} /></>}
               </button>
             </form>
@@ -269,7 +498,7 @@ export default function VerificarPreinscripcionProgramaPage() {
           )}
         </div>
       </main>
-      <footer className="bg-[#011a14] py-12 text-center border-t border-white/5"><p className="text-gray-600 text-[10px] uppercase tracking-[0.2em]">CÁMARA INMOBILIARIA • 2026</p></footer>
+      <Footer />
     </div>
   )
 }

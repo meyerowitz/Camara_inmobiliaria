@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import Footer from '@/pages/landing/components/Footer'
 import bgPreani from '@/assets/Pzo.jpg'
 import logoPreani from '@/assets/Preani.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
@@ -41,14 +42,14 @@ export default function PreaniPage() {
           <p className="text-emerald-500 font-black uppercase tracking-[0.4em] text-xs animate-header-text">Especialización Profesional Avanzada</p>
           <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black tracking-tighter animate-header-text">PROGRAMA <span className="text-emerald-500 italic">PREANI</span></h1>
           <p className="text-emerald-100/60 text-lg md:text-xl font-light max-w-2xl mx-auto animate-header-text">
-            Programa de Estudios Avanzados en Negocios Inmobiliarios. Evolución y excelencia académica.
+            Estudios Avanzados en Negocios Inmobiliarios. Evolución y excelencia académica.
           </p>
         </div>
       </header>
 
       <main className="bg-white text-slate-900 rounded-t-[3rem] sm:rounded-t-[4rem] -mt-12 relative z-10 px-4 sm:px-6 lg:px-20 py-24">
         <div className="max-w-6xl mx-auto">
-          
+
           <div className="flex flex-col lg:flex-row items-center gap-12 mb-20 bg-slate-50 p-8 lg:p-16 rounded-[3rem] border border-emerald-50 relative overflow-hidden">
             <div className="w-full lg:w-1/3 flex justify-center relative z-10">
               <img src={logoPreani} alt="Logo PREANI" className="w-64 h-auto drop-shadow-2xl" />
@@ -68,31 +69,31 @@ export default function PreaniPage() {
           <ProgramTimeline modules={MODULES} />
 
           {/* --- SECCIÓN DE CONTACTO CON IMÁGENES DE MARCA DE AGUA --- */}
-          <div className="relative mt-16 group"> 
-            <div 
-              ref={(el) => setRevealEstudiosa(el)} 
+          <div className="relative mt-16 group">
+            <div
+              ref={(el) => setRevealEstudiosa(el)}
               className="reveal-on-scroll absolute -bottom-50 -left-150 z-10 pointer-events-none hidden lg:block transition-all duration-1000 opacity-0 [&.active]:opacity-20"
             >
-              <img 
-                src={Estudiosa} 
-                alt="Decoración" 
+              <img
+                src={Estudiosa}
+                alt="Decoración"
                 className="h-[800px] w-auto max-w-none transform"
               />
             </div>
-            <div 
-              ref={(el) => setRevealEstudioso(el)} 
+            <div
+              ref={(el) => setRevealEstudioso(el)}
               className="reveal-on-scroll absolute -bottom-40 left-270 z-10 pointer-events-none hidden lg:block transition-all duration-1000 opacity-0 [&.active]:opacity-20"
             >
-              <img 
-                src={Estudioso} 
-                alt="Decoración" 
+              <img
+                src={Estudioso}
+                alt="Decoración"
                 className="h-[650px] w-auto max-w-none transform"
               />
             </div>
-          
+
             <div className="relative z-10 p-6 sm:p-12 rounded-[2rem] sm:rounded-[4rem] bg-[#022c22]/95 backdrop-blur-sm text-white text-center space-y-8 overflow-hidden border border-white/5">
               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-              
+
               <div className="relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black mb-4 uppercase tracking-tighter">
                   ¿Listo para dar el siguiente paso?
@@ -115,11 +116,7 @@ export default function PreaniPage() {
         </div>
       </main>
 
-      <footer className="bg-[#011a14] px-6 lg:px-20 py-12 pt-16 text-center border-t border-white/5 relative z-10">
-        <p className="text-gray-600 text-[10px] uppercase tracking-[0.2em]">
-          PREANI • Coordinación de Formación • Cámara Inmobiliaria
-        </p>
-      </footer>
+      <Footer />
     </div>
   )
 }

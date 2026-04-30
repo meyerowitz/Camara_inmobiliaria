@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import Footer from '@/pages/landing/components/Footer'
 import bgCaracas from '@/assets/Pzo.jpg'
 import Estudiosa from '@/assets/estudiosa1.png'
 import Estudioso from '@/assets/estudioso1.png'
@@ -38,10 +39,10 @@ export default function PadiPage() {
             Especialización Profesional
           </p>
           <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black tracking-tighter animate-header-text" style={{ animationDelay: '0.4s', opacity: 0 }}>
-            PROGRAMA <span className="text-emerald-500 italic">PADI</span>
+            <span className="text-emerald-500 italic">PADI</span>
           </h1>
           <p className="text-emerald-100/60 text-lg md:text-xl font-light max-w-2xl mx-auto animate-header-text" style={{ animationDelay: '0.6s', opacity: 0 }}>
-            Programa de Especialización en Administración de Inmuebles. Materias de alto nivel dictadas por expertos calificados.
+            Especialización en Administración de Inmuebles. Materias de alto nivel dictadas por expertos calificados.
           </p>
         </div>
       </header>
@@ -101,6 +102,7 @@ export default function PadiPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

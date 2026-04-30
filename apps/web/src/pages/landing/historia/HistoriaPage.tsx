@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 import { API_URL } from '@/config/env'
 
 const useScrollReveal = () => {
@@ -84,9 +85,7 @@ export default function Historia() {
           </div>
         </div>
       </main>
-      <footer className='bg-[#011a14] px-6 lg:px-20 py-12 text-center border-t border-white/5'>
-        <p className='text-gray-600 text-[10px] uppercase tracking-[0.2em]'>© 2026 Cámara Inmobiliaria del Estado Bolívar • RIF J-30462520-0</p>
-      </footer>
+      <Footer />
     </div>
   )
 }

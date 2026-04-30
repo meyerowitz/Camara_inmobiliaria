@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgBolivar from '@/assets/Pzo.jpg'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 import SEO from '@/components/SEO'
 
 const useScrollReveal = () => {
@@ -63,9 +64,7 @@ export default function MisionVision() {
           <button onClick={() => navigate('/')} className='px-10 py-4 border-2 border-[#022c22] text-[#022c22] rounded-full font-black uppercase text-xs tracking-widest hover:bg-[#022c22] hover:text-white transition-all'>Conoce más sobre nosotros</button>
         </div>
       </main>
-      <footer className='bg-[#011a14] px-6 lg:px-20 py-12 text-center border-t border-white/5'>
-        <p className='text-gray-600 text-[10px] uppercase tracking-[0.2em]'>© 2026 Cámara Inmobiliaria del Estado Bolívar • RIF J-30462520-0</p>
-      </footer>
+      <Footer />
     </div>
   )
 }

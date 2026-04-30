@@ -20,7 +20,7 @@ function isImageUrl(url: string): boolean {
 
 
 export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, string> }) {
-  const [convenios, setConvenios] = useState(FALLBACK_CONVENIOS)
+  const [convenios, setConvenios] = useState<any[]>([])
   const revealTextConvenios = useScrollReveal()
 
   // Evita huecos en el marquee cuando hay pocos items
@@ -43,6 +43,8 @@ export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, st
     @keyframes marquee-infinite { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
     .animate-marquee-infinite { display: flex; width: max-content; animation: marquee-infinite 28s linear infinite; will-change: transform; }
   `
+
+  if (convenios.length === 0) return null
 
   return (
     <section id='convenios' className='bg-white py-10 scroll-mt-24 overflow-hidden'>
@@ -68,13 +70,13 @@ export default function ConveniosSection({ cfg = {} }: { cfg?: Record<string, st
                 >
                   <div className='h-32 lg:h-40 w-56 lg:w-80 rounded-2xl overflow-hidden flex items-center justify-center group-hover:scale-[1.02] transition-all duration-500'>
                     {isImageUrl(item.logo_url) ? (
-                      <img src={item.logo_url} alt={item.nombre} className='w-full h-full object-contain p-4' />
+                      <img src={item.logo_url} alt={item.nombre_aliado || item.nombre} className='w-full h-full object-contain p-4' />
                     ) : (
                       <span className='text-3xl lg:text-4xl' aria-hidden>📄</span>
                     )}
                   </div>
                   <p className='mt-2 text-center text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 max-w-56 lg:max-w-80 truncate'>
-                    {item.nombre}
+                    {item.nombre_aliado || item.nombre}
                   </p>
                 </a>
               ))}

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
+import Footer from '@/pages/landing/components/Footer'
 import bgPegi from '@/assets/Pzo.jpg'
 import logoPegi from '@/assets/Pegi.jpg'
 import Estudiosa from '@/assets/estudiosa1.png'
@@ -38,7 +39,10 @@ export default function PegiPage() {
       >
         <div className="text-center space-y-6 max-w-4xl">
           <p className="text-emerald-500 font-black uppercase tracking-[0.4em] text-xs animate-header-text">Formación Directiva Superior</p>
-          <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black tracking-tighter animate-header-text">PROGRAMA <span className="text-emerald-500 italic">PEGI</span></h1>
+          <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black tracking-tighter animate-header-text"><span className="text-emerald-500 italic">PEGI</span></h1>
+          <p className="text-emerald-100/60 text-lg md:text-xl font-light max-w-2xl mx-auto animate-header-text">
+            Especialización en Negocios Inmobiliarios. Evolución y excelencia académica.
+          </p>
         </div>
       </header>
 
@@ -86,6 +90,7 @@ export default function PegiPage() {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   )
 }

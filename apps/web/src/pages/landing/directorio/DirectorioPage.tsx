@@ -15,7 +15,7 @@ const DirectorioPage = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
 
-  const [filterType, setFilterType] = useState<'Todos' | 'Natural' | 'Juridico'>('Todos');
+  const [filterType, setFilterType] = useState<'Todos' | 'Natural' | 'Corporativo'>('Todos');
 
   useEffect(() => {
     const fetchAfiliados = async () => {
@@ -61,11 +61,11 @@ const DirectorioPage = () => {
 
   // Depuración: contar tipos reales en la data
   const stats = useMemo(() => {
-    const counts: Record<string, number> = { Natural: 0, Juridico: 0, Otros: 0 };
+    const counts: Record<string, number> = { Natural: 0, Corporativo: 0, Otros: 0 };
     afiliados.forEach(a => {
       const t = a.tipo_afiliado;
       if (t === 'Natural') counts.Natural++;
-      else if (t === 'Juridico') counts.Juridico++;
+      else if (t === 'Corporativo' || t === 'Juridico') counts.Corporativo++;
       else counts.Otros++;
     });
     return counts;
@@ -126,7 +126,7 @@ const DirectorioPage = () => {
                   {[
                     { id: 'Todos', label: 'Todos' },
                     { id: 'Natural', label: 'Independientes' },
-                    { id: 'Juridico', label: 'Corporativos' },
+                    { id: 'Corporativo', label: 'Corporativos' },
                   ].map((f) => (
                     <button
                       key={f.id}
@@ -145,7 +145,7 @@ const DirectorioPage = () => {
                 {/* Debug Info (Visible en desarrollo) */}
                 <div className="flex gap-4 text-[9px] font-bold text-slate-400 dark:text-emerald-500/40 uppercase tracking-tighter">
                   <span>Ind: {stats.Natural}</span>
-                  <span>Corp: {stats.Juridico}</span>
+                  <span>Corp: {stats.Corporativo}</span>
                   {stats.Otros > 0 && <span className="text-amber-500">Sin tipo: {stats.Otros}</span>}
                 </div>
               </div>

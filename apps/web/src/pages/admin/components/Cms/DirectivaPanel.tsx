@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { api, FormField, Input, BtnPrimary, BtnDanger, BtnSecondary, ListDetail, uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared'
+import { Edit, Upload, CheckCircle, Trash2 } from 'lucide-react'
 import { sendToPreview } from '@/pages/admin/components/Cms/LandingPreviewPane'
 import { formatNombreCard } from '@/utils/formatters'
-import { Upload, CheckCircle, Trash2 } from 'lucide-react'
 
 import { invalidateDirectivaCache } from '@/pages/landing/junta-directiva/JuntaDirectivaPage'
 
@@ -45,15 +45,42 @@ export const DirectivaPanel = () => {
     }
   }
 
-  const load = useCallback(async () => { setLoading(true); const data = await api.get('/api/cms/directiva'); if (data.success) setItems(data.data); setLoading(false) }, [])
+  const load = useCallback(async () => {
+    setLoading(true);
+    const resp = await api.get('/api/cms/directiva');
+    if (resp.success && Array.isArray(resp.data)) {
+      const normalized = resp.data.map((item: any) => ({
+        ...item,
+        id: item.id_miembro,
+        activo: item.activo === 1 || item.activo === true,
+      }));
+      setItems(normalized);
+    }
+    setLoading(false);
+  }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (selectedId && selectedId !== 'new') {
+      const item = items.find(i => i.id === selectedId)
+      if (item) {
+        setForm({ 
+          nombre: item.nombre, 
+          cargo: item.cargo, 
+          foto_url: item.foto_url || '', 
+          orden: item.orden, 
+          activo: item.activo === 1 || item.activo === true 
+        })
+      }
+    }
+  }, [selectedId, items])
   const openEdit = (item: DirectivaItem) => { setSelectedId(item.id); setForm({ nombre: item.nombre, cargo: item.cargo, foto_url: item.foto_url || '', orden: item.orden, activo: item.activo === 1 }); setIsEditing(true) }
   const openNew = () => { setSelectedId('new'); setForm({ nombre: '', cargo: '', foto_url: '', orden: 0, activo: true }); setIsEditing(true) }
   const save = async () => {
     setSaving(true)
     try {
-      const res = selectedId === 'new' 
+      const res = selectedId === 'new'
         ? await api.post('/api/cms/directiva', form)
         : await api.put(`/api/cms/directiva/${selectedId}`, form)
 
@@ -90,19 +117,19 @@ export const DirectivaPanel = () => {
 
       <div className="grid grid-cols-1 gap-5">
         <FormField label="Nombre Completo">
-          <Input 
-            value={form.nombre} 
-            onChange={f('nombre')} 
-            placeholder="Ej. Francisco Piñango" 
+          <Input
+            value={form.nombre}
+            onChange={f('nombre')}
+            placeholder="Ej. Francisco Piñango"
             className="!text-sm !py-3 bg-slate-50/50 border-slate-200 focus:bg-white transition-all"
           />
         </FormField>
 
         <FormField label="Cargo / Posición">
-          <Input 
-            value={form.cargo} 
-            onChange={f('cargo')} 
-            placeholder="Ej. Presidente, Secretario..." 
+          <Input
+            value={form.cargo}
+            onChange={f('cargo')}
+            placeholder="Ej. Presidente, Secretario..."
             className="!text-sm !py-3 bg-slate-50/50 border-slate-200 focus:bg-white transition-all"
           />
         </FormField>
@@ -111,7 +138,7 @@ export const DirectivaPanel = () => {
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Fotografía</span>
             {form.foto_url && (
-              <button 
+              <button
                 onClick={() => setForm(p => ({ ...p, foto_url: '' }))}
                 className="flex items-center gap-1 text-[10px] font-bold text-rose-500 hover:text-rose-700 transition-colors"
               >
@@ -136,16 +163,15 @@ export const DirectivaPanel = () => {
               onDrop={() => setIsDraggingOver(false)}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-not-allowed"
             />
-            <div className={`flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed rounded-2xl transition-all duration-300 ${
-              uploading 
-                ? 'border-emerald-200 bg-emerald-50/30' 
+            <div className={`flex flex-col items-center justify-center py-8 px-4 border-2 border-dashed rounded-2xl transition-all duration-300 ${uploading
+                ? 'border-emerald-200 bg-emerald-50/30'
                 : isDraggingOver
                   ? 'border-emerald-500 bg-emerald-100 scale-[1.02] shadow-xl shadow-emerald-500/10'
-                  : form.foto_url 
-                    ? 'border-emerald-400 bg-emerald-50/50' 
+                  : form.foto_url
+                    ? 'border-emerald-400 bg-emerald-50/50'
                     : 'border-slate-200 group-hover:border-emerald-400 group-hover:bg-emerald-50/10'
-            }`}>
-              
+              }`}>
+
               {uploading ? (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -182,14 +208,14 @@ export const DirectivaPanel = () => {
         </FormField>
 
         <div className="flex gap-3 pt-4 border-t border-gray-50">
-          <BtnPrimary 
-            onClick={save} 
+          <BtnPrimary
+            onClick={save}
             disabled={saving || uploading}
             className="!rounded-xl !py-3 flex-1"
           >
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </BtnPrimary>
-          <BtnSecondary 
+          <BtnSecondary
             onClick={() => { setSelectedId(null); setIsEditing(false) }}
             className="!rounded-xl !py-3 flex-1"
           >
@@ -202,18 +228,25 @@ export const DirectivaPanel = () => {
 
   return (
     <ListDetail
-      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); setIsEditing(false) }}
+      items={items} loading={loading} selectedId={selectedId} setSelectedId={(id) => { setSelectedId(id); if(id) setIsEditing(true) }}
       isEditing={isEditing} setIsEditing={setIsEditing}
       onNew={openNew}
       renderRow={(item, sel) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#E9FAF4] flex items-center justify-center text-[#00B870] font-black text-sm flex-shrink-0 overflow-hidden">
-            {item.foto_url ? <img src={item.foto_url} className="w-full h-full object-cover" /> : item.nombre.charAt(0)}
+        <div className="flex items-center justify-between gap-3 p-1 w-full">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-8 h-8 rounded-full bg-[#E9FAF4] flex items-center justify-center text-[#00B870] font-black text-sm flex-shrink-0 overflow-hidden">
+              {item.foto_url ? <img src={item.foto_url} className="w-full h-full object-cover" /> : item.nombre.charAt(0)}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className={`text-sm font-semibold truncate ${sel ? 'text-[#00B870]' : 'text-slate-800'}`}>
+                {formatNombreCard(item.nombre)}
+              </span>
+              <span className="text-[10px] text-slate-400 truncate uppercase font-bold tracking-tighter">{item.cargo}</span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className={['text-sm font-semibold truncate', sel ? 'text-[#00B870]' : 'text-slate-800'].join(' ')}>{formatNombreCard(item.nombre)}</span>
-
-            <span className="text-xs text-slate-400 truncate">{item.cargo}</span>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={(e) => { e.stopPropagation(); openEdit(item); }} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded" title="Editar"><Edit size={14} /></button>
+            <button onClick={(e) => { e.stopPropagation(); remove(item.id); }} className="p-1 text-rose-600 hover:bg-rose-50 rounded" title="Eliminar"><Trash2 size={14} /></button>
           </div>
         </div>
       )}
@@ -225,7 +258,6 @@ export const DirectivaPanel = () => {
                 {item.foto_url ? <img src={item.foto_url} className="w-full h-full object-cover" /> : item.nombre.charAt(0)}
               </div>
               <div><h3 className="text-sm font-bold text-slate-800">{formatNombreCard(item.nombre)}</h3><p className="text-xs text-slate-400">{item.cargo}</p></div>
-
             </div>
             <div className="flex gap-2"><BtnSecondary onClick={() => openEdit(item)}>Editar</BtnSecondary><BtnDanger onClick={() => remove(item.id)}>Eliminar</BtnDanger></div>
           </div>

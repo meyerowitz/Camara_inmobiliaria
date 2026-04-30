@@ -36,3 +36,7 @@ scripts/temp_*
 scratch/
 temp/
 tmp/
+
+# Database Seeds
+apps/api/src/config/seed-*.ts
+apps/api/src/config/afiliados_seed.json

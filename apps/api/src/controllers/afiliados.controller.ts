@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { db } from '../lib/db.js';
+
+const sha256 = (raw: string) => createHash('sha256').update(raw).digest('hex');
 import { generarCredenciales } from '../lib/credentials.js';
 import {
   enviarCorreoVerificacion,
@@ -71,10 +73,10 @@ export const getAfiliadoById = async (req: Request, res: Response): Promise<void
   try {
     const { id } = req.params
     const requesterId = req.user!.id_agremiado
-    const requesterRol = req.user!.rol
+    const requesterRoles = req.user!.roles ?? [req.user!.rol]
 
     // Afiliados solo pueden consultar su propio registro
-    if (requesterRol !== 'admin' && requesterId !== Number(id)) {
+    if (!requesterRoles.some(r => ['admin','super_admin'].includes(r)) && requesterId !== Number(id)) {
       res.status(403).json({ success: false, message: 'Acceso denegado' })
       return
     }
@@ -120,11 +122,11 @@ export const registerAfiliado = async (req: Request, res: Response) => {
       notas
     } = req.body;
 
-    // Validación básica
-    if (!nombreCompleto || !email || !cedulaRif || !telefono) {
+    // Validación básica (nombre_completo es generado, no se necesita)
+    if (!email || !cedulaRif || !telefono) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Los campos básicos son requeridos (nombreCompleto, email, cedulaRif, telefono)' 
+        message: 'Los campos básicos son requeridos (email, cedulaRif, telefono)' 
       });
     }
 
@@ -238,24 +240,36 @@ export const verificarEmail = async (req: Request, res: Response) => {
       });
     }
 
-    // Insertar en agremiados
-    const estatus = '1_SOLICITUD';
-    const cibir = null;
+    // Insertar en agremiados — nombre_completo es columna VIRTUAL GENERATED, NO se inserta
+    const estatus = '1_PREINSCRIPCION';
 
     try {
+      // Intentamos parsear nombres/apellidos del nombre_completo almacenado en la verificación
+      const fullName = String(registro.nombre_completo || '').trim()
+      const parts = fullName.split(' ')
+      const apellidos = parts.length > 1 ? parts.slice(Math.ceil(parts.length / 2)).join(' ') : ''
+      const nombres = parts.length > 1 ? parts.slice(0, Math.ceil(parts.length / 2)).join(' ') : fullName
+
       const insertResult = await db.execute({
         sql: `INSERT INTO agremiados (
-                nombre_completo, 
+                nombres,
+                apellidos,
                 email, 
                 cedula_rif, 
                 telefono, 
-                estatus, 
-                codigo_cibir
+                estatus
               ) VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
-        args: [registro.nombre_completo, registro.email, registro.cedula_rif, registro.telefono, estatus, cibir]
+        args: [nombres || fullName, apellidos || null, registro.email, registro.cedula_rif, registro.telefono, estatus]
       });
 
-      const newAfiliado = insertResult.rows[0];
+      const newAfiliado = insertResult.rows[0] as any;
+
+      if (newAfiliado?.id_agremiado) {
+        await db.execute({
+          sql: `UPDATE agremiados SET codigo_cibir = CAST(id_agremiado AS TEXT) WHERE id_agremiado = ?`,
+          args: [newAfiliado.id_agremiado]
+        });
+      }
 
       // Eliminar el token usado
       await db.execute({
@@ -357,42 +371,40 @@ export const aprobarAfiliado = async (req: Request, res: Response) => {
       });
     }
 
-    if (agremiado.estatus !== '6_JUNTA_DIRECTIVA' && agremiado.estatus !== '1_SOLICITUD') {
+    if (['Afiliado', 'Moroso', 'Suspendido', 'Rechazado'].includes(agremiado.estatus as string)) {
       return res.status(400).json({
         success: false,
-        message: 'El candidato debe estar en proceso de aprobación para ser aprobado'
+        message: 'El candidato ya tiene un estatus final y no puede ser aprobado nuevamente'
       });
     }
 
-    // 2. Generar el código CIBIR (CIBIR-YYYY-NNN) - Se mantiene como identificador
-    const currentYear = new Date().getFullYear();
-    const prefix = `CIBIR-${currentYear}-`;
-
-    const resultUltimoCibir = await db.execute({
-      sql: 'SELECT codigo_cibir FROM agremiados WHERE codigo_cibir LIKE ? ORDER BY codigo_cibir DESC LIMIT 1',
-      args: [`${prefix}%`]
+    // 2. Generar el código de Afiliado (Secuencial Numérico)
+    // Buscamos el último código numérico asignado
+    const resultUltimoCode = await db.execute({
+      sql: `SELECT codigo_cibir FROM agremiados 
+            WHERE codigo_cibir GLOB '[0-9]*' 
+            ORDER BY CAST(codigo_cibir AS INTEGER) DESC LIMIT 1`,
+      args: []
     });
 
     let correlativo = 1;
-    if (resultUltimoCibir.rows.length > 0 && resultUltimoCibir.rows[0].codigo_cibir) {
-      const lastCode = resultUltimoCibir.rows[0].codigo_cibir as string;
-      const parts = lastCode.split('-');
-      const lastNumber = parseInt(parts[2], 10);
-      if (!isNaN(lastNumber)) {
-        correlativo = lastNumber + 1;
+    if (resultUltimoCode.rows.length > 0 && resultUltimoCode.rows[0].codigo_cibir) {
+      const lastCode = parseInt(resultUltimoCode.rows[0].codigo_cibir as string, 10);
+      if (!isNaN(lastCode)) {
+        correlativo = lastCode + 1;
       }
     }
 
-    const codigoCibir = `${prefix}${correlativo.toString().padStart(3, '0')}`;
+    const codigoAfiliado = correlativo.toString();
 
-    // 3. Actualizar a estatus 7_RESULTADO (Aprobado)
+    // 3. Actualizar a estatus Afiliado (aprobado final)
     const fechaCambio = new Date().toISOString();
     
     const updateResult = await db.execute({
       sql: `UPDATE agremiados 
-            SET estatus = '7_RESULTADO', codigo_cibir = ?, fecha_ultimo_cambio_estatus = ?
+            SET estatus = 'Afiliado', inscripcion_pagada = 1, codigo_cibir = ?, fecha_ultimo_cambio_estatus = ?, actualizado_en = ?
             WHERE id_agremiado = ? RETURNING *`,
-      args: [codigoCibir, fechaCambio, id]
+      args: [codigoAfiliado, fechaCambio, fechaCambio, id]
     });
 
     const afiliadoActualizado = updateResult.rows[0];
@@ -408,15 +420,17 @@ export const aprobarAfiliado = async (req: Request, res: Response) => {
         // Crear el usuario en estado "por configurar" (password aleatorio inútil)
         const placeholderPass = await bcrypt.hash(randomUUID(), 10);
         
-        // Insertar o actualizar usuario con el token
+        // Insertar o actualizar usuario con el token hasheado
+        const resetTokenHash = sha256(resetToken)
         await db.execute({
-          sql: `INSERT INTO users (email, password_hash, rol, id_agremiado, reset_token, reset_token_expira)
-                VALUES (?, ?, 'afiliado', ?, ?, ?)
+          sql: `INSERT INTO users (email, password_hash, roles, id_agremiado, reset_token_hash, reset_token_expira)
+                VALUES (?, ?, '["afiliado"]', ?, ?, ?)
                 ON CONFLICT(email) DO UPDATE SET 
                   id_agremiado = excluded.id_agremiado,
-                  reset_token = excluded.reset_token, 
-                  reset_token_expira = excluded.reset_token_expira`,
-          args: [agremiado.email, placeholderPass, id, resetToken, expStr]
+                  reset_token_hash = excluded.reset_token_hash, 
+                  reset_token_expira = excluded.reset_token_expira,
+                  actualizado_en = strftime('%Y-%m-%dT%H:%M:%SZ','now')`,
+          args: [agremiado.email, placeholderPass, id, resetTokenHash, expStr]
         });
 
         // Enviar Correo de Aprobación
@@ -460,23 +474,19 @@ export const rechazarAfiliado = async (req: Request, res: Response) => {
       });
     }
 
-    if (agremiado.estatus === '9_AFILIACION') {
+    if (agremiado.estatus === 'Afiliado') {
       return res.status(400).json({
         success: false,
         message: 'No se puede rechazar a un afiliado activo'
       });
     }
 
-    // 2. Actualizar a estatus Suspendido (ya que 'Rechazado' no está en el CHECK constraint original de initdb.ts)
-    // En initdb.ts el estatus es CHECK (estatus IN ('Preinscrito','CIBIR','Moroso','Suspendido'))
     const fechaCambio = new Date().toISOString();
-    
-    // NOTA: Para no romper la DB actual cambiamos el estatus a 'Suspendido', mapeado como 'Rechazado' en la UI
     const updateResult = await db.execute({
       sql: `UPDATE agremiados 
-            SET estatus = 'Suspendido', fecha_ultimo_cambio_estatus = ?
+            SET estatus = 'Rechazado', fecha_ultimo_cambio_estatus = ?, actualizado_en = ?
             WHERE id_agremiado = ? RETURNING *`,
-      args: [fechaCambio, id]
+      args: [fechaCambio, fechaCambio, id]
     });
 
     return res.status(200).json({
@@ -505,9 +515,10 @@ export const buscarAfiliadosPublic = async (req: Request, res: Response) => {
     // Retornamos hasta 1000 afiliados (o todos) para que fuse.js en el frontend haga la búsqueda fuzzy y filtrado local sin saturar DB
     const result = await db.execute({
       sql: `
-      SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, cedula_rif, tipo_afiliado 
+      SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, cedula_rif, tipo_afiliado,
+             logo_url, instagram, facebook, linkedin, twitter, website
       FROM agremiados 
-      WHERE estatus = '9_AFILIACION' AND activo = 1
+      WHERE estatus = 'Afiliado' AND activo = 1
       ORDER BY nombre_completo ASC
     `,
       args: []
@@ -518,15 +529,16 @@ export const buscarAfiliadosPublic = async (req: Request, res: Response) => {
       console.log(`[DEBUG] Tipos encontrados:`, [...new Set(result.rows.map(r => r.tipo_afiliado))]);
     }
 
-    // Transformamos la respuesta para simular foto generica y redes sociales temporalmente 
+    // Usamos logo_url real si existe, sino ui-avatars como fallback
     const mappedData = result.rows.map((row) => ({
       ...row,
-      // Usamos una API the ui-avatars para generar fotos genericas
-      foto_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(row.nombre_completo as string)}&background=047857&color=fff&size=200`,
+      foto_url: (row.logo_url as string) || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.nombre_completo as string)}&background=047857&color=fff&size=200`,
       redes_sociales: {
-        instagram: '',
-        linkedin: '',
-        facebook: ''
+        instagram: row.instagram || '',
+        linkedin: row.linkedin || '',
+        facebook: row.facebook || '',
+        twitter: row.twitter || '',
+        website: row.website || ''
       }
     }));
 
@@ -548,13 +560,14 @@ export const getAfiliadoPublicById = async (req: Request, res: Response) => {
     const { id } = req.params;
     const result = await db.execute({
       sql: `
-        SELECT id_agremiado, nombre_completo, nombres, apellidos, razon_social, codigo_cibir, 
-               cedula_rif, tipo_afiliado, cedula_personal, email, telefono, direccion, 
-               fecha_nacimiento, nivel_academico, notas, instagram, facebook, linkedin, 
-               twitter, website, fecha_registro, estatus, activo, descripcion, redes_sociales,
-               fecha_inicio_servicio, mostrar_direccion_publica, direccion_publica
-        FROM agremiados 
-        WHERE id_agremiado = ? AND estatus = '9_AFILIACION' AND activo = 1
+        SELECT a.id_agremiado, a.nombre_completo, a.nombres, a.apellidos, a.razon_social, a.codigo_cibir, 
+               a.cedula_rif_tipo, a.cedula_rif, a.tipo_afiliado, a.cedula_personal, a.email, a.telefono, a.direccion, 
+               a.fecha_nacimiento, a.nivel_academico, a.notas, a.instagram, a.facebook, a.linkedin, 
+               a.twitter, a.website, a.logo_url, a.banner_url, a.fecha_registro, a.estatus, a.activo,
+               p.nombre_completo as empresa_pertenece, p.id_agremiado as empresa_id
+        FROM agremiados a
+        LEFT JOIN agremiados p ON a.id_agremiado_corp = p.id_agremiado
+        WHERE a.id_agremiado = ? AND a.estatus = 'Afiliado' AND a.activo = 1
       `,
       args: [Number(id)]
     });
@@ -565,24 +578,29 @@ export const getAfiliadoPublicById = async (req: Request, res: Response) => {
 
     const row = result.rows[0];
     
-    let parsedRedes = {
+    const mappedData: any = {
+      ...row,
+      foto_url: (row.logo_url as string) || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.nombre_completo as string)}&background=047857&color=fff&size=200`,
+      redes_sociales: {
         instagram: row.instagram || '',
         linkedin: row.linkedin || '',
         facebook: row.facebook || '',
-        twitter: row.twitter || ''
+        twitter: row.twitter || '',
+        website: row.website || ''
+      }
     };
-    
-    if (row.redes_sociales) {
-        try {
-            parsedRedes = { ...parsedRedes, ...JSON.parse(row.redes_sociales as string) };
-        } catch(e) {}
-    }
 
-    const mappedData = {
-      ...row,
-      foto_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(row.nombre_completo as string)}&background=047857&color=fff&size=200`,
-      redes_sociales: parsedRedes
-    };
+    if (row.tipo_afiliado === 'Corporativo' || row.tipo_afiliado === 'Juridico') {
+      const assocResult = await db.execute({
+        sql: `
+          SELECT id_agremiado, nombre_completo, codigo_cibir, cedula_rif, tipo_afiliado, logo_url
+          FROM agremiados
+          WHERE id_agremiado_corp = ? AND estatus = 'Afiliado' AND activo = 1
+        `,
+        args: [Number(id)]
+      });
+      mappedData.afiliados_asociados = assocResult.rows;
+    }
 
     return res.status(200).json({
       success: true,
@@ -602,33 +620,27 @@ export const getSolicitudesCibir = async (req: Request, res: Response) => {
   try {
     const tab = (req.query.tab as string) || 'todos'; // todos | pendiente | aprobado | rechazado
 
-    // Mapeo de Tabs a los estados reales en BD
-    // Pendiente -> Preinscrito
-    // Aprobado -> CIBIR
-    // Rechazado -> Suspendido (Para obedecer la base de datos estricta SQLite)
-    
-    // Primero, obtener los contadores para los badges de la UI
+    // Nuevo flujo de 6 pasos: 1_PREINSCRIPCION … 6_INSCRIPCION → Afiliado / Moroso / Suspendido / Rechazado
     const countSql = `
       SELECT 
         COUNT(*) as todos,
-        SUM(CASE WHEN estatus NOT IN ('9_AFILIACION', 'Suspendido', 'Rechazado', 'Moroso') THEN 1 ELSE 0 END) as pendiente,
-        SUM(CASE WHEN estatus = '9_AFILIACION' THEN 1 ELSE 0 END) as aprobado,
-        SUM(CASE WHEN estatus IN ('Suspendido', 'Rechazado') THEN 1 ELSE 0 END) as rechazado
+        SUM(CASE WHEN estatus IN ('1_PREINSCRIPCION','2_EXPEDIENTE','3_ENTREVISTA','4_VERIFICACION','5_CIBIR','6_INSCRIPCION') THEN 1 ELSE 0 END) as pendiente,
+        SUM(CASE WHEN estatus = 'Afiliado' THEN 1 ELSE 0 END) as aprobado,
+        SUM(CASE WHEN estatus IN ('Suspendido', 'Rechazado', 'Moroso') THEN 1 ELSE 0 END) as rechazado
       FROM agremiados
     `;
     const countResult = await db.execute({ sql: countSql, args: [] });
     const counts = countResult.rows[0];
 
-    // Luego, obtener la lista filtrada según el tab seleccionado
-    let sql = `SELECT * FROM agremiados WHERE estatus IN ('Preinscrito', 'CIBIR', 'Suspendido')`;
+    let sql = `SELECT * FROM agremiados`;
     const args: any[] = [];
-
-    if (tab === 'pendiente') {
-      sql = `SELECT * FROM agremiados WHERE estatus NOT IN ('9_AFILIACION', 'Suspendido', 'Rechazado', 'Moroso')`;
-    } else if (tab === 'aprobado') {
-      sql = `SELECT * FROM agremiados WHERE estatus = '9_AFILIACION'`;
-    } else if (tab === 'rechazado') {
-      sql = `SELECT * FROM agremiados WHERE estatus IN ('Suspendido', 'Rechazado')`;
+    const whereConditions: Record<string, string> = {
+      pendiente: `estatus IN ('1_PREINSCRIPCION','2_EXPEDIENTE','3_ENTREVISTA','4_VERIFICACION','5_CIBIR','6_INSCRIPCION')`,
+      aprobado: `estatus = 'Afiliado'`,
+      rechazado: `estatus IN ('Suspendido','Rechazado','Moroso')`,
+    };
+    if (tab in whereConditions) {
+      sql += ` WHERE ${whereConditions[tab]}`;
     }
 
     sql += ' ORDER BY fecha_registro DESC';
@@ -697,11 +709,11 @@ export const updateEstatusAfiliado = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { estatus, cibir_convalidado } = req.body;
 
+    // Estados válidos del nuevo flujo de 6 pasos
     const allowedStatuses = [
-      '1_SOLICITUD', '2_REQUISITOS', '3_CONFIRMACION', 
-      '4_RECEPCION', '5_ENTREVISTA', '6_JUNTA_DIRECTIVA', 
-      '7_RESULTADO', '8_FORMALIZACION', '9_AFILIACION',
-      'Moroso', 'Suspendido', 'Rechazado'
+      '1_PREINSCRIPCION', '2_EXPEDIENTE', '3_ENTREVISTA',
+      '4_VERIFICACION', '5_CIBIR', '6_INSCRIPCION',
+      'Afiliado', 'Moroso', 'Suspendido', 'Rechazado'
     ];
 
     if (estatus && !allowedStatuses.includes(estatus)) {
@@ -729,6 +741,31 @@ export const updateEstatusAfiliado = async (req: Request, res: Response) => {
 
     args.push(Number(id));
 
+    // Si el estatus cambia a 'Afiliado', nos aseguramos de que tenga un código de afiliado
+    if (estatus === 'Afiliado') {
+      const currentRes = await db.execute({
+        sql: 'SELECT codigo_cibir FROM agremiados WHERE id_agremiado = ?',
+        args: [Number(id)]
+      });
+      const current = currentRes.rows[0];
+      if (!current || !current.codigo_cibir) {
+        // Generar nuevo código correlativo
+        const resultUltimoCode = await db.execute({
+          sql: `SELECT codigo_cibir FROM agremiados 
+                WHERE codigo_cibir GLOB '[0-9]*' 
+                ORDER BY CAST(codigo_cibir AS INTEGER) DESC LIMIT 1`,
+          args: []
+        });
+        let correlativo = 1;
+        if (resultUltimoCode.rows.length > 0 && resultUltimoCode.rows[0].codigo_cibir) {
+          const lastCode = parseInt(resultUltimoCode.rows[0].codigo_cibir as string, 10);
+          if (!isNaN(lastCode)) correlativo = lastCode + 1;
+        }
+        setParts.push('codigo_cibir = ?');
+        args.splice(args.length - 1, 0, correlativo.toString()); // Insertar antes del ID
+      }
+    }
+
     const result = await db.execute({
       sql: `UPDATE agremiados SET ${setParts.join(', ')} WHERE id_agremiado = ? RETURNING *`,
       args
@@ -750,12 +787,14 @@ export const updateAfiliado = async (req: Request, res: Response) => {
     const fields = req.body;
 
     const allowedFields = [
-      'nombre_completo', 'nombres', 'apellidos', 'cedula_rif', 
+      // NOTA: nombre_completo es columna GENERADA, no se puede actualizar directamente
+      'nombres', 'apellidos', 'cedula_rif', 
       'cedula_personal', 'email', 'telefono', 'razon_social',
       'direccion', 'fecha_nacimiento', 'nivel_academico', 'notas',
       'estatus', 'cibir_convalidado', 'inscripcion_pagada', 'tipo_afiliado',
-      'url_titulo', 'url_cv', 'url_especializaciones', 'url_cursos_extras', 'codigo_cibir', 'id_agremiado_corp',
-      'instagram', 'facebook', 'linkedin', 'twitter', 'website', 'activo'
+      'codigo_cibir', 'id_agremiado_corp', 'id_representante_legal',
+      'instagram', 'facebook', 'linkedin', 'twitter', 'website',
+      'logo_url', 'banner_url', 'activo'
     ];
 
     // Validar duplicados si se están cambiando campos únicos
@@ -786,8 +825,8 @@ export const updateAfiliado = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Nada que actualizar o campos no permitidos' });
     }
 
-    // Siempre actualizar fecha de cambio si hay cambios
-    setParts.push('fecha_ultimo_cambio_estatus = ?');
+    // Siempre actualizar fecha de auditoría
+    setParts.push('actualizado_en = ?');
     args.push(new Date().toISOString());
 
     args.push(Number(id));
@@ -840,7 +879,7 @@ export const generarInvitacionCorporativa = async (req: Request, res: Response):
       res.status(404).json({ success: false, message: 'Afiliado corporativo no encontrado' }); return
     }
     const empresa = corp.rows[0] as any
-    if (empresa.tipo_afiliado !== 'Juridico') {
+    if (!['Juridico', 'Corporativo'].includes(empresa.tipo_afiliado)) {
       res.status(400).json({ success: false, message: 'Solo los afiliados corporativos pueden generar invitaciones' }); return
     }
 
@@ -1191,8 +1230,18 @@ export const createAfiliado = async (req: Request, res: Response): Promise<void>
       telefono, direccion, codigo_cibir 
     } = req.body;
 
-    if (!nombre_completo || !cedula_rif || !email) {
-      res.status(400).json({ success: false, message: 'Nombre, Cédula/RIF y Email son obligatorios.' });
+    if (!cedula_rif || !email) {
+      res.status(400).json({ success: false, message: 'Cédula/RIF y Email son obligatorios.' });
+      return;
+    }
+    // Para Natural se requieren nombres+apellidos; para Juridico razon_social
+    const tipoFinal = tipo_afiliado || 'Natural'
+    if (tipoFinal === 'Natural' && (!nombres || !apellidos)) {
+      res.status(400).json({ success: false, message: 'Para afiliado Natural, nombres y apellidos son obligatorios.' });
+      return;
+    }
+    if (['Juridico', 'Corporativo'].includes(tipoFinal) && !razon_social) {
+      res.status(400).json({ success: false, message: 'Para afiliado Jurídico, la razón social es obligatoria.' });
       return;
     }
 
@@ -1207,17 +1256,17 @@ export const createAfiliado = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // nombre_completo es columna GENERADA — no se inserta directamente
     const result = await db.execute({
       sql: `INSERT INTO agremiados (
-        nombre_completo, nombres, apellidos, razon_social, 
+        nombres, apellidos, razon_social, 
         cedula_rif, email, tipo_afiliado, estatus, 
-        telefono, direccion, codigo_cibir, fecha_registro
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+        telefono, direccion, codigo_cibir
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
       args: [
-        nombre_completo, nombres || null, apellidos || null, razon_social || null,
-        cedula_rif, email, tipo_afiliado || 'Natural', estatus || '9_AFILIACION',
-        telefono || null, direccion || null, codigo_cibir || null,
-        new Date().toISOString()
+        nombres || null, apellidos || null, razon_social || null,
+        cedula_rif, email, tipoFinal, estatus || 'Afiliado',
+        telefono || null, direccion || null, codigo_cibir || null
       ]
     });
 

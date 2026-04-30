@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Footer from '@/pages/landing/components/Footer';
 import bgCibir from "@/assets/Pzo.jpg";
 import heroCibir from "@/assets/Cibir.jpg";
 import Navbar from '@/pages/landing/components/navbar/Navbar';
@@ -120,7 +121,7 @@ export default function Cibir() {
             Formación Básica Inicial
           </p>
           <h1 className="text-4xl sm:text-5xl lg:text-8xl font-black tracking-tighter animate-header-text" style={{ animationDelay: "0.4s", opacity: 0 }}>
-            PROGRAMA <span className="text-emerald-500 italic">CIBIR</span>
+            <span className="text-emerald-500 italic">CIBIR</span>
           </h1>
           <p className="text-emerald-100/60 text-lg md:text-xl font-light max-w-2xl mx-auto animate-header-text" style={{ animationDelay: "0.6s", opacity: 0 }}>
             Curso Introductorio a los Bienes Raíces. El estándar de excelencia para nuevos profesionales en el sector.
@@ -248,11 +249,7 @@ export default function Cibir() {
         </div>
       </main >
 
-      <footer className="bg-[#011a14] px-6 lg:px-20 py-12 pt-16 text-center border-t border-white/5 relative z-10">
-        <p className="text-gray-600 text-[10px] uppercase tracking-[0.2em]">
-          CIBIR • COORDINACIÓN DE FORMACIÓN • CÁMARA INMOBILIARIA • 2026
-        </p>
-      </footer>
+      <Footer />
     </div >
   );
 }

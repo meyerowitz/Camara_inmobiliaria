@@ -13,6 +13,7 @@ type Row = {
   programa_codigo: ProgramaCodigo
   estatus: Estatus
   creado_en: string
+  id_estudiante: number
   estudiante_nombre: string
   estudiante_email: string
   estudiante_telefono: string | null
@@ -20,10 +21,6 @@ type Row = {
   entrevista_fecha?: string
   entrevista_hora?: string
   entrevista_lugar?: string
-  estudiante_url_titulo?: string
-  estudiante_url_cv?: string
-  estudiante_url_especializaciones?: string
-  estudiante_url_cursos_extras?: string
 }
 
 export default function PreinscripcionesPrincipalesPanel({
@@ -41,6 +38,8 @@ export default function PreinscripcionesPrincipalesPanel({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<Row | null>(null)
+  const [documentos, setDocumentos] = useState<{ id_documento: number; tipo_doc: string; url: string; nombre_archivo: string | null }[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
 
   const authHeaders = useMemo(() => {
     const h: Record<string, string> = {}
@@ -93,9 +92,13 @@ export default function PreinscripcionesPrincipalesPanel({
       const idFromUrl = urlParams.get('id')
       if (idFromUrl) {
         const found = data.find(r => r.id_inscripcion === Number(idFromUrl))
-        if (found) setSelected(found)
+        if (found) {
+          setSelected(found)
+          fetchDocumentos(found.id_estudiante)
+        }
       } else {
         setSelected(null)
+        setDocumentos([])
       }
     } catch (e: unknown) {
       const err = e as Error
@@ -103,6 +106,19 @@ export default function PreinscripcionesPrincipalesPanel({
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchDocumentos = async (idEstudiante: number) => {
+    setLoadingDocs(true)
+    setDocumentos([])
+    try {
+      const res = await fetch(`${API_URL}/api/academia/estudiantes/${idEstudiante}/documentos`, {
+        headers: { ...authHeaders },
+      })
+      const json = await res.json()
+      if (res.ok && json.success) setDocumentos(json.data)
+    } catch { /* silencioso */ }
+    finally { setLoadingDocs(false) }
   }
 
   useEffect(() => {
@@ -266,7 +282,7 @@ export default function PreinscripcionesPrincipalesPanel({
             filteredRows.map(r => (
               <button
                 key={r.id_inscripcion}
-                onClick={() => setSelected(r)}
+                onClick={() => { setSelected(r); fetchDocumentos(r.id_estudiante) }}
                 className={['w-full text-left px-4 py-3.5 transition-colors flex flex-col gap-1',
                   selected?.id_inscripcion === r.id_inscripcion ? 'bg-[#E9FAF4]' : 'hover:bg-slate-50',
                 ].join(' ')}
@@ -337,93 +353,52 @@ export default function PreinscripcionesPrincipalesPanel({
             </div>
 
             {/* Documentos */}
-            {(selected.estudiante_url_titulo || selected.estudiante_url_cv || selected.estudiante_url_especializaciones || selected.estudiante_url_cursos_extras) && (
-              <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Documentación Adjunta</span>
-                
-                <div className="flex flex-col gap-4">
-                  {/* Documentos Principales */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {selected.estudiante_url_titulo ? (
-                      <a 
-                        href={selected.estudiante_url_titulo} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-100 transition-colors"
-                      >
-                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                        Ver Título
-                      </a>
-                    ) : (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-dashed border-slate-200">
-                        Título no cargado
-                      </div>
-                    )}
-                    {selected.estudiante_url_cv ? (
-                      <a 
-                        href={selected.estudiante_url_cv} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-emerald-100 transition-colors"
-                      >
-                        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                        Ver CV
-                      </a>
-                    ) : (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-400 rounded-xl text-[10px] font-bold uppercase tracking-wider border border-dashed border-slate-200">
-                        CV no cargado
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Especializaciones */}
-                  <div className="space-y-2">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Especializaciones / Postgrados</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {(() => {
-                        try {
-                          const list = JSON.parse(selected.estudiante_url_especializaciones || '[]')
-                          if (!Array.isArray(list) || list.length === 0) return (
-                            <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
-                              <span className="text-[10px] text-slate-400 font-medium italic">Sin especializaciones adjuntas</span>
-                            </div>
-                          )
-                          return list.map((url, idx) => (
-                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-100 transition-colors border border-slate-100">
-                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                              Especialización #{idx + 1}
-                            </a>
-                          ))
-                        } catch (e) { return null }
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Otros Cursos */}
-                  <div className="space-y-2">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">Otros Cursos y Certificados</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {(() => {
-                        try {
-                          const list = JSON.parse(selected.estudiante_url_cursos_extras || '[]')
-                          if (!Array.isArray(list) || list.length === 0) return (
-                            <div className="col-span-full py-3 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 flex items-center justify-center">
-                              <span className="text-[10px] text-slate-400 font-medium italic">Sin certificados adicionales</span>
-                            </div>
-                          )
-                          return list.map((url, idx) => (
-                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-100 transition-colors border border-slate-100">
-                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
-                              Curso Extra #{idx + 1}
-                            </a>
-                          ))
-                        } catch (e) { return null }
-                      })()}
-                    </div>
-                  </div>
+            <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Documentación Adjunta</span>
+              {loadingDocs ? (
+                <div className="py-4 text-center text-xs text-slate-400 animate-pulse">Cargando documentos...</div>
+              ) : documentos.length === 0 ? (
+                <div className="py-4 px-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 text-center">
+                  <span className="text-[10px] text-slate-400 font-medium italic">Sin documentos adjuntos</span>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {documentos.map((doc) => {
+                    const labelMap: Record<string, string> = {
+                      titulo: 'Título Académico',
+                      cv: 'Curriculum Vitae',
+                      especializacion: 'Especialización',
+                      curso_extra: 'Curso Extra',
+                      comprobante: 'Comprobante',
+                    }
+                    const colorMap: Record<string, string> = {
+                      titulo: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+                      cv: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
+                      especializacion: 'bg-purple-50 text-purple-700 hover:bg-purple-100',
+                      curso_extra: 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+                      comprobante: 'bg-slate-50 text-slate-600 hover:bg-slate-100',
+                    }
+                    return (
+                      <a
+                        key={doc.id_documento}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-colors ${colorMap[doc.tipo_doc] || colorMap.comprobante}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M13.8 12H3" />
+                        </svg>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-bold truncate">{doc.nombre_archivo || labelMap[doc.tipo_doc] || doc.tipo_doc}</span>
+                          <span className="text-[9px] opacity-60 font-normal uppercase tracking-wider">{labelMap[doc.tipo_doc] || doc.tipo_doc}</span>
+                        </div>
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
 
             {['Preinscrito', 'Entrevista'].includes(selected.estatus) && (
               <div className="bg-white rounded-2xl p-4 border border-gray-100 flex flex-col gap-2">

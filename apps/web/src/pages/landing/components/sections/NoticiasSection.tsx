@@ -36,6 +36,8 @@ export default function NoticiasSection() {
     return () => clearInterval(interval)
   }, [scroll])
 
+  if (noticiasBase.length === 0) return null
+
   return (
     <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden'>
       <div className='max-w-8xl mx-auto flex justify-between items-end mb-12'>

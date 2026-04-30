@@ -65,16 +65,8 @@ const NAV_ADMIN_CORE = [
 
 const NAV_CMS = [
   { icon: Newspaper, label: 'CMS · Noticias' },
-  { 
-    icon: FileText, 
-    label: 'CMS · Marco Legal',
-    children: [
-      { icon: FileText, label: 'Leyes y Decretos' },
-      { icon: FileText, label: 'Reglamentos y Estatutos' },
-      { icon: FileText, label: 'Normas y Procedimientos' },
-      { icon: FileText, label: 'Actas de Asamblea' },
-    ]
-  },
+  { icon: FileText, label: 'CMS · Marco Legal' },
+  { icon: Handshake, label: 'CMS · Convenios' },
   { icon: Users, label: 'CMS · Directiva' },
   { icon: Settings, label: 'CMS · Configuración' },
 ];
@@ -159,7 +151,7 @@ const PanelPage = () => {
     }
     
     // Si es corporativo, agregar pestaña de gestión
-    if (agremiado?.tipo_afiliado === 'Juridico') {
+    if (agremiado?.tipo_afiliado === 'Corporativo') {
       baseItems.push({ icon: Users, label: 'Mis Afiliados' });
     }
 
@@ -242,6 +234,7 @@ const PanelPage = () => {
         'Reglamentos y Estatutos': 'reglamentos',
         'Normas y Procedimientos': 'normas',
         'Actas de Asamblea': 'actas',
+        'CMS · Convenios': 'convenios',
         'CMS · Directiva': 'directiva',
         'CMS · Configuración': 'config',
       };

@@ -7,19 +7,20 @@ import {
   UserPlus, Search, Filter, RefreshCw, Trash2, Edit3, Save, X,
   ChevronRight, Building2, User as UserIcon, CheckCircle2, AlertCircle,
   Mail, Phone, MapPin, BadgeCheck, FileText, Calendar, CreditCard,
-  ShieldAlert
+  ShieldAlert, ArrowUpDown
 } from 'lucide-react'
 
 type Agremiado = {
   id_agremiado: number
   codigo_cibir: string | null
+  cedula_rif_tipo: string | null
   cedula_rif: string
   nombre_completo: string
   nombres: string | null
   apellidos: string | null
   razon_social: string | null
   cedula_personal: string | null
-  tipo_afiliado: 'Natural' | 'Juridico'
+  tipo_afiliado: 'Natural' | 'Corporativo'
   email: string
   telefono: string | null
   direccion: string | null
@@ -30,14 +31,16 @@ type Agremiado = {
   inscripcion_pagada: number
   fecha_registro: string
   id_agremiado_corp: number | null
+  id_representante_legal: number | null
   corp_razon_social: string | null
   corp_rif: string | null
-  representante_legal: string | null
   instagram: string | null
   facebook: string | null
   linkedin: string | null
   twitter: string | null
   website: string | null
+  logo_url: string | null
+  banner_url: string | null
   activo: number
 }
 
@@ -54,7 +57,8 @@ export default function MiembrosPanel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
-  const [filterTipo, setFilterTipo] = useState<'Todos' | 'Natural' | 'Juridico'>('Todos')
+  const [filterTipo, setFilterTipo] = useState<'Todos' | 'Natural' | 'Corporativo'>('Todos')
+  const [sortState, setSortState] = useState<'nombre_asc' | 'nombre_desc' | 'codigo_asc' | 'codigo_desc'>('nombre_asc')
 
   const [selected, setSelected] = useState<Agremiado | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -64,7 +68,7 @@ export default function MiembrosPanel() {
   const [showNewModal, setShowNewModal] = useState(false)
   const [newForm, setNewForm] = useState<Partial<Agremiado>>({
     tipo_afiliado: 'Natural',
-    estatus: '9_AFILIACION'
+    estatus: 'Afiliado'
   })
 
   const load = async () => {
@@ -76,7 +80,7 @@ export default function MiembrosPanel() {
       if (!res.ok || !json.success) throw new Error(json.message || 'Error cargando miembros')
       const all = json.data as Agremiado[]
       setItems(all)
-      setCompanies(all.filter(i => i.tipo_afiliado === 'Juridico'))
+      setCompanies(all.filter(i => i.tipo_afiliado === 'Corporativo'))
     } catch (e: any) {
       setError(e.message)
     } finally {
@@ -86,15 +90,39 @@ export default function MiembrosPanel() {
 
   useEffect(() => { load() }, [])
 
+  const associatedMembers = useMemo(() => {
+    if (!selected || selected.tipo_afiliado !== 'Corporativo') return []
+    return items.filter(item => item.id_agremiado_corp === selected.id_agremiado)
+  }, [items, selected])
+
   const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      const matchSearch = item.nombre_completo.toLowerCase().includes(search.toLowerCase()) ||
-        item.cedula_rif.toLowerCase().includes(search.toLowerCase()) ||
-        item.email.toLowerCase().includes(search.toLowerCase())
+    let result = items.filter(item => {
+      const nombre = (item.nombre_completo || '').toLowerCase()
+      const rif = (item.cedula_rif || '').toLowerCase()
+      const email = (item.email || '').toLowerCase()
+      const s = search.toLowerCase()
+
+      const matchSearch = nombre.includes(s) || rif.includes(s) || email.includes(s)
       const matchTipo = filterTipo === 'Todos' || item.tipo_afiliado === filterTipo
       return matchSearch && matchTipo
     })
-  }, [items, search, filterTipo])
+
+    result.sort((a, b) => {
+      if (sortState.startsWith('codigo')) {
+        const codA = parseInt(a.codigo_cibir || '0', 10) || 0;
+        const codB = parseInt(b.codigo_cibir || '0', 10) || 0;
+        return sortState === 'codigo_asc' ? codA - codB : codB - codA;
+      } else {
+        const nomA = (a.nombre_completo || '').toLowerCase();
+        const nomB = (b.nombre_completo || '').toLowerCase();
+        if (nomA < nomB) return sortState === 'nombre_asc' ? -1 : 1;
+        if (nomA > nomB) return sortState === 'nombre_asc' ? 1 : -1;
+        return 0;
+      }
+    });
+
+    return result;
+  }, [items, search, filterTipo, sortState])
 
   const handleEdit = (item: Agremiado) => {
     setSelected(item)
@@ -149,7 +177,7 @@ export default function MiembrosPanel() {
       const json = await res.json()
       if (res.ok && json.success) {
         setShowNewModal(false)
-        setNewForm({ tipo_afiliado: 'Natural', estatus: '9_AFILIACION' })
+        setNewForm({ tipo_afiliado: 'Natural', estatus: 'Afiliado' })
         load()
       } else {
         alert(json.message || 'Error al crear')
@@ -181,15 +209,37 @@ export default function MiembrosPanel() {
             </button>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-            <input
-              type="text"
-              placeholder="Buscar miembro..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input
+                type="text"
+                placeholder="Buscar miembro..."
+                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none transition-all"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={() => {
+                setSortState(prev => {
+                  if (prev === 'nombre_asc') return 'nombre_desc';
+                  if (prev === 'nombre_desc') return 'codigo_asc';
+                  if (prev === 'codigo_asc') return 'codigo_desc';
+                  return 'nombre_asc';
+                });
+              }}
+              className="px-3 bg-slate-50 border border-gray-100 rounded-xl text-slate-600 flex items-center justify-center gap-1.5 hover:bg-slate-100 transition-colors shrink-0"
+              title="Cambiar criterio de ordenación"
+            >
+              <ArrowUpDown size={14} />
+              <span className="text-[10px] font-bold uppercase tracking-widest">
+                {sortState === 'nombre_asc' && 'A-Z'}
+                {sortState === 'nombre_desc' && 'Z-A'}
+                {sortState === 'codigo_asc' && 'CÓD. ↑'}
+                {sortState === 'codigo_desc' && 'CÓD. ↓'}
+              </span>
+            </button>
           </div>
 
           <div className="flex gap-2">
@@ -206,8 +256,8 @@ export default function MiembrosPanel() {
               Indep.
             </button>
             <button
-              onClick={() => setFilterTipo('Juridico')}
-              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${filterTipo === 'Juridico' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-gray-200 hover:border-slate-300'}`}
+              onClick={() => setFilterTipo('Corporativo')}
+              className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${filterTipo === 'Corporativo' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-gray-200 hover:border-slate-300'}`}
             >
               Corp.
             </button>
@@ -230,10 +280,12 @@ export default function MiembrosPanel() {
                   <p className="font-bold text-slate-800 text-sm truncate">{formatNombreCard(item.nombre_completo)}</p>
 
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md ${item.tipo_afiliado === 'Juridico' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {item.tipo_afiliado === 'Juridico' ? 'Corporativo' : 'Independiente'}
+                    <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md ${item.tipo_afiliado === 'Corporativo' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {item.tipo_afiliado === 'Corporativo' ? 'Corporativo' : 'Independiente'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-medium">{item.cedula_rif}</span>
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {item.cedula_rif_tipo ? `${item.cedula_rif_tipo}-${item.cedula_rif}` : item.cedula_rif}
+                    </span>
                   </div>
                 </div>
                 <ChevronRight size={14} className={`text-slate-300 group-hover:translate-x-1 transition-transform ${selected?.id_agremiado === item.id_agremiado ? 'text-emerald-500' : ''}`} />
@@ -298,20 +350,15 @@ export default function MiembrosPanel() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center shrink-0 shadow-inner ${selected.tipo_afiliado === 'Juridico' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                  {selected.tipo_afiliado === 'Juridico' ? <Building2 size={40} /> : <UserIcon size={40} />}
+                <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center shrink-0 shadow-inner ${selected.tipo_afiliado === 'Corporativo' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                  {selected.tipo_afiliado === 'Corporativo' ? <Building2 size={40} /> : <UserIcon size={40} />}
                 </div>
 
                 <div className="text-center sm:text-left space-y-1">
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                     <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-                      {isEditing ? (
-                        <input
-                          className="bg-slate-50 border-b-2 border-emerald-500 outline-none px-2 py-1"
-                          value={editForm.nombre_completo || ''}
-                          onChange={(e) => setEditForm({ ...editForm, nombre_completo: e.target.value })}
-                        />
-                      ) : formatNombreCard(selected.nombre_completo)}
+                      {/* nombre_completo es columna VIRTUAL GENERATED — se muestra, no se edita */}
+                      {formatNombreCard(selected.nombre_completo)}
                     </h2>
                   </div>
 
@@ -386,26 +433,30 @@ export default function MiembrosPanel() {
                         />
                       </div>
                     ) : (
-                      <p className="bg-slate-50/50 border border-transparent rounded-xl px-4 py-2 text-sm font-bold text-slate-700">{selected.cedula_rif}</p>
+                      <p className="bg-slate-50/50 border border-transparent rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+                        {selected.cedula_rif_tipo ? `${selected.cedula_rif_tipo}-${selected.cedula_rif}` : selected.cedula_rif}
+                      </p>
                     )}
                   </div>
 
                   {/* Campo adicional para Cédula Personal */}
-                  <DataField
-                    label={selected.tipo_afiliado === 'Juridico' ? "Cédula del Representante" : "Cédula Personal"}
-                    value={selected.cedula_personal || 'No registrada'}
-                    isEditing={isEditing}
-                    fieldName="cedula_personal"
-                    form={editForm}
-                    setForm={setEditForm}
-                  />
-
-                  {selected.tipo_afiliado === 'Juridico' && (
+                  {selected.tipo_afiliado === 'Corporativo' && (
                     <DataField
-                      label="Representante Legal"
-                      value={selected.representante_legal || 'No registrado'}
+                      label="Cédula del Representante"
+                      value={selected.cedula_personal || 'No registrada'}
                       isEditing={isEditing}
-                      fieldName="representante_legal"
+                      fieldName="cedula_personal"
+                      form={editForm}
+                      setForm={setEditForm}
+                    />
+                  )}
+
+                  {selected.tipo_afiliado === 'Corporativo' && (
+                    <DataField
+                      label="Representante Legal ID"
+                      value={selected.id_representante_legal ? `Agremiado #${selected.id_representante_legal}` : 'No asignado'}
+                      isEditing={false}  // La FK se gestiona aparte, no desde este campo de texto
+                      fieldName="id_representante_legal"
                       form={editForm}
                       setForm={setEditForm}
                     />
@@ -422,11 +473,11 @@ export default function MiembrosPanel() {
                           onChange={(e) => setEditForm({ ...editForm, tipo_afiliado: e.target.value as any })}
                         >
                           <option value="Natural">Independiente / Persona</option>
-                          <option value="Juridico">Empresa (Jurídico)</option>
+                          <option value="Corporativo">Empresa (Corporativo)</option>
                         </select>
                       ) : (
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${selected.tipo_afiliado === 'Juridico' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {selected.tipo_afiliado === 'Juridico' ? 'Corporativo (Empresa)' : (selected.id_agremiado_corp ? 'Corporativo (Empleado)' : 'Independiente')}
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${selected.tipo_afiliado === 'Corporativo' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {selected.tipo_afiliado === 'Corporativo' ? 'Corporativo (Empresa)' : (selected.id_agremiado_corp ? 'Corporativo (Empleado)' : 'Independiente')}
                         </span>
                       )}
                     </div>
@@ -462,7 +513,7 @@ export default function MiembrosPanel() {
                     )}
                   </div>
 
-                  {selected.tipo_afiliado === 'Juridico' && (
+                  {selected.tipo_afiliado === 'Corporativo' && (
                     <DataField
                       label="Razón Social"
                       value={selected.razon_social || 'N/A'}
@@ -590,6 +641,56 @@ export default function MiembrosPanel() {
             <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 font-medium pt-2">
               <Calendar size={12} /> Registrado el {new Date(selected.fecha_registro).toLocaleDateString()}
             </div>
+
+            {/* Nueva Sección: Afiliados Asociados (Solo para Corporativos) */}
+            {selected.tipo_afiliado === 'Corporativo' && (
+              <div className="bg-slate-50/50 rounded-[2rem] p-6 border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm">
+                      <UserIcon size={16} />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-slate-800 text-sm uppercase tracking-wider">Afiliados Asociados</h3>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Trabajadores directos de la empresa</p>
+                    </div>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">
+                    {associatedMembers.length} MIEMBROS
+                  </span>
+                </div>
+
+                {associatedMembers.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {associatedMembers.map(m => (
+                      <div
+                        key={m.id_agremiado}
+                        onClick={() => setSelected(m)}
+                        className="group flex items-center gap-3 p-3 bg-white rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all cursor-pointer shadow-sm hover:shadow-md"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
+                          <UserIcon size={18} />
+                        </div>
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-black text-slate-700 truncate group-hover:text-emerald-600 transition-colors">
+                            {m.nombres} {m.apellidos}
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">
+                            {m.cedula_rif_tipo}-{m.cedula_rif}
+                          </p>
+                        </div>
+                        <ChevronRight size={14} className="ml-auto text-slate-300 group-hover:text-emerald-500 transition-transform group-hover:translate-x-1" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">No hay trabajadores asociados todavía</p>
+                    <p className="text-[10px] text-slate-300 mt-1">Los trabajadores aparecerán aquí una vez vinculados a este RIF.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -619,9 +720,11 @@ export default function MiembrosPanel() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <DataInput label="Nombre Completo" placeholder="Ej: Juan Perez" value={newForm.nombre_completo || ''} onChange={(v: string) => setNewForm({ ...newForm, nombre_completo: v })} />
-                  <DataInput label="Cédula" placeholder="V-12345678" value={newForm.cedula_rif || ''} onChange={(v: string) => setNewForm({ ...newForm, cedula_rif: v })} />
-                  <DataInput label="Código (Opcional)" placeholder="359" value={newForm.codigo_cibir || ''} onChange={(v: string) => setNewForm({ ...newForm, codigo_cibir: v })} />
+                  <DataInput label="Nombres" placeholder="Ej: Juan" value={(newForm as any).nombres || ''} onChange={(v: string) => setNewForm({ ...newForm, nombres: v } as any)} />
+                  <DataInput label="Apellidos" placeholder="Ej: Pérez" value={(newForm as any).apellidos || ''} onChange={(v: string) => setNewForm({ ...newForm, apellidos: v } as any)} />
+                  <DataInput label="Razón Social (si es empresa)" placeholder="Inmobiliaria XYZ C.A." value={newForm.razon_social || ''} onChange={(v: string) => setNewForm({ ...newForm, razon_social: v })} />
+                  <DataInput label="Cédula / RIF" placeholder="V-12345678" value={newForm.cedula_rif || ''} onChange={(v: string) => setNewForm({ ...newForm, cedula_rif: v })} />
+                  <DataInput label="Código CIBIR (Opcional)" placeholder="359" value={newForm.codigo_cibir || ''} onChange={(v: string) => setNewForm({ ...newForm, codigo_cibir: v })} />
                 </div>
 
                 <div className="p-4 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl space-y-4">

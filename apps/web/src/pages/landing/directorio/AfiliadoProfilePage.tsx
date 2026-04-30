@@ -10,12 +10,16 @@ import { API_URL } from '@/config/env';
 import Navbar from '@/pages/landing/components/navbar/Navbar';
 import Footer from '@/pages/landing/components/Footer';
 import { formatNombreCard, getInitials } from '@/utils/formatters';
-import { AfiliadoData } from './components/AfiliadoCard';
+import { AfiliadoCard, AfiliadoData } from './components/AfiliadoCard';
+
+interface AfiliadoProfile extends AfiliadoData {
+  afiliados_asociados?: AfiliadoData[];
+}
 
 const AfiliadoProfilePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [afiliado, setAfiliado] = useState<AfiliadoData | null>(null);
+  const [afiliado, setAfiliado] = useState<AfiliadoProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [darkMode, setDarkMode] = useState(false);
@@ -81,7 +85,7 @@ const AfiliadoProfilePage = () => {
     );
   }
 
-  const isJuridico = afiliado.tipo_afiliado === 'Juridico';
+  const isCorporativo = afiliado.tipo_afiliado === 'Corporativo' || afiliado.tipo_afiliado === 'Juridico';
   const yearsOfService = afiliado.fecha_inicio_servicio 
     ? new Date().getFullYear() - new Date(afiliado.fecha_inicio_servicio).getFullYear()
     : 0;
@@ -137,7 +141,7 @@ const AfiliadoProfilePage = () => {
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div className="space-y-1">
                   <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-tight">
-                    {isJuridico 
+                    {isCorporativo 
                       ? (afiliado.razon_social || formatNombreCard(afiliado.nombre_completo)) 
                       : formatNombreCard(afiliado.nombre_completo)}
                   </h1>
@@ -145,13 +149,24 @@ const AfiliadoProfilePage = () => {
 
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                   <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
-                    {isJuridico ? 'Miembro Corporativo' : 'Miembro Independiente'}
+                    {isCorporativo ? 'Miembro Corporativo' : 'Miembro Independiente'}
+                  </span>
+                  {/* @ts-ignore */}
+                  {afiliado.empresa_pertenece && (
+                    <Link 
+                      /* @ts-ignore */
+                      to={`/miembros/${afiliado.empresa_id}`} 
+                      className="px-4 py-1.5 bg-emerald-500/20 backdrop-blur-md text-emerald-100 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 hover:bg-emerald-500/30 transition-all"
+                    >
+                      {/* @ts-ignore */}
+                      Parte de: {afiliado.empresa_pertenece}
+                    </Link>
+                  )}
+                  <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md text-slate-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
+                    Miembro desde: {afiliado.fecha_registro ? new Date(afiliado.fecha_registro).getFullYear() : '2024'}
                   </span>
                   <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md text-slate-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
-                    Código CIBIR: {afiliado.codigo_cibir || '---'}
-                  </span>
-                  <span className="px-4 py-1.5 bg-white/10 backdrop-blur-md text-slate-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5">
-                    {isJuridico ? 'RIF' : 'Cédula'}: {afiliado.cedula_rif}
+                    Código: {afiliado.codigo_cibir || '---'}
                   </span>
                 </div>
               </div>
@@ -166,6 +181,7 @@ const AfiliadoProfilePage = () => {
             
             {/* LEFT COLUMN: Contact & Stats */}
             <div className="lg:col-span-4 space-y-8">
+              
               {/* Contact Card */}
               <section className="bg-white dark:bg-[#04432f] rounded-[2.5rem] p-8 shadow-xl border border-slate-200 dark:border-emerald-500/10">
                 <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-8 flex items-center gap-3">
@@ -176,6 +192,19 @@ const AfiliadoProfilePage = () => {
                 </h3>
                 
                 <div className="space-y-8">
+                  <div className="flex items-center gap-5">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-[#022c22] flex items-center justify-center text-emerald-500 shrink-0 shadow-sm">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{isCorporativo ? 'RIF' : 'Documento de Identidad'}</p>
+                      <p className="text-sm font-bold text-slate-700 dark:text-emerald-50">
+                        {/* @ts-ignore */}
+                        {afiliado.cedula_rif_tipo}-{afiliado.cedula_rif}
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-5">
                     <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-[#022c22] flex items-center justify-center text-emerald-500 shrink-0 shadow-sm">
                       <Mail size={20} />
@@ -203,7 +232,7 @@ const AfiliadoProfilePage = () => {
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ubicación</p>
                       <p className="text-sm font-bold text-slate-700 dark:text-emerald-50">
-                        {isJuridico || afiliado.mostrar_direccion_publica 
+                        {isCorporativo || afiliado.mostrar_direccion_publica 
                           ? (afiliado.direccion_publica || afiliado.direccion || 'Cámara Inmobiliaria Bolívar')
                           : 'Información Reservada'}
                       </p>
@@ -259,16 +288,16 @@ const AfiliadoProfilePage = () => {
                   Perfil Académico y Profesional
                 </h3>
 
-                <div className="grid grid-cols-1 gap-6 mb-12">
+                <div className="mb-12">
                   <div className="relative p-6 rounded-[2rem] bg-slate-50 dark:bg-[#022c22] flex items-center gap-5 overflow-hidden group">
-                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500" />
-                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-sm shrink-0">
-                      <Briefcase size={24} />
+                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-500" />
+                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-sm shrink-0">
+                      <GraduationCap size={24} />
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Tiempo de Servicio</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nivel Académico</p>
                       <p className="text-lg font-black text-slate-800 dark:text-white leading-none">
-                        {afiliado.fecha_inicio_servicio ? `${yearsOfService} Años` : '---'}
+                        {afiliado.nivel_academico || 'No especificado'}
                       </p>
                     </div>
                   </div>
@@ -297,6 +326,23 @@ const AfiliadoProfilePage = () => {
                   <p className="text-slate-600 dark:text-emerald-100/80 leading-relaxed font-medium whitespace-pre-wrap">
                     {afiliado.descripcion}
                   </p>
+                </section>
+              )}
+
+              {/* Miembros Asociados (Solo Corporativo) */}
+              {isCorporativo && afiliado.afiliados_asociados && afiliado.afiliados_asociados.length > 0 && (
+                <section className="bg-white dark:bg-[#04432f] rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-200 dark:border-emerald-500/10">
+                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-8 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <User size={16} className="text-emerald-500" />
+                    </div>
+                    Equipo de Trabajo ({afiliado.afiliados_asociados.length})
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {afiliado.afiliados_asociados.map((assoc: AfiliadoData) => (
+                      <AfiliadoCard key={assoc.id_agremiado} afiliado={assoc} />
+                    ))}
+                  </div>
                 </section>
               )}
             </div>

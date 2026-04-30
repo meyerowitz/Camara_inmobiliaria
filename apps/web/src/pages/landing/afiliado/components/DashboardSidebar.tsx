@@ -72,7 +72,7 @@ const SidebarContent = ({
   onLogout?: () => void;
   isMobile?: boolean;
 }) => {
-  const [expandedTabs, setExpandedTabs] = useState<string[]>(['CMS · Marco Legal']);
+  const [expandedTabs, setExpandedTabs] = useState<string[]>([]);
 
   const toggleExpand = (label: string) => {
     setExpandedTabs(prev => prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]);

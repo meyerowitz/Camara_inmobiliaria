@@ -5,3 +5,7 @@ node_modules/
 
 .vercel
 scratch/
+
+# Database Seeds
+src/config/seed-*.ts
+src/config/afiliados_seed.json

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { FileText, Upload, FolderSearch, CheckCircle } from 'lucide-react'
+import { FileText, Upload, FolderSearch, CheckCircle, Edit, Trash2 } from 'lucide-react'
 import { api, FormField, Input, Textarea, BtnPrimary, BtnDanger, BtnSecondary, ListDetail, uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared'
 
 interface NormativaItem {
   id: string | number
   titulo: string
   descripcion: string | null
-  url_documento: string
+  url_archivo: string
   categoria: string | null
   orden: number
   activo: boolean | number
@@ -20,7 +20,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
   const [form, setForm] = useState({
     titulo: '',
     descripcion: '',
-    url_documento: '',
+    url_archivo: '',
     categoria: fixedCategory || '',
     orden: 0,
     activo: true,
@@ -39,7 +39,9 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
   const load = useCallback(async () => {
     setLoading(true)
     const data = await api.get('/api/cms/normativas')
-    if (data.success) setItems(data.data as NormativaItem[])
+    if (data.success && Array.isArray(data.data)) {
+      setItems(data.data.map((it: any) => ({ ...it, id: it.id_normativa })))
+    }
     setLoading(false)
   }, [])
   useEffect(() => {
@@ -60,26 +62,49 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
     setForm({
       titulo: item.titulo,
       descripcion: item.descripcion ?? '',
-      url_documento: item.url_documento,
+      url_archivo: item.url_archivo,
       categoria: item.categoria ?? '',
       orden: item.orden,
       activo: item.activo === 1 || item.activo === true,
     })
     setIsEditing(true)
-    if (item.url_documento) {
-      const fileName = item.url_documento.split('/').pop() || 'documento.pdf'
+    if (item.url_archivo) {
+      const fileName = item.url_archivo.split('/').pop() || 'documento.pdf'
       setUploadedFileName(fileName)
     } else {
       setUploadedFileName(null)
     }
   }
 
+  // Efecto para poblar el formulario cuando cambia la selección
+  useEffect(() => {
+    if (selectedId && selectedId !== 'new') {
+      const item = items.find(it => String(it.id) === String(selectedId))
+      if (item) {
+        setForm({
+          titulo: item.titulo,
+          descripcion: item.descripcion ?? '',
+          url_archivo: item.url_archivo,
+          categoria: item.categoria ?? '',
+          orden: item.orden,
+          activo: item.activo === 1 || item.activo === true,
+        })
+        if (item.url_archivo) {
+          const fileName = item.url_archivo.split('/').pop() || 'documento.pdf'
+          setUploadedFileName(fileName)
+        } else {
+          setUploadedFileName(null)
+        }
+      }
+    }
+  }, [selectedId, items])
+
   const openNew = () => {
     setSelectedId('new')
     setForm({ 
       titulo: '', 
       descripcion: '', 
-      url_documento: '', 
+      url_archivo: '', 
       categoria: fixedCategory || (activeTab !== 'Todas' ? activeTab : ''), 
       orden: 0, 
       activo: true 
@@ -128,7 +153,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
     try {
       setUploadedFileName(file.name)
       const publicUrl = await uploadFileSupabase(file, 'normativas')
-      setForm((p) => ({ ...p, url_documento: publicUrl }))
+      setForm((p) => ({ ...p, url_archivo: publicUrl }))
     } catch (e) {
       setUploadedFileName(null)
       setUploadError(e instanceof Error ? e.message : 'Error al subir archivo')
@@ -185,9 +210,9 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/60 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Documento PDF</span>
-              {form.url_documento && (
+              {form.url_archivo && (
                 <a 
-                  href={form.url_documento} 
+                  href={form.url_archivo} 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
@@ -218,7 +243,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                   ? 'border-emerald-200 bg-emerald-50/30' 
                   : isDraggingOver
                     ? 'border-emerald-500 bg-emerald-100 scale-[1.02] shadow-xl shadow-emerald-500/10'
-                    : form.url_documento 
+                    : form.url_archivo 
                       ? 'border-emerald-400 bg-emerald-50/50' 
                       : 'border-slate-200 group-hover:border-emerald-400 group-hover:bg-emerald-50/10'
               }`}>
@@ -228,7 +253,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                     <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                     <span className="text-[11px] font-bold text-emerald-700">Subiendo archivo...</span>
                   </div>
-                ) : form.url_documento ? (
+                ) : form.url_archivo ? (
                   <div className="flex flex-col items-center gap-1 text-center animate-in fade-in zoom-in duration-300">
                     <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center mb-1 shadow-md shadow-emerald-200 ring-4 ring-emerald-50">
                       <CheckCircle size={22} strokeWidth={3} />
@@ -362,20 +387,37 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
           selectedId={selectedId}
           setSelectedId={(id) => {
             setSelectedId(id)
-            setIsEditing(false)
+            if (id) setIsEditing(true)
           }}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
           onNew={openNew}
           renderRow={(item, sel) => (
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
-                <FileText size={18} strokeWidth={2.5} />
+            <div className="flex items-center justify-between gap-3 min-w-0 group cursor-pointer pr-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                  <FileText size={18} strokeWidth={2.5} />
+                </div>
+
+                <div className="flex flex-col min-w-0">
+                  <span className={['text-sm font-semibold truncate', sel ? 'text-[#00B870]' : 'text-slate-800'].join(' ')}>{item.titulo}</span>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">{item.categoria || 'Sin categoría'}</span>
+                </div>
               </div>
 
-              <div className="flex flex-col min-w-0">
-                <span className={['text-sm font-semibold truncate', sel ? 'text-[#00B870]' : 'text-slate-800'].join(' ')}>{item.titulo}</span>
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">{item.categoria || 'Sin categoría'}</span>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); openEdit(item); }}
+                  className="p-1.5 rounded-lg hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                >
+                  <Edit size={14} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); remove(item.id); }}
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
           )}
@@ -393,7 +435,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                 <span className="inline-block text-[10px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg w-fit">{item.categoria}</span>
               )}
               <a
-                href={item.url_documento}
+                href={item.url_archivo}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:border-red-200 hover:shadow-sm transition-all"
@@ -404,7 +446,7 @@ export const NormativasPanel = ({ fixedCategory }: { fixedCategory?: string }) =
                 <div className="flex flex-col min-w-0 flex-1">
                   <span className="text-xs font-black text-slate-700 uppercase tracking-tight">Archivo PDF</span>
                   <span className="text-[10px] text-slate-400 truncate max-w-[280px]">
-                    {item.url_documento.split('/').pop() || 'Ver documento legal'}
+                    {item.url_archivo.split('/').pop() || 'Ver documento legal'}
                   </span>
                 </div>
                 <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-red-500 group-hover:border-red-100 transition-colors">

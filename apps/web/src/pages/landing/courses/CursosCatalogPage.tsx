@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { API_URL } from '@/config/env'
 import Swal from 'sweetalert2'
 import { CourseSkeletonGrid } from '@/components/Skeletons'
+import Footer from '@/pages/landing/components/Footer'
 import SEO from '@/components/SEO'
 
 interface CursoDB {
@@ -156,6 +157,7 @@ export default function CursosCatalogPage() {
           </div>
         ))}
       </div>
+      <Footer />
     </section>
   )
 }

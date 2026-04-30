@@ -45,13 +45,14 @@ type EstatusAgremiado =
 type Agremiado = {
   id_agremiado: number
   codigo_cibir: string | null
+  cedula_rif_tipo: string | null
   cedula_rif: string
   nombre_completo: string
   nombres: string | null
   apellidos: string | null
   razon_social: string | null
   cedula_personal: string | null
-  tipo_afiliado: 'Natural' | 'Juridico'
+  tipo_afiliado: 'Natural' | 'Corporativo' | 'Juridico'
   email: string
   telefono: string | null
   direccion: string | null
@@ -78,7 +79,7 @@ export default function AfiliadosPanel() {
   }, [token])
 
   const [estatus, setEstatus] = useState<'Todos' | EstatusAgremiado>('Todos')
-  const [filterTipo, setFilterTipo] = useState<'Todos' | 'Natural' | 'Juridico'>('Todos')
+  const [filterTipo, setFilterTipo] = useState<'Todos' | 'Natural' | 'Corporativo'>('Todos')
   const [items, setItems] = useState<Agremiado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -171,17 +172,15 @@ export default function AfiliadosPanel() {
             >
               <option value="Todos">Todos los estados</option>
               <optgroup label="Proceso de Afiliación">
-                <option value="1_SOLICITUD">1. Solicitud</option>
-                <option value="2_REQUISITOS">2. Requisitos</option>
-                <option value="3_CONFIRMACION">3. Confirmación</option>
-                <option value="4_RECEPCION">4. Recepción</option>
-                <option value="5_ENTREVISTA">5. Entrevista</option>
-                <option value="6_JUNTA_DIRECTIVA">6. Junta Directiva</option>
-                <option value="7_RESULTADO">7. Resultado</option>
-                <option value="8_FORMALIZACION">8. Formalización</option>
+                <option value="1_PREINSCRIPCION">1. Preinscripción</option>
+                <option value="2_EXPEDIENTE">2. Expediente</option>
+                <option value="3_ENTREVISTA">3. Entrevista</option>
+                <option value="4_VERIFICACION">4. Verificación</option>
+                <option value="5_CIBIR">5. CIBIR</option>
+                <option value="6_INSCRIPCION">6. Inscripción</option>
               </optgroup>
               <optgroup label="Estados Finales">
-                <option value="9_AFILIACION">9. Afiliación (CIBIR)</option>
+                <option value="Afiliado">Afiliado (CIBIR)</option>
                 <option value="Moroso">Moroso</option>
                 <option value="Suspendido">Suspendido</option>
                 <option value="Rechazado">Rechazado</option>
@@ -196,7 +195,7 @@ export default function AfiliadosPanel() {
               >
                 <option value="Todos">Todos los tipos</option>
                 <option value="Natural">Independientes</option>
-                <option value="Juridico">Corporativos</option>
+                <option value="Corporativo">Corporativos</option>
               </select>
               <button
                 onClick={load}
@@ -228,8 +227,8 @@ export default function AfiliadosPanel() {
                   <div className="flex flex-col min-w-0">
                     <span className="text-sm font-semibold truncate text-slate-800">{formatNombreCard(a.nombre_completo)}</span>
 
-                    <span className={`text-[9px] font-black uppercase tracking-widest ${a.tipo_afiliado === 'Juridico' ? 'text-emerald-600' : 'text-blue-500'}`}>
-                      {a.tipo_afiliado === 'Juridico' ? 'Corporativo' : 'Independiente'}
+                    <span className={`text-[9px] font-black uppercase tracking-widest ${a.tipo_afiliado === 'Corporativo' ? 'text-emerald-600' : 'text-blue-500'}`}>
+                      {a.tipo_afiliado === 'Corporativo' ? 'Corporativo' : 'Independiente'}
                     </span>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
@@ -268,11 +267,11 @@ export default function AfiliadosPanel() {
                       className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-100 text-slate-500 border-none focus:ring-0 cursor-pointer"
                     >
                       <option value="Natural">Natural</option>
-                      <option value="Juridico">Juridico</option>
+                      <option value="Corporativo">Corporativo</option>
                     </select>
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 leading-tight">
-                    {selected.tipo_afiliado === 'Juridico' 
+                    {selected.tipo_afiliado === 'Corporativo' 
                       ? (selected.razon_social || formatNombreCard(selected.nombre_completo)) 
                       : formatNombreCard(selected.nombre_completo)
                     }
@@ -333,20 +332,22 @@ export default function AfiliadosPanel() {
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Cédula / RIF</label>
                   <input 
                     type="text" 
-                    value={selected.cedula_rif || ''} 
+                    value={selected.cedula_rif_tipo ? `${selected.cedula_rif_tipo}-${selected.cedula_rif}` : selected.cedula_rif} 
                     disabled
                     className="w-full rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-400 cursor-not-allowed"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase">Cédula Personal</label>
-                  <input 
-                    type="text" 
-                    value={selected.cedula_personal || ''} 
-                    onChange={(e) => updateField('cedula_personal', e.target.value)}
-                    className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
-                  />
-                </div>
+                {selected.tipo_afiliado === 'Corporativo' && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Cédula Personal</label>
+                    <input 
+                      type="text" 
+                      value={selected.cedula_personal || ''} 
+                      onChange={(e) => updateField('cedula_personal', e.target.value)}
+                      className="w-full rounded-xl border border-slate-100 bg-slate-50/50 px-3 py-2 text-sm text-slate-700 focus:bg-white transition-colors"
+                    />
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase">Teléfono</label>
                   <input 

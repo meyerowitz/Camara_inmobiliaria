@@ -4,10 +4,11 @@ import { DirectivaPanel } from '@/pages/admin/components/Cms/DirectivaPanel'
 import { ConfigPanel } from '@/pages/admin/components/Cms/ConfigPanel'
 import { PaginasPanel } from '@/pages/admin/components/Cms/PaginasPanel'
 import { NormativasPanel } from '@/pages/admin/components/Cms/NormativasPanel'
+import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
 export type CmsTab = 'noticias' | 'normativas' | 'directiva' | 'config' | 'paginas' 
-  | 'leyes' | 'reglamentos' | 'normas' | 'actas' | 'cursos' | 'hitos'
+  | 'leyes' | 'reglamentos' | 'normas' | 'actas' | 'cursos' | 'hitos' | 'convenios'
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
@@ -164,6 +165,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
           {externalTab === 'normas' && <NormativasPanel fixedCategory="Normas y Procedimientos" />}
           {externalTab === 'actas' && <NormativasPanel fixedCategory="Actas de Asamblea" />}
           {externalTab === 'directiva' && <DirectivaPanel />}
+          {externalTab === 'convenios' && <ConveniosPanel />}
         </div>
       </div>
 

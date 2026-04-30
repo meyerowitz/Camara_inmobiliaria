@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import bgBolivar from "@/assets/Pzo.jpg";
 import Navbar from "@/pages/landing/components/navbar/Navbar";
+import Footer from "@/pages/landing/components/Footer";
 
 const useScrollReveal = () => {
   const [node, setNode] = useState<HTMLElement | null>(null);
@@ -105,11 +106,7 @@ export default function Proposito() {
           </section>
         </div>
       </main>
-      <footer className="bg-[#011a14] py-14 text-center">
-        <p className="text-gray-600 text-[10px] uppercase tracking-[0.4em] font-black">
-          CIEBO • Compromiso Institucional • 2026
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }
