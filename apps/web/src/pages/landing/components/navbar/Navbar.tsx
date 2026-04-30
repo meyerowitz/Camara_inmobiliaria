@@ -103,7 +103,7 @@ const Navbar = ({
             <>
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="hidden md:flex items-center gap-1.5 px-4 py-2 text-white text-xs font-bold bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/30 rounded-full transition-all cursor-pointer"
+                className="hidden md:flex items-center gap-1.5 px-4 py-2 text-white text-xs font-bold bg-emerald-800/80 border border-emerald-400/30 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 rounded-full transition-all cursor-pointer"
               >
                 <svg
                   className="w-4 h-4"
