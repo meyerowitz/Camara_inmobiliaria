@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 
-// Components
 import Navbar from '@/pages/landing/components/navbar/Navbar'
 import Header from '@/pages/landing/components/Header'
 import NosotrosSection from '@/pages/landing/components/sections/NosotrosSection'
@@ -11,25 +10,27 @@ import DirectivaSection from '@/pages/landing/components/sections/DirectivaSecti
 import Footer from '@/pages/landing/components/Footer'
 import LoginModal from '@/pages/landing/components/LoginModal'
 import RegisterModal from '@/pages/landing/components/RegisterModal'
+import SEO from '@/components/SEO'
 
-// ConveniosSection and NoticiasSection are temporarily disabled
-// import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
-// import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
+import ConveniosSection from '@/pages/landing/components/sections/ConveniosSection'
+import NoticiasSection from '@/pages/landing/components/sections/NoticiasSection'
 
 export default function LandingPage() {
   const [isModalSesionOpen, setIsSesionModalOpen] = useState(false)
   const [isModalRegisterOpen, setIsRegisterModalOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
 
-  // ── Config is now handled per-component ──────────────────────────────────────
-  // Tier 1 (static): NosotrosSection, OrigenesSection, AfiliadosSection
-  // Tier 2 (cached): Header, Footer — use useCachedConfig() internally
-  // Tier 3 (on-mount API): FormacionSection, DirectivaSection, NoticiasSection
-
   return (
-    <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-slate-50'} min-h-screen transition-colors duration-300`}>
+    <div className={`${darkMode ? 'dark bg-[#022c22]' : 'bg-[#022c22]'} transition-colors duration-300`}>
+      <SEO
+        title="Camara Inmobiliaria de Bolivar"
+        description="Página oficial de la Cámara Inmobiliaria del Estado Bolívar (CIBIR). Encuentra las mejores inmobiliarias en Bolívar, profesionales certificados y formación de vanguardia."
+        keywords="inmobiliarias en estado bolivar, camara inmobiliaria bolivar, bienes raices puerto ordaz, ciudad bolivar inmobiliaria, cursos inmobiliarios bolivar, cibir"
+      />
 
       <Navbar
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
         setIsSesionModalOpen={setIsSesionModalOpen}
         setIsRegisterModalOpen={setIsRegisterModalOpen}
       />
@@ -39,22 +40,23 @@ export default function LandingPage() {
       </div>
 
       <NosotrosSection />
-
+      <FormacionSection />
 
       <AfiliadosSection />
 
-      <FormacionSection />
+      <OrigenesSection />
+
+      <NoticiasSection />
 
       <DirectivaSection />
 
-      {/* <ConveniosSection /> */}
-      {/* <NoticiasSection /> */}
+      <ConveniosSection />
 
       <Footer />
 
-      {/* MODALS */}
-      {isModalSesionOpen && <LoginModal onClose={() => setIsSesionModalOpen(false)} />}
-      {isModalRegisterOpen && <RegisterModal onClose={() => setIsRegisterModalOpen(false)} />}
-    </div>
+  {/* MODALS */ }
+  { isModalSesionOpen && <LoginModal onClose={() => setIsSesionModalOpen(false)} /> }
+  { isModalRegisterOpen && <RegisterModal onClose={() => setIsRegisterModalOpen(false)} /> }
+    </div >
   )
 }

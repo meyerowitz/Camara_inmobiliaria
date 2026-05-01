@@ -27,3 +27,16 @@ dist-ssr
 .vscode
 .vercel
 .env*.local
+
+scripts/temp_*
+*.temp.js
+*.temp.ts
+*.temp.sh
+*.temp.py
+scratch/
+temp/
+tmp/
+
+# Database Seeds
+apps/api/src/config/seed-*.ts
+apps/api/src/config/afiliados_seed.json

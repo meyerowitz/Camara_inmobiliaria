@@ -1,14 +1,18 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import { createHash } from 'crypto'
 import { db } from '../lib/db.js'
 import { env } from '../config/env.js'
 import type { JwtPayload, UserRole } from '../middlewares/auth.middleware.js'
 
+/** Hashea un token en crudo con SHA-256 (para almacenar en reset_token_hash). */
+const sha256 = (raw: string) => createHash('sha256').update(raw).digest('hex')
+
 /**
  * Parsea el campo `roles` de la DB (puede venir como JSON string o como string simple).
  */
-function parseRoles(rolesField: unknown, rolFallback: unknown): UserRole[] {
+function parseRoles(rolesField: unknown): UserRole[] {
   if (typeof rolesField === 'string' && rolesField.startsWith('[')) {
     try {
       return JSON.parse(rolesField) as UserRole[]
@@ -18,9 +22,6 @@ function parseRoles(rolesField: unknown, rolFallback: unknown): UserRole[] {
   }
   if (typeof rolesField === 'string' && rolesField.length > 0) {
     return [rolesField as UserRole]
-  }
-  if (typeof rolFallback === 'string' && rolFallback.length > 0) {
-    return [rolFallback as UserRole]
   }
   return ['afiliado']
 }
@@ -41,7 +42,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Buscar usuario por email (incluyendo campo roles)
     const result = await db.execute({
-      sql: `SELECT id, email, password_hash, rol, roles, id_agremiado, activo FROM users WHERE email = ?`,
+      sql: `SELECT id, email, password_hash, roles, id_agremiado, activo FROM users WHERE email = ?`,
       args: [email],
     })
 
@@ -64,7 +65,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    const roles = parseRoles(user.roles, user.rol)
+    const roles = parseRoles(user.roles)
 
     // El rol primario (para retrocompatibilidad) es el "más alto" en jerarquía
     const rolPrimary: UserRole = roles.includes('super_admin')
@@ -75,9 +76,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     // Generar JWT
     const payload: JwtPayload = {
-      id:           user.id as number,
-      email:        user.email as string,
-      rol:          rolPrimary,
+      id: user.id as number,
+      email: user.email as string,
+      rol: rolPrimary,
       roles,
       id_agremiado: user.id_agremiado as number | null,
     }
@@ -106,18 +107,26 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.user!
 
     const result = await db.execute({
-      sql: `SELECT id, email, rol, roles, id_agremiado, activo, creado_en FROM users WHERE id = ?`,
+      sql: `
+        SELECT 
+          u.id, u.email, u.roles, u.id_agremiado, u.activo, u.creado_en,
+          a.nombre_completo, a.cedula_rif, a.telefono
+        FROM users u
+        LEFT JOIN agremiados a ON a.id_agremiado = u.id_agremiado
+        WHERE u.id = ?
+      `,
       args: [id],
     })
 
-    const user = result.rows[0]
+    const user = result.rows[0] as any
     if (!user) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
 
-    const roles = parseRoles(user.roles, user.rol)
-    res.status(200).json({ success: true, user: { ...user, roles } })
+    const roles = parseRoles(user.roles)
+    const rolPrimary: UserRole = roles.includes('super_admin') ? 'super_admin' : roles.includes('admin') ? 'admin' : 'afiliado'
+    res.status(200).json({ success: true, user: { ...user, roles, rol: rolPrimary } })
   } catch (error) {
     console.error('Error en getMe:', error)
     res.status(500).json({ success: false, message: 'Error interno del servidor' })
@@ -157,9 +166,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     // Expira en 1 hora
     const expira = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
+    const tokenHash = sha256(token)
     await db.execute({
-      sql: `UPDATE users SET reset_token = ?, reset_token_expira = ? WHERE id = ?`,
-      args: [token, expira, user.id],
+      sql: `UPDATE users SET reset_token_hash = ?, reset_token_expira = ?, actualizado_en = ? WHERE id = ?`,
+      args: [tokenHash, expira, new Date().toISOString(), user.id],
     })
 
     const { enviarCorreoOlvideContrasena } = await import('../lib/email.js')
@@ -195,11 +205,11 @@ export const resetPasswordWithToken = async (req: Request, res: Response): Promi
       return
     }
 
-    // SQLite/Turso datetime logic handled softly by node.js date comparison
-    // we fetch expira and parse to Date
+    // SHA-256 del token crudo para buscar en la BD
+    const tokenHash = sha256(token)
     const result = await db.execute({
-      sql: `SELECT id, email, reset_token_expira FROM users WHERE reset_token = ?`,
-      args: [token],
+      sql: `SELECT id, email, reset_token_expira FROM users WHERE reset_token_hash = ?`,
+      args: [tokenHash],
     })
 
     if (result.rows.length === 0) {
@@ -214,16 +224,16 @@ export const resetPasswordWithToken = async (req: Request, res: Response): Promi
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    
+
     await db.execute({
-      sql: `UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expira = NULL, activo = 1 WHERE id = ?`,
-      args: [passwordHash, user.id],
+      sql: `UPDATE users SET password_hash = ?, reset_token_hash = NULL, reset_token_expira = NULL, activo = 1, actualizado_en = ? WHERE id = ?`,
+      args: [passwordHash, new Date().toISOString(), user.id],
     })
 
-    res.status(200).json({ 
-      success: true, 
-      message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.', 
-      email: user.email 
+    res.status(200).json({
+      success: true,
+      message: 'Contraseña actualizada correctamente. Ya puedes iniciar sesión.',
+      email: user.email
     })
   } catch (error) {
     console.error('Error en resetPasswordWithToken:', error)
@@ -250,21 +260,12 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
       return
     }
 
-    // Buscar usuario con ese token y que no haya expirado
-    const result = await db.execute({
-      sql: `SELECT id FROM users 
-            WHERE reset_token = ? 
-            AND reset_token_expira > datetime('now', 'localtime')`,
-      args: [token],
-    })
+    // SHA-256 del token crudo para buscar en la BD
+    const tokenHash = sha256(token)
 
-    // Nota: datetime('now', 'localtime') en SQLite depende de la zona horaria del servidor. 
-    // Usamos strftime('%Y-%m-%dT%H:%M:%SZ','now') o similar para consistencia ISO.
-    // Dado que guardamos en ISO en el controller de afiliados, comparemos strings:
-    
     const resultFix = await db.execute({
-      sql: `SELECT id, email FROM users WHERE reset_token = ?`,
-      args: [token],
+      sql: `SELECT id, email FROM users WHERE reset_token_hash = ?`,
+      args: [tokenHash],
     })
 
     const user = resultFix.rows[0]
@@ -276,8 +277,8 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
     // Verificar expiración (ISO compare)
     const { id, email } = user as any
     const userWithExp = await db.execute({
-       sql: `SELECT reset_token_expira FROM users WHERE id = ?`,
-       args: [id]
+      sql: `SELECT reset_token_expira FROM users WHERE id = ?`,
+      args: [id]
     })
     const exp = userWithExp.rows[0].reset_token_expira as string
     if (new Date(exp) < new Date()) {
@@ -290,15 +291,15 @@ export const setupInitialPassword = async (req: Request, res: Response): Promise
     // Actualizar contraseña y limpiar token
     await db.execute({
       sql: `UPDATE users 
-            SET password_hash = ?, reset_token = NULL, reset_token_expira = NULL, activo = 1
+            SET password_hash = ?, reset_token_hash = NULL, reset_token_expira = NULL, activo = 1, actualizado_en = ?
             WHERE id = ?`,
-      args: [passwordHash, id],
+      args: [passwordHash, new Date().toISOString(), id],
     })
 
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       message: 'Contraseña establecida exitosamente. Ya puedes iniciar sesión.',
-      email 
+      email
     })
   } catch (error) {
     console.error('Error en setupInitialPassword:', error)

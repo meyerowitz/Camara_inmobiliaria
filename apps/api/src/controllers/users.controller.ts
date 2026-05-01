@@ -1,15 +1,17 @@
 import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
+import { createHash } from 'crypto'
 import { db } from '../lib/db.js'
 import { resetCredenciales } from '../lib/credentials.js'
 import { isSuperAdmin, isAdmin } from '../middlewares/auth.middleware.js'
 
-const parseRoles = (rolesField: unknown, rolFallback: unknown): string[] => {
+const sha256 = (raw: string) => createHash('sha256').update(raw).digest('hex')
+
+const parseRoles = (rolesField: unknown): string[] => {
   if (typeof rolesField === 'string' && rolesField.startsWith('[')) {
     try { return JSON.parse(rolesField) } catch { /* fall through */ }
   }
   if (typeof rolesField === 'string') return [rolesField]
-  if (typeof rolFallback === 'string') return [rolFallback]
   return ['afiliado']
 }
 
@@ -20,14 +22,18 @@ const parseRoles = (rolesField: unknown, rolFallback: unknown): string[] => {
 export const getUsers = async (_req: Request, res: Response): Promise<void> => {
   try {
     const result = await db.execute({
-      sql: `SELECT u.id, u.email, u.rol, u.roles, u.activo, u.creado_en, u.id_agremiado,
+      sql: `SELECT u.id, u.email, u.roles, u.activo, u.creado_en, u.id_agremiado,
                    a.nombre_completo, a.codigo_cibir, a.estatus as estatus_agremiado
             FROM users u
             LEFT JOIN agremiados a ON u.id_agremiado = a.id_agremiado
             ORDER BY u.creado_en DESC`,
       args: [],
     })
-    const rows = result.rows.map(r => ({ ...r, roles: parseRoles(r.roles, r.rol) }))
+    const rows = result.rows.map(r => {
+      const roles = parseRoles(r.roles)
+      const rol = roles.includes('super_admin') ? 'super_admin' : roles.includes('admin') ? 'admin' : 'afiliado'
+      return { ...r, roles, rol }
+    })
     res.status(200).json({ success: true, data: rows })
   } catch (error) {
     console.error('Error en getUsers:', error)
@@ -66,9 +72,9 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
     const rolesJson = JSON.stringify([rol])
 
     const result = await db.execute({
-      sql: `INSERT INTO users (email, password_hash, rol, roles, id_agremiado)
-            VALUES (?, ?, ?, ?, ?) RETURNING id, email, rol, roles, id_agremiado, activo, creado_en`,
-      args: [email, passwordHash, rol, rolesJson, id_agremiado ?? null],
+      sql: `INSERT INTO users (email, password_hash, roles, id_agremiado)
+            VALUES (?, ?, ?, ?) RETURNING id, email, roles, id_agremiado, activo, creado_en`,
+      args: [email, passwordHash, rolesJson, id_agremiado ?? null],
     })
 
     res.status(201).json({ success: true, data: result.rows[0] })
@@ -89,16 +95,17 @@ export const createUser = async (req: Request, res: Response): Promise<void> => 
 export const updateUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params
-    const { rol, activo, id_agremiado } = req.body
+    const { rol, activo, id_agremiado, password } = req.body
 
     // Si queremos actualizar a un usuario, validamos permisos estrictos para administradores
-    const userToUpdate = await db.execute({ sql: `SELECT rol FROM users WHERE id = ?`, args: [Number(id)] })
+    const userToUpdate = await db.execute({ sql: `SELECT roles FROM users WHERE id = ?`, args: [Number(id)] })
     if (userToUpdate.rows.length === 0) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
-    
-    const targetRole = userToUpdate.rows[0].rol
+
+    const targetRoles = parseRoles(userToUpdate.rows[0].roles)
+    const targetRole = targetRoles.includes('super_admin') ? 'super_admin' : targetRoles.includes('admin') ? 'admin' : 'afiliado'
     if (['admin', 'super_admin'].includes(targetRole as string) && !isSuperAdmin(req.user!)) {
       res.status(403).json({ success: false, message: 'Acceso denegado: Solo el súper administrador puede editar a otros administradores' })
       return
@@ -116,20 +123,29 @@ export const updateUser = async (req: Request, res: Response): Promise<void> => 
         res.status(403).json({ success: false, message: 'Acceso denegado: No puedes ascender a este rol' })
         return
       }
-      fields.push('rol = ?'); args.push(rol)
+      const rolesJson = JSON.stringify([rol])
+      fields.push('roles = ?'); args.push(rolesJson)
     }
     if (activo !== undefined) { fields.push('activo = ?'); args.push(activo ? 1 : 0) }
     if (id_agremiado !== undefined) { fields.push('id_agremiado = ?'); args.push(id_agremiado) }
+    if (password !== undefined) {
+      if (password.length < 4) {
+        res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 4 caracteres' })
+        return
+      }
+      const hash = await bcrypt.hash(password, 10)
+      fields.push('password_hash = ?'); args.push(hash)
+    }
 
     if (fields.length === 0) {
       res.status(400).json({ success: false, message: 'No hay campos para actualizar' })
       return
     }
 
-    args.push(id)
+    // args ya contiene los valores de los fields; agregamos fecha y id al final
     const result = await db.execute({
-      sql: `UPDATE users SET ${fields.join(', ')} WHERE id = ? RETURNING id, email, rol, activo, id_agremiado`,
-      args,
+      sql: `UPDATE users SET ${fields.join(', ')}, actualizado_en = ? WHERE id = ? RETURNING id, email, roles, activo, id_agremiado`,
+      args: [...args, new Date().toISOString(), id],
     })
 
     res.status(200).json({ success: true, data: result.rows[0] })
@@ -163,13 +179,14 @@ export const resetUserPassword = async (req: Request, res: Response): Promise<vo
     const token = randomBytes(32).toString('hex')
     const expira = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
 
+    const tokenHash = sha256(token)
     await db.execute({
-      sql: `UPDATE users SET reset_token = ?, reset_token_expira = ? WHERE id = ?`,
-      args: [token, expira, userId],
+      sql: `UPDATE users SET reset_token_hash = ?, reset_token_expira = ?, actualizado_en = ? WHERE id = ?`,
+      args: [tokenHash, expira, new Date().toISOString(), userId],
     })
 
     const { enviarCorreoResetAdmin } = await import('../lib/email.js')
-    
+
     try {
       await enviarCorreoResetAdmin(nombre, user.email, token)
     } catch (err) {
@@ -197,13 +214,14 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
   try {
     const { id } = req.params
 
-    const userToUpdate = await db.execute({ sql: `SELECT rol FROM users WHERE id = ?`, args: [Number(id)] })
+    const userToUpdate = await db.execute({ sql: `SELECT roles FROM users WHERE id = ?`, args: [Number(id)] })
     if (userToUpdate.rows.length === 0) {
       res.status(404).json({ success: false, message: 'Usuario no encontrado' })
       return
     }
-    
-    const targetRole = userToUpdate.rows[0].rol
+
+    const tRoles = parseRoles(userToUpdate.rows[0].roles)
+    const targetRole = tRoles.includes('super_admin') ? 'super_admin' : tRoles.includes('admin') ? 'admin' : 'afiliado'
     if (['admin', 'super_admin'].includes(targetRole as string) && !isSuperAdmin(req.user!)) {
       res.status(403).json({ success: false, message: 'Acceso denegado: Solo el súper administrador puede eliminar a administradores' })
       return
@@ -211,8 +229,8 @@ export const deleteUser = async (req: Request, res: Response): Promise<void> => 
 
     // Do not allow deleting yourself if you are superadmin
     if (Number(id) === req.user?.id) {
-       res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo' })
-       return
+      res.status(400).json({ success: false, message: 'No puedes eliminarte a ti mismo' })
+      return
     }
 
     await db.execute({ sql: `DELETE FROM users WHERE id = ?`, args: [Number(id)] })

@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { NavMenuItem } from './navData'; // Importas el tipo
+import { NavMenuItem } from './navData';
 
 interface NavItemProps {
   item: NavMenuItem;
 }
-/* ─────────────────────────────────────────────────────────────────────────────
-   COMPONENTE: NavItem (Sub-menú desplegable)
-   ───────────────────────────────────────────────────────────────────────────── */
+
 export default function NavItem({ item }: NavItemProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -20,7 +18,7 @@ export default function NavItem({ item }: NavItemProps) {
       onMouseLeave={() => setIsOpen(false)}
     >
       <Link to={hasOptions ? '#' : item.Tpath}>
-        <button className='flex items-center gap-1 hover:text-emerald-400 transition py-2 font-medium font-bold text-sm'>
+        <button className='flex items-center gap-1 hover:text-emerald-400 transition py-2 font-bold text-sm'>
           {item.title}
 
           {hasOptions && (
@@ -37,7 +35,7 @@ export default function NavItem({ item }: NavItemProps) {
       </Link>
 
       {hasOptions && isOpen && (
-        <div className='absolute top-full left-0 w-48 bg-white  text-slate-800  shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]'>
+        <div className='absolute top-full left-0 w-48 bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-xl rounded-xl py-2 mt-0 border border-emerald-500/10 z-[60]'>
           {item.items!.map((opt, idx) => (
             <Link
               key={idx}

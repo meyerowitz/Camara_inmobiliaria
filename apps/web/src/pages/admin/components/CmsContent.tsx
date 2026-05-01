@@ -70,7 +70,11 @@ const PANELS: Record<string, React.ReactNode> = {
   articles: <Placeholder title='Articles' icon={icons.articles} />,
   cms_noticias: <CmsArticlesPanel externalTab="noticias" />,
   cms_cursos: <CmsArticlesPanel externalTab="cursos" />,
-  cms_convenios: <CmsArticlesPanel externalTab="convenios" />,
+  cms_normativas: <CmsArticlesPanel externalTab="normativas" />,
+  cms_leyes: <CmsArticlesPanel externalTab="leyes" />,
+  cms_reglamentos: <CmsArticlesPanel externalTab="reglamentos" />,
+  cms_normas: <CmsArticlesPanel externalTab="normas" />,
+  cms_actas: <CmsArticlesPanel externalTab="actas" />,
   cms_directiva: <CmsArticlesPanel externalTab="directiva" />,
   cms_hitos: <CmsArticlesPanel externalTab="hitos" />,
   cms_paginas: <CmsArticlesPanel externalTab="paginas" />,
@@ -93,7 +97,7 @@ interface CmsContentProps {
 
 const CmsContent = ({ activeId }: CmsContentProps) => {
   const panel = PANELS[activeId] ?? PANELS['dashboard']
-  return <div className="absolute inset-0 overflow-hidden">{panel}</div>
+  return <div className="absolute inset-0 flex flex-col min-h-0 overflow-hidden">{panel}</div>
 }
 
 export default CmsContent

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { Trash2, ShieldCheck, Loader2, KeyRound } from 'lucide-react'
+
+
 
 interface UserAdmin {
   id: number
@@ -16,11 +19,12 @@ const SuperAdminUsersPanel = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [newRol, setNewRol] = useState('admin')
+  const [userToDelete, setUserToDelete] = useState<UserAdmin | null>(null)
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     fetchUsers()
@@ -43,24 +47,28 @@ const SuperAdminUsersPanel = () => {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar a este administrador? Esta acción es irreversible.')) return
-
+  const confirmDelete = async () => {
+    if (!userToDelete) return
+    setSaving(true)
     try {
-      const res = await fetch(`${API_URL}/api/users/${id}`, {
+      const res = await fetch(`${API_URL}/api/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       })
       const data = await res.json()
       if (data.success) {
-        setUsers(users.filter(u => u.id !== id))
+        setUsers(users.filter(u => u.id !== userToDelete.id))
+        setUserToDelete(null)
       } else {
         alert(data.message)
       }
     } catch (err) {
       alert('Error de conexión')
+    } finally {
+      setSaving(false)
     }
   }
+
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -167,7 +175,7 @@ const SuperAdminUsersPanel = () => {
                   </td>
                   <td className="px-6 py-4 text-right space-x-3">
                      <button 
-                       onClick={() => handleDelete(u.id)}
+                       onClick={() => setUserToDelete(u)}
                        disabled={u.id === user?.id}
                        className="text-red-400 hover:text-red-600 font-medium disabled:opacity-30 transition-colors"
                      >
@@ -185,6 +193,41 @@ const SuperAdminUsersPanel = () => {
           </table>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {userToDelete && (
+        <div className='fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm'>
+          <div className='bg-white rounded-2xl shadow-2xl border border-slate-100 p-8 w-full max-w-sm animate-in fade-in zoom-in duration-200 text-center'>
+            <div className='w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mx-auto mb-4'>
+              <Trash2 size={32} />
+            </div>
+            <h3 className='text-lg font-black text-slate-800 mb-2'>¿Eliminar administrador?</h3>
+            <p className='text-sm text-slate-500 mb-6'>
+              Estás a punto de eliminar a <span className='font-bold text-slate-700'>{userToDelete.email}</span>. Perderá todo acceso al panel administrativo.
+            </p>
+            
+            <div className='flex flex-col gap-2'>
+              <button
+                type='button'
+                disabled={saving}
+                onClick={confirmDelete}
+                className='w-full py-3 bg-rose-500 text-white rounded-xl text-sm font-black hover:bg-rose-600 disabled:opacity-50 shadow-lg shadow-rose-500/25 transition-all flex items-center justify-center gap-2'
+              >
+                {saving ? <Loader2 size={18} className='animate-spin' /> : <Trash2 size={18} />}
+                Confirmar Eliminación
+              </button>
+              <button 
+                type='button' 
+                onClick={() => setUserToDelete(null)} 
+                className='w-full py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors'
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">

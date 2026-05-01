@@ -21,29 +21,29 @@ export default function LobbyPage() {
   const options = [
     isAdmin
       ? {
-          key: 'admin',
-          title: 'Intranet Administrativa',
-          desc: 'Gestión interna, aprobaciones, formación, afiliados y administración del sistema.',
-          icon: Building2,
-          onClick: () => navigate('/admin'),
-          accent: 'from-emerald-500/10 to-emerald-500/0',
-          border: 'border-emerald-200/60',
-          text: 'text-emerald-700',
-          button: 'bg-emerald-600 hover:bg-emerald-500',
-        }
+        key: 'admin',
+        title: 'Intranet Administrativa',
+        desc: 'Gestión interna, aprobaciones, formación, afiliados y administración del sistema.',
+        icon: Building2,
+        onClick: () => navigate('/admin'),
+        accent: 'from-emerald-500/10 to-emerald-500/0',
+        border: 'border-emerald-200/60',
+        text: 'text-emerald-700',
+        button: 'bg-emerald-600 hover:bg-emerald-500',
+      }
       : null,
     isAfiliado
       ? {
-          key: 'academico',
-          title: 'Módulo Académico',
-          desc: 'Acceso al panel académico para registro, formalización de inscripción y certificados.',
-          icon: GraduationCap,
-          onClick: () => navigate('/panel'),
-          accent: 'from-slate-900/5 to-slate-900/0',
-          border: 'border-slate-200',
-          text: 'text-slate-800',
-          button: 'bg-slate-900 hover:bg-slate-800',
-        }
+        key: 'academico',
+        title: 'Módulo Académico',
+        desc: 'Acceso al panel académico para registro, formalización de inscripción y certificados.',
+        icon: GraduationCap,
+        onClick: () => navigate('/panel'),
+        accent: 'from-slate-900/5 to-slate-900/0',
+        border: 'border-slate-200',
+        text: 'text-slate-800',
+        button: 'bg-slate-900 hover:bg-slate-800',
+      }
       : null,
   ].filter(Boolean) as Array<{
     key: string

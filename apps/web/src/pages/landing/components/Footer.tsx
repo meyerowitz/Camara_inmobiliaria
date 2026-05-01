@@ -1,28 +1,51 @@
 import React from 'react'
-import logo from '@/pages/landing/assets/Logo3.png'
+import logo from '@/assets/Logo3.png'
 import { useCachedConfig } from '@/hooks/useCachedConfig'
 import { STATIC } from '@/pages/landing/config/staticContent'
+import { Instagram, Facebook, Linkedin, Icon } from 'lucide-react'
 
 const s = STATIC.footer
 
-// Tier 1: Static text (descripcion, direccion, copyright)
-// Tier 2: Social links (instagram, facebook, linkedin) — loaded from cache
 export default function Footer() {
   const cfg = useCachedConfig()
 
+  const sociallinks = [
+    { name: 'Instagram', icon: <Instagram size={20} />, url: cfg['redes_instagram'] },
+    { name: 'Facebook', icon: <Facebook size={20} />, url: cfg['redes_instagram'] },
+    { name: 'Linkedin', icon: <Linkedin size={20} />, url: cfg['redes_instagram'] },
+  ]
+
   return (
     <footer className='bg-[#022c22] px-6 lg:px-20 py-16 text-center border-t border-white/5 space-y-6'>
-      <img src={logo} alt='Logo' className='h-20 mx-auto opacity-50 grayscale brightness-200' />
-      <p className='text-gray-500 text-sm max-w-lg mx-auto leading-relaxed'>
+      <img
+        src={logo}
+        alt='Logo Cámara Inmobiliaria de Bolívar - Inmobiliarias en Puerto Ordaz y Ciudad Bolívar'
+        className='h-26 mx-auto '
+      />
+      <p className='text-white text-sm max-w-lg mx-auto leading-relaxed'>
         {s.descripcion} <br />
         {s.direccion}
       </p>
-      <div className='flex justify-center gap-6 text-gray-400 text-xs'>
-        <a href={cfg['redes_instagram'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>Instagram</a>
-        <a href={cfg['redes_facebook'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>Facebook</a>
-        <a href={cfg['redes_linkedin'] || '#'} target='_blank' rel='noopener noreferrer' className='hover:text-emerald-400'>LinkedIn</a>
+      <div className='flex justify-center gap-8 text-white'>
+        {sociallinks.map((social) => (
+          <a
+            key={social.name}
+            href={social.url || '#'}
+            target='_blank'
+            rel='noopener noreferrer'
+            className='flex flex-col items-center gap-2 transition-all duration-300 hover:text-emerald-400 hover:scale-110'
+            aria-label={social.name}
+          >
+            <div className='group-hover:scale-110 transition-transform duration-300'>
+              {social.icon}
+            </div>
+            <span className='text-[10px] uppercase tracking-[0.15em] font-medium'>
+              {social.name}
+            </span>
+          </a>
+        ))}
       </div>
-      <p className='text-gray-600 text-[10px] pt-4'>
+      <p className='text-white text-[10px] pt-4'>
         {s.copyright}
       </p>
     </footer>

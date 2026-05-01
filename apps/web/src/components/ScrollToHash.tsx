@@ -14,7 +14,11 @@ const ScrollToHash = () => {
         }, 100);
       }
     } else {
-      window.scrollTo(0, 0);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTo(0, 0);
+        document.body.scrollTo(0, 0);
+      }, 50);
     }
   }, [pathname, hash, key]);
 

@@ -21,6 +21,8 @@ export default function AsignarEstudiantePanel() {
   const [cedulaRif, setCedulaRif] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
+  const [nivelProfesional, setNivelProfesional] = useState('')
+  const [esCorredorInmobiliario, setEsCorredorInmobiliario] = useState<'si' | 'no' | ''>('')
 
   const [submitting, setSubmitting] = useState(false)
   const [resultMsg, setResultMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -63,7 +65,14 @@ export default function AsignarEstudiantePanel() {
       const res = await fetch(`${API_URL}/api/academia/cursos/${idCurso}/asignar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ nombreCompleto, cedulaRif, email, telefono }),
+        body: JSON.stringify({
+          nombreCompleto,
+          cedulaRif,
+          email,
+          telefono,
+          nivelProfesional,
+          esCorredorInmobiliario: esCorredorInmobiliario === 'si',
+        }),
       })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.message || 'No se pudo asignar')
@@ -72,6 +81,8 @@ export default function AsignarEstudiantePanel() {
       setCedulaRif('')
       setEmail('')
       setTelefono('')
+      setNivelProfesional('')
+      setEsCorredorInmobiliario('')
     } catch (e: unknown) {
       const err = e as Error
       setResultMsg({ type: 'err', text: err.message || 'Error inesperado' })
@@ -150,6 +161,57 @@ export default function AsignarEstudiantePanel() {
               className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084]"
               placeholder="+58 4XX 0000000"
             />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Nivel profesional</label>
+            <div className="relative mt-2">
+              <select
+                value={nivelProfesional}
+                onChange={(e) => setNivelProfesional(e.target.value)}
+                required
+                className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#00D084]/40 focus:border-[#00D084] appearance-none bg-white"
+              >
+                <option value="" disabled>
+                  Selecciona…
+                </option>
+                <option value="Bachiller">Bachiller</option>
+                <option value="Universitario">Universitario</option>
+                <option value="Postgrado">Postgrado</option>
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">▼</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">¿Ya es corredor inmobiliario?</label>
+            <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50 p-1">
+              <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label="¿Ya es corredor inmobiliario?">
+                {(['si', 'no'] as const).map((v) => {
+                  const selected = esCorredorInmobiliario === v
+                  return (
+                    <label
+                      key={v}
+                      className={[
+                        'h-10 rounded-lg cursor-pointer text-xs font-semibold flex items-center justify-center transition-all',
+                        selected ? 'bg-[#00D084] text-white shadow-sm' : 'text-slate-600 hover:bg-white',
+                      ].join(' ')}
+                    >
+                      <input
+                        type="radio"
+                        name="esCorredorInmobiliario"
+                        value={v}
+                        checked={selected}
+                        onChange={() => setEsCorredorInmobiliario(v)}
+                        required
+                        className="sr-only"
+                      />
+                      {v === 'si' ? 'Sí' : 'No'}
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
           <div className="md:col-span-2">

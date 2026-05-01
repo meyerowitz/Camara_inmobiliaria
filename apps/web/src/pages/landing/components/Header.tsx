@@ -1,9 +1,7 @@
-import bgBolivar from '@/pages/landing/assets/Pzo.jpg'
-import React, { useState } from 'react'
+import bgBolivar from '@/assets/Pzo.png'
 import { Link } from 'react-router-dom'
 import { useCachedConfig } from '@/hooks/useCachedConfig'
 import { STATIC } from '@/pages/landing/config/staticContent'
-import LoginModal from '@/pages/landing/components/LoginModal'
 
 const s = STATIC.hero
 
@@ -11,7 +9,6 @@ const s = STATIC.hero
 // Tier 2: Hero image and title can be override from CMS (cached).
 export default function Header({ darkMode }: { darkMode?: boolean }) {
   const cfg = useCachedConfig()
-  const [showLoginModal, setShowLoginModal] = useState(false)
 
   return (
     <header
@@ -22,7 +19,7 @@ export default function Header({ darkMode }: { darkMode?: boolean }) {
       <div
         className='absolute inset-0 z-0 animate-bg-zoom'
         style={{
-          backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.68), rgba(2, 44, 34, 0.68)), url(${cfg['hero_img'] || bgBolivar})`,
+          backgroundImage: `linear-gradient(rgba(2, 99, 76, 0.49), rgba(2, 102, 79, 0.35)), url(${cfg['hero_img'] || bgBolivar})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed'
@@ -43,7 +40,7 @@ export default function Header({ darkMode }: { darkMode?: boolean }) {
         style={{ animationDelay: '0.8s', opacity: 0 }}
       >
         <h1
-          className='text-white text-5xl lg:text-7xl font-bold leading-[1.1]'
+          className='text-white text-4xl sm:text-5xl lg:text-7xl font-bold leading-[1.1]'
           dangerouslySetInnerHTML={{ __html: cfg['hero_titulo'] || s.titulo }}
         />
 
@@ -52,17 +49,14 @@ export default function Header({ darkMode }: { darkMode?: boolean }) {
         </p>
 
         <div className='pt-6 flex flex-wrap items-center gap-4'>
-          <button onClick={() => setShowLoginModal(true)} className='px-8 py-3.5 bg-emerald-500 text-[#011a14] rounded-full font-bold uppercase text-sm tracking-widest hover:bg-emerald-400 hover:-translate-y-1 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]'>
+          <Link to='/cibir#formulario' className='cursor-pointer px-8 py-3.5 bg-emerald-500 text-[#011a14] rounded-full font-bold uppercase text-sm tracking-widest hover:bg-emerald-400 hover:-translate-y-1 transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]'>
             {s.btnPrimario}
-          </button>
-          <Link to='/' className='px-8 py-3.5 bg-transparent border border-white/30 text-white rounded-full font-bold uppercase text-sm tracking-widest hover:bg-white/10 transition-all'>
+          </Link>
+          <Link to='/cibir' className='cursor-pointer px-8 py-3.5 bg-transparent border border-white/30 text-white rounded-full font-bold uppercase text-sm tracking-widest hover:bg-white/10 transition-all'>
             {s.btnSecundario}
           </Link>
         </div>
       </div>
-       {showLoginModal && (
-              <LoginModal onClose={() => setShowLoginModal(false)} />
-            )}
     </header>
   )
 }

@@ -4,17 +4,8 @@ import { STATIC } from '@/pages/landing/config/staticContent'
 
 const s = STATIC.noticias
 
-const FALLBACK_NOTICIAS = [
-  { id: 1, titulo: 'Nuevas tasas de registro 2026', extracto: 'Bolívar actualiza aranceles para transacciones de bienes raíces este trimestre.', imagen_url: 'https://sectorpublico.softplan.com.br/wp-content/uploads/2022/04/softplanplanejamentoesistemasltda_softplan_image_440-1.jpeg', tag: 'Legal' },
-  { id: 2, titulo: 'Crecimiento en Puerto Ordaz', extracto: 'La zona industrial y comercial muestra signos de recuperación tras nuevas inversiones.', imagen_url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', tag: 'Mercado' },
-  { id: 3, titulo: 'Taller de Ventas Digitales', extracto: 'Éxito total en el último evento presencial realizado en el Hotel Eurobuilding.', imagen_url: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800', tag: 'Eventos' },
-  { id: 4, titulo: 'Innovación Inmobiliaria', extracto: 'Nuevas tecnologías aplicadas al sector de bienes raíces en la región.', imagen_url: 'https://www.elnuevoherald.com/public/ultimas-noticias/5hl2um/picture314557289/alternates/LANDSCAPE_1140/CONDO11.jpg', tag: 'Tecnología' }
-]
-
-// Tier 3: News fetched only when section mounts.
-// Tier 1: All UI labels from staticContent.
 export default function NoticiasSection() {
-  const [noticiasBase, setNoticiasBase] = useState(FALLBACK_NOTICIAS)
+  const [noticiasBase, setNoticiasBase] = useState<any[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -26,7 +17,7 @@ export default function NoticiasSection() {
 
   const noticias = [...noticiasBase, ...noticiasBase]
 
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = React.useCallback((direction: 'left' | 'right') => {
     const current = scrollRef.current
     if (!current) return
     const cardWidth = current.offsetWidth / 3
@@ -38,15 +29,17 @@ export default function NoticiasSection() {
       if (current.scrollLeft <= 0) current.scrollTo({ left: maxScroll, behavior: 'instant' })
       else current.scrollBy({ left: -cardWidth, behavior: 'smooth' })
     }
-  }
+  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => scroll('right'), 4000)
     return () => clearInterval(interval)
-  }, [])
+  }, [scroll])
+
+  if (noticiasBase.length === 0) return null
 
   return (
-    <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden rounded-b-[4rem]'>
+    <section id='noticias' className='bg-white text-slate-900 px-6 lg:px-10 pt-10 pb-10 lg:pb-24 scroll-mt-20 overflow-hidden'>
       <div className='max-w-8xl mx-auto flex justify-between items-end mb-12'>
         <div>
           <h2 className='text-4xl lg:text-5xl font-bold text-[#022c22] tracking-tighter'>
@@ -62,8 +55,11 @@ export default function NoticiasSection() {
       </div>
 
       <div className='relative max-w-8xl mx-auto group'>
-        <button onClick={() => scroll('left')} className='absolute -left-4 lg:-left-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 hidden md:block'>
-          <span className='block rotate-180 text-xl font-bold'>→</span>
+        <button 
+          onClick={() => scroll('left')} 
+          className='absolute -left-2 md:-left-10 lg:-left-12 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white border border-emerald-50 shadow-xl text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0'
+        >
+          <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='3' d='M15 19l-7-7 7-7' /></svg>
         </button>
 
         <div ref={scrollRef} className='flex gap-10 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-8' style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
@@ -71,7 +67,13 @@ export default function NoticiasSection() {
             <div key={i} className='min-w-full md:min-w-[calc(50%-20px)] lg:min-w-[calc(33.333%-27px)] snap-start group/card cursor-pointer'>
               <div className='relative aspect-[16/10] mb-6 overflow-hidden rounded-[2.5rem] shadow-xl shadow-emerald-900/5'>
                 <div className='absolute inset-0 bg-emerald-900/20 opacity-0 group-hover/card:opacity-100 transition-opacity z-10 duration-500' />
-                <img src={news.imagen_url || news.img} alt={news.titulo} className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' />
+                <img 
+                  src={news.imagen_url || news.img} 
+                  alt={news.titulo} 
+                  loading="lazy"
+                  decoding="async"
+                  className='w-full h-full object-cover group-hover/card:scale-110 transition duration-700 ease-out' 
+                />
                 <span className='absolute top-4 left-4 z-20 bg-white/90 backdrop-blur-sm text-emerald-700 text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg'>
                   {news.tag}
                 </span>
@@ -96,8 +98,11 @@ export default function NoticiasSection() {
           ))}
         </div>
 
-        <button onClick={() => scroll('right')} className='absolute -right-4 lg:-right-12 top-1/3 z-30 p-4 rounded-full bg-white shadow-2xl text-slate-800 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 hidden md:block'>
-          <span className='text-xl font-bold block'>→</span>
+        <button 
+          onClick={() => scroll('right')} 
+          className='absolute -right-2 md:-right-10 lg:-right-12 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-white border border-emerald-50 shadow-xl text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100 translate-x-2 group-hover:translate-x-0'
+        >
+          <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth='3' d='M9 5l7 7-7 7' /></svg>
         </button>
       </div>
     </section>

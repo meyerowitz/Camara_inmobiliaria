@@ -4,7 +4,7 @@ import { API_URL } from '@/config/env'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export type UserRole = 'admin' | 'afiliado' | 'super_admin'
+export type UserRole = 'admin' | 'afiliado' | 'super_admin' | 'estudiante'
 
 export interface AuthUser {
   id: number
@@ -12,6 +12,12 @@ export interface AuthUser {
   rol: UserRole              // rol primario (más alto en jerarquía)
   roles: UserRole[]          // todos los roles del usuario
   id_agremiado: number | null
+  // Datos de perfil vinculados (estudiante)
+  nombre_completo?: string
+  cedula_rif?: string
+  telefono?: string
+  nivel_profesional?: string
+  es_corredor_inmobiliario?: boolean
 }
 
 interface AuthContextValue {
@@ -25,6 +31,7 @@ interface AuthContextValue {
   isAdmin: boolean
   isSuperAdmin: boolean
   isAfiliado: boolean
+  isEstudiante: boolean
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
@@ -42,8 +49,16 @@ function normalizeUser(rawUser: any): AuthUser {
     ? 'super_admin'
     : roles.includes('admin')
       ? 'admin'
-      : 'afiliado'
-  return { ...rawUser, rol, roles }
+      : roles.includes('estudiante')
+        ? 'estudiante'
+        : 'afiliado'
+
+  return { 
+    ...rawUser, 
+    rol, 
+    roles,
+    es_corredor_inmobiliario: rawUser.es_corredor_inmobiliario === 1 || rawUser.es_corredor_inmobiliario === true
+  }
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -95,17 +110,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(data.token)
     setUser(newUser)
 
-    // Selector de perfiles ("Netflix") solo si tiene múltiples roles
+    // Selector general si tiene múltiples roles al panel unificado
     if (newUser.roles.length > 1) {
-      navigate('/lobby')
+      navigate('/panel')
       return
     }
 
     // Redirección directa si solo tiene 1 rol
-    if (newUser.rol === 'admin' || newUser.rol === 'super_admin') {
+    if (newUser.rol === 'admin') {
       navigate('/admin')
       return
     }
+
+    if (newUser.rol === 'estudiante') {
+      navigate('/panel?tab=formacion')
+      return
+    }
+
     navigate('/panel')
   }, [navigate])
 
@@ -125,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdminVal      = (user?.roles?.includes('admin') || user?.roles?.includes('super_admin')) ?? false
   const isSuperAdminVal = user?.roles?.includes('super_admin') ?? false
   const isAfiliadoVal   = user?.roles?.includes('afiliado') ?? false
+  const isEstudianteVal = user?.roles?.includes('estudiante') ?? false
 
   return (
     <AuthContext.Provider value={{
@@ -133,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin: isAdminVal,
       isSuperAdmin: isSuperAdminVal,
       isAfiliado: isAfiliadoVal,
+      isEstudiante: isEstudianteVal,
     }}>
       {children}
     </AuthContext.Provider>
