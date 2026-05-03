@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import bgCibir from "@/assets/Pzo.jpg";
-import Navbar from '@/pages/landing/components/navbar/Navbar';
+import Navbar from '@/pages/landing/components/navbar/Navbar4';
 import Estudiosa from "@/assets/estudiosa1.png";
 import Estudioso from "@/assets/estudioso1.png";
 import PreinscripcionProgramaForm from '@/pages/landing/components/PreinscripcionProgramaForm'

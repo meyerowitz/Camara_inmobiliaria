@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Navbar from '@/pages/landing/components/navbar/Navbar4'
 
 export default function Direccion() {
   const [darkMode, setDarkMode] = useState(false)

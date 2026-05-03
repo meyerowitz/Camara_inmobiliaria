@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
-import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Navbar from '@/pages/landing/components/navbar/Navbar4'
 import { API_URL } from '@/config/env'
 
 const useScrollReveal = () => {

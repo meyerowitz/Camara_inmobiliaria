@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { CheckCircle2, XCircle, Loader2, Home, FileText, ChevronDown, ShieldCheck, ArrowRight, GraduationCap, School, Award, Briefcase, Check } from 'lucide-react'
 import { API_URL } from '@/config/env'
 import FileUpload from '@/components/common/FileUpload'
-import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Navbar from '@/pages/landing/components/navbar/Navbar4'
 
 const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },

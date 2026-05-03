@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import bgBolivar from '@/assets/Camara_Metropolitana.jpg'
-import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Navbar from '@/pages/landing/components/navbar/Navbar4'
 import actaPDF from '@/pages/landing/courses/CIV/acta.pdf'
 
 const useScrollReveal = () => {

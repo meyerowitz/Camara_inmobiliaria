@@ -6,7 +6,7 @@ import {
   ShieldCheck, ArrowRight
 } from 'lucide-react'
 import { API_URL } from '@/config/env'
-import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Navbar from '@/pages/landing/components/navbar/Navbar4'
 
 const NIVELES = [
   { value: 'Bachiller', label: 'Bachiller', icon: School },

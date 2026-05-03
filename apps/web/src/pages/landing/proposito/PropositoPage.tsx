@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import bgBolivar from "@/assets/Pzo.jpg";
-import Navbar from "@/pages/landing/components/navbar/Navbar";
+import Navbar from "@/pages/landing/components/navbar/Navbar4";
 
 const useScrollReveal = () => {
   const [node, setNode] = useState<HTMLElement | null>(null);
