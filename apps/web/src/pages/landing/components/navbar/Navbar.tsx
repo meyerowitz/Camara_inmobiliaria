@@ -15,13 +15,18 @@ interface NavbarProps {
   setIsRegisterModalOpen?: (val: boolean) => void;
 }
 
-const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModalOpen }: NavbarProps) => {
-  const { user, logout } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+const Navbar = ({
+  darkMode,
+  setDarkMode,
+  setIsSesionModalOpen,
+  setIsRegisterModalOpen,
+}: NavbarProps) => {
+  const { user, logout } = useAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const labelLogin = 'Acceder'
-  const labelSalir = 'Salir'
+  const labelLogin = "Iniciar Sesión";
+  const labelSalir = "Salir";
 
   return (
     <>
@@ -128,7 +133,7 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
             {NAV_ITEMS.map((item, idx) => (
               <div key={idx} className="space-y-4">
                 <Link
-                  to={item.items ? '#' : item.Tpath}
+                  to={item.items ? "#" : item.Tpath}
                   onClick={() => !item.items && setIsMobileMenuOpen(false)}
                   className={`block text-lg font-black uppercase tracking-wider ${
                     darkMode ? 'text-white hover:text-emerald-400' : 'text-emerald-900 hover:text-emerald-600'
@@ -161,7 +166,7 @@ const Navbar = ({ darkMode, setDarkMode, setIsSesionModalOpen, setIsRegisterModa
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
 export default Navbar;
