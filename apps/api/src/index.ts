@@ -1,33 +1,48 @@
 import express, { Request, Response } from 'express'
-import cors from 'cors'
 import { env } from './config/env.js'
-import { afiliadosRoutes, publicRoutes, cmsRoutes, authRoutes, usersRoutes, academiaRoutes } from './routes/index.js'
+import { isOriginAllowed, corsMiddleware } from './lib/cors.js'
+import { afiliadosRoutes, publicRoutes, cmsRoutes, uploadsRoutes, authRoutes, usersRoutes, academiaRoutes, notificationsRoutes, analyticsRoutes } from './routes/index.js'
 
 
-const app = express()
+const app = express() // v1.0.3
 
-// Middleware
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permite requests sin Origin (curl, server-to-server, Postman)
-    if (!origin) return callback(null, true)
-    // En dev permitimos todo para no bloquear el DX
-    if (env.NODE_ENV !== 'production') return callback(null, true)
+// Normaliza paths con doble barra (evita 308 en Vercel sin cabeceras CORS)
+app.use((req, _res, next) => {
+  const q = req.url.indexOf('?')
+  const path = q === -1 ? req.url : req.url.slice(0, q)
+  const query = q === -1 ? '' : req.url.slice(q)
+  const cleaned = path.replace(/\/{2,}/g, '/')
+  if (cleaned !== path) req.url = cleaned + query
+  next()
+})
 
-    const allowed = env.CORS_ORIGINS.includes(origin)
-    return callback(allowed ? null : new Error('Not allowed by CORS'), allowed)
-  },
-  credentials: true,
-}))
+app.use(corsMiddleware)
 app.use(express.json())
 
+// ── Debug: endpoint para diagnosticar CORS desde producción ──────────
+app.get('/api/cors-check', (req, res) => {
+  const origin = req.headers.origin || '(sin-origin)'
+  res.json({
+    ok: true,
+    origin,
+    allowed_origin: isOriginAllowed(origin),
+    allowed: env.CORS_ORIGINS,
+    app_url: env.APP_URL,
+    node_env: env.NODE_ENV,
+    request_host: req.headers.host,
+  })
+})
+
 // Rutas de API
-app.use('/api/auth',      authRoutes)
-app.use('/api/users',     usersRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/users', usersRoutes)
 app.use('/api/afiliados', afiliadosRoutes)
-app.use('/api/public',    publicRoutes)
-app.use('/api/cms',       cmsRoutes)
-app.use('/api/academia',  academiaRoutes)
+app.use('/api/public', publicRoutes)
+app.use('/api/cms', cmsRoutes)
+app.use('/api/cms/uploads', uploadsRoutes)
+app.use('/api/academia', academiaRoutes)
+app.use('/api/notifications', notificationsRoutes)
+app.use('/api/analytics', analyticsRoutes)
 
 // Rutas base
 app.get('/', (req: Request, res: Response) => {

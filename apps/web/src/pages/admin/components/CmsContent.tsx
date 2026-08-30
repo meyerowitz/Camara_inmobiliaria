@@ -2,10 +2,13 @@ import React from 'react'
 import CmsDashboard from '@/pages/admin/components/dashboard/CmsDashboard'
 import CmsArticlesPanel from '@/pages/admin/components/Cms/CmsArticlesPanel'
 import FormacionPanel from '@/pages/admin/components/Formacion/FormacionPanel'
+import PreinscripcionesPrincipalesPanel from '@/pages/admin/components/Formacion/PreinscripcionesPrincipalesPanel'
 import AnalyticsPanel from '@/pages/admin/components/Analytics/AnalyticsPanel'
 import UsersPanel from '@/pages/admin/components/Users/UsersPanel'
 import AfiliadosPanel from '@/pages/admin/components/Afiliados/AfiliadosPanel'
 import EstudiantesRegularesPanel from '@/pages/admin/components/Estudiantes/EstudiantesRegularesPanel'
+import FinancePanel from '@/pages/admin/components/Finance/FinancePanel'
+import DenunciasPanel from '@/pages/admin/components/Denuncias/DenunciasPanel'
 
 // ─── Placeholder panels ───────────────────────────────────────────────────────
 const Placeholder = ({ title, icon }: { title: string; icon: React.ReactNode }) => (
@@ -68,22 +71,30 @@ import SuperAdminUsersPanel from '@/pages/admin/components/Users/SuperAdminUsers
 const PANELS: Record<string, React.ReactNode> = {
   dashboard: <CmsDashboard />,
   articles: <Placeholder title='Articles' icon={icons.articles} />,
-  cms_noticias: <CmsArticlesPanel externalTab="noticias" />,
-  cms_cursos: <CmsArticlesPanel externalTab="cursos" />,
-  cms_convenios: <CmsArticlesPanel externalTab="convenios" />,
-  cms_directiva: <CmsArticlesPanel externalTab="directiva" />,
-  cms_hitos: <CmsArticlesPanel externalTab="hitos" />,
-  cms_paginas: <CmsArticlesPanel externalTab="paginas" />,
-  cms_config: <CmsArticlesPanel externalTab="config" />,
+  noticias: <CmsArticlesPanel externalTab="noticias" />,
+  cursos: <CmsArticlesPanel externalTab="cursos" />,
+  normativas: <CmsArticlesPanel externalTab="normativas" />,
+  leyes: <CmsArticlesPanel externalTab="leyes" />,
+  reglamentos: <CmsArticlesPanel externalTab="reglamentos" />,
+  normas: <CmsArticlesPanel externalTab="normas" />,
+  actas: <CmsArticlesPanel externalTab="actas" />,
+  directiva: <CmsArticlesPanel externalTab="directiva" />,
+  hitos: <CmsArticlesPanel externalTab="hitos" />,
+  paginas: <CmsArticlesPanel externalTab="paginas" />,
+  config: <CmsArticlesPanel externalTab="config" />,
   // Main CMS generic redirect
   cms: <CmsArticlesPanel externalTab="config" />, 
   formacion: <FormacionPanel />,
+  preinscripciones: <PreinscripcionesPrincipalesPanel />,
+  solicitudes_cambio: <AfiliadosPanel defaultViewMode="solicitudes" hideViewModeTabs />,
   media: <Placeholder title='Media Library' icon={icons.media} />,
   afiliados: <AfiliadosPanel />,
   estudiantes: <EstudiantesRegularesPanel />,
   users: <UsersPanel />,
   admin_users: <SuperAdminUsersPanel />,
   analytics: <AnalyticsPanel />,
+  finanzas: <FinancePanel />,
+  denuncias: <DenunciasPanel />,
   settings: <Placeholder title='Settings' icon={icons.settings} />,
 }
 
@@ -93,7 +104,7 @@ interface CmsContentProps {
 
 const CmsContent = ({ activeId }: CmsContentProps) => {
   const panel = PANELS[activeId] ?? PANELS['dashboard']
-  return <div className="absolute inset-0 overflow-hidden">{panel}</div>
+  return <div className="absolute inset-0 flex flex-col min-h-0 overflow-hidden">{panel}</div>
 }
 
 export default CmsContent

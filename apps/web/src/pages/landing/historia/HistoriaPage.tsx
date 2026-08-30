@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import bgBolivar from '@/pages/landing/assets/Camara_Metropolitana.jpg'
+import bgBolivar from '@/assets/Camara_Metropolitana.webp'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
+import SEO from '@/components/SEO'
 import { API_URL } from '@/config/env'
+import { apiFetch } from '@/lib/apiClient'
 
 const useScrollReveal = () => {
   const [node, setNode] = useState<HTMLElement | null>(null)
@@ -40,18 +43,24 @@ export default function Historia() {
   const [hitos, setHitos] = useState<{ año: string, titulo: string, descripcion: string }[]>([])
 
   useEffect(() => {
-    fetch(`${API_URL}/api/cms/hitos`)
-      .then(r => r.json())
+    let active = true
+    apiFetch(`${API_URL}/api/cms/hitos`)
       .then(data => {
+        if (!active) return
         if (data.success && data.data.length > 0) {
           setHitos(data.data.map((h: any) => ({ año: h.anio, titulo: h.titulo, descripcion: h.descripcion })))
         }
       })
-      .catch(() => {})
+      .catch(() => { })
+    return () => { active = false }
   }, [])
   return (
     <div className='min-h-screen bg-[#022c22] text-white font-sans selection:bg-emerald-500/30 scroll-smooth'>
-      <Navbar  />
+      <SEO
+        title="Nuestra Historia"
+        description="Conoce la trayectoria de la Cámara Inmobiliaria del Estado Bolívar. Décadas impulsando el profesionalismo inmobiliario en la región."
+      />
+      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
       <header
         className='relative px-6 lg:px-20 py-16 lg:py-24 flex items-center justify-center min-h-[45vh] bg-cover animate-header-bg'
         style={{ backgroundImage: `linear-gradient(rgba(2, 44, 34, 0.88), rgba(2, 44, 34, 0.88)), url(${bgBolivar})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}
@@ -66,27 +75,27 @@ export default function Historia() {
       </header>
       <main className='bg-white text-slate-900 rounded-t-[4rem] -mt-12 relative z-10 px-6 lg:px-20 py-24'>
         <div className='max-w-6xl mx-auto'>
-          <div className='text-center mb-20 space-y-4'>
-            <h2 className='text-3xl font-black text-[#022c22] uppercase tracking-tight'>Un legado en movimiento</h2>
-            <p className='max-w-2xl mx-auto text-slate-500'>Desde nuestros inicios, hemos trabajado para ser el pilar del desarrollo inmobiliario en el sur de Venezuela.</p>
+          <div className='max-w-4xl mx-auto text-center mb-20 space-y-6'>
+            <h2 className='text-3xl font-black text-[#022c22] uppercase tracking-tight'>Reseña Histórica</h2>
+            <p className='text-slate-600 leading-relaxed text-lg md:text-center text-justify'>
+              La Cámara Inmobiliaria del Estado Bolívar, también conocida como CIEBO, es una asociación civil sin fines de lucro que agrupa a personas jurídicas y naturales en el área inmobiliaria. De igual manera, difunde las políticas inmobiliarias de la región del estado Bolívar, asegurando el buen ejercicio de la profesión y la protección de los intereses de sus miembros. Esta cámara nace y se constituye en Ciudad Guayana el 28 de julio de 1999 con el fin de asistir, asesorar y dar asistencia a todos sus agremiados en materia inmobiliaria, además de servir como enlace con las demás cámaras que hacen vida en la región.
+            </p>
           </div>
           <div className='relative'>
             <div className='absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-1 bg-slate-100 hidden md:block' />
             {hitos.map((hito, index) => (
-              <HitoHistoria key={index} index={index} año={hito.año} titulo={hito.titulo} descripcion={hito.descripcion} />
+              <HitoHistoria key={hito.año || hito.titulo} index={index} año={hito.año} titulo={hito.titulo} descripcion={hito.descripcion} />
             ))}
           </div>
           <div className='mt-20 p-12 rounded-[3rem] bg-slate-50 border border-emerald-100 text-center space-y-6'>
             <h3 className='text-2xl font-black text-[#022c22]'>¿Quieres ser parte de nuestra historia futura?</h3>
-            <button onClick={() => navigate('/contacto')} className='px-10 py-4 bg-[#022c22] text-emerald-400 rounded-full font-black uppercase text-xs tracking-widest hover:scale-105 transition-all shadow-xl shadow-emerald-900/10'>
+            <button onClick={() => navigate('/contacto')} className='px-10 py-4 bg-[#022c22] text-emerald-400 rounded-full font-black uppercase text-xs tracking-widest hover:scale-105 transition-transform shadow-xl shadow-emerald-900/10'>
               Afíliate hoy mismo
             </button>
           </div>
         </div>
       </main>
-      <footer className='bg-[#011a14] px-6 lg:px-20 py-12 text-center border-t border-white/5'>
-        <p className='text-gray-600 text-[10px] uppercase tracking-[0.2em]'>© 2026 Cámara Inmobiliaria del Estado Bolívar • RIF J-30462520-0</p>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -4,21 +4,32 @@ import CmsAside from '@/pages/admin/components/CmsAside'
 import CmsContent from '@/pages/admin/components/CmsContent'
 
 const NAV_META: Record<string, { title: string; subtitle: string }> = {
-  dashboard: { title: 'Dashboard', subtitle: 'Resumen financiero y actividad reciente' },
   articles: { title: 'Artículos', subtitle: 'Gestionar el contenido del sitio' },
-  formacion: { title: 'Formación', subtitle: 'Cursos, talleres y programa CIBIR' },
+  formacion: { title: 'Formación', subtitle: 'Cursos, talleres y asignación de estudiantes' },
+  preinscripciones: {
+    title: 'Preinscripciones',
+    subtitle: '',
+  },
+  solicitudes_cambio: {
+    title: 'Solicitudes de Cambio',
+    subtitle: 'Revisión y aprobación de solicitudes de actualización de datos de afiliados',
+  },
   cms: { title: 'Contenido', subtitle: 'Todas las secciones de la Landing' },
-  cms_noticias: { title: 'Noticias', subtitle: 'Últimas novedades y artículos' },
-  cms_convenios: { title: 'Convenios', subtitle: 'Alianzas y beneficios para afiliados' },
-  cms_directiva: { title: 'Directiva', subtitle: 'Miembros de la Junta Directiva' },
-  cms_paginas: { title: 'Páginas públicas', subtitle: 'Contenido JSON de rutas /beneficios, /pegi, etc.' },
-  cms_config: { title: 'Configuración de Contenido', subtitle: 'Textos fijos e imágenes de la Landing' },
+  noticias: { title: 'Noticias', subtitle: 'Últimas novedades y artículos' },
+  convenios: { title: 'Convenios', subtitle: 'Alianzas y beneficios para afiliados' },
+  normativas: { title: 'Normativas', subtitle: 'Enlaces a documentos oficiales (PDF u otros)' },
+  directiva: { title: 'Directiva', subtitle: 'Miembros de la Junta Directiva' },
+  paginas: { title: 'Páginas públicas', subtitle: 'Contenido JSON de rutas /beneficios, /pegi, etc.' },
+  config: { title: 'Configuración de Contenido', subtitle: 'Textos fijos e imágenes de la Landing' },
   media: { title: 'Medios', subtitle: 'Gestionar archivos e imágenes' },
-  afiliados: { title: 'Afiliados', subtitle: 'Gestión de candidatos y agremiados CIBIR' },
-  estudiantes: { title: 'Estudiantes', subtitle: 'Estudiantes regulares, preinscripciones e inscripciones' },
+  afiliados: { title: 'Afiliados', subtitle: '' },
+  estudiantes: { title: 'Estudiantes', subtitle: 'Estudiantes regulares e inscripciones activas' },
+  admin_users: { title: 'Administradores', subtitle: 'Cuentas con acceso al panel administrativo' },
   users: { title: 'Usuarios', subtitle: 'Cuentas de acceso al sistema' },
+  finanzas: { title: 'Finanzas', subtitle: 'Libros contables y flujo de caja' },
   analytics: { title: 'Análisis', subtitle: 'Métricas y rendimiento general' },
   settings: { title: 'Configuración del Sistema', subtitle: 'Ajustes del sistema y preferencias' },
+  denuncias: { title: 'Denuncias', subtitle: 'Gestión y seguimiento de denuncias ciudadanas e institucionales' },
 }
 
 const SIDEBAR_COLLAPSED = 72    // icon-only width
@@ -26,8 +37,11 @@ const SIDEBAR_MIN_DRAG = 100   // minimum width while dragging before snapping t
 const SIDEBAR_MAX = 340
 const SIDEBAR_DEFAULT = 220
 
+import { useAuth } from '@/context/AuthContext'
+
 const AdminPage = () => {
-  const [activeId, setActiveId] = useState('dashboard')
+  const { isAsistente, isAdmin } = useAuth()
+  const [activeId, setActiveId] = useState(() => (isAsistente && !isAdmin ? 'afiliados' : 'analytics'))
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT)
   const [sidebarDragging, setSidebarDragging] = useState(false)
@@ -39,7 +53,7 @@ const AdminPage = () => {
   /** Remembers the last expanded width so toggle can restore it */
   const prevExpandedWidth = useRef(SIDEBAR_DEFAULT)
 
-  const meta = NAV_META[activeId] ?? NAV_META['dashboard']
+  const meta = NAV_META[activeId] ?? NAV_META['analytics']
   const isCollapsed = sidebarWidth <= SIDEBAR_COLLAPSED
 
   // ── Toggle: icon-only ↔ last expanded width ──────────────────────────────
@@ -92,7 +106,7 @@ const AdminPage = () => {
   }, [])
 
   return (
-    <div ref={containerRef} className="flex h-screen bg-gray-50 overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 flex bg-gray-50 overflow-hidden w-full h-full">
 
       {/* ── SIDEBAR ──────────────────────────────────────────────────────── */}
       <CmsAside
@@ -123,7 +137,7 @@ const AdminPage = () => {
             flex items-center justify-center w-5 h-5 rounded-full
             bg-white border border-gray-200 text-slate-400 shadow-sm
             hover:bg-[#00D084] hover:text-white hover:border-[#00D084]
-            transition-all duration-150"
+            transition-colors duration-150"
         >
           <svg
             viewBox="0 0 24 24"
@@ -149,7 +163,7 @@ const AdminPage = () => {
           subtitle={meta.subtitle}
           onMenuOpen={() => setMobileMenuOpen(true)}
         />
-        <main className="relative flex-1 overflow-hidden">
+        <main className="relative flex-1 min-h-0 overflow-hidden">
           <CmsContent activeId={activeId} />
         </main>
       </div>

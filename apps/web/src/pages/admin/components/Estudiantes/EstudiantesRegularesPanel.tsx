@@ -1,15 +1,18 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { API_URL } from '@/config/env'
 import { useAuth } from '@/context/AuthContext'
+import { formatNombreCard } from '@/utils/formatters'
+
 
 type Estudiante = {
   id_estudiante: number
-  id_agremiado: number | null
-  cedula_rif: string | null
+  id_persona: number | null
+  id_empresa: number | null
+  cedula: string | null
   nombre_completo: string
   email: string
   telefono: string | null
-  tipo: 'Regular' | 'Agremiado'
+  tipo: 'Regular' | 'Afiliado'
   creado_en: string
 }
 
@@ -40,7 +43,7 @@ export default function EstudiantesRegularesPanel() {
   const [detail, setDetail] = useState<{ estudiante: Estudiante; inscripciones: Inscripcion[] } | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
@@ -60,31 +63,34 @@ export default function EstudiantesRegularesPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [query, authHeaders, selected])
 
-  const loadDetail = async (id: number) => {
+  const loadDetail = useCallback(async (id: number, signal?: AbortSignal) => {
     setDetailLoading(true)
     setError('')
     try {
-      const res = await fetch(`${API_URL}/api/academia/estudiantes/${id}`, { headers: authHeaders })
+      const res = await fetch(`${API_URL}/api/academia/estudiantes-regulares/${id}`, { headers: authHeaders, signal })
       const json = await res.json()
+      if (signal?.aborted) return
       if (!res.ok || !json.success) throw new Error(json.message || 'Error cargando detalle')
       setDetail(json.data)
     } catch (e: unknown) {
+      if (signal?.aborted) return
       const err = e as Error
       setError(err.message || 'Error inesperado')
     } finally {
-      setDetailLoading(false)
+      if (!signal?.aborted) setDetailLoading(false)
     }
-  }
+  }, [authHeaders])
 
-  useEffect(() => { load() }, []) // initial
+  useEffect(() => { load() }, [load]) // initial
 
   useEffect(() => {
     if (!selected) { setDetail(null); return }
-    loadDetail(selected.id_estudiante)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.id_estudiante])
+    const controller = new AbortController()
+    loadDetail(selected.id_estudiante, controller.signal)
+    return () => controller.abort()
+  }, [selected, loadDetail])
 
   const procesar = async (idInscripcion: number, action: 'aprobar' | 'rechazar') => {
     setError('')
@@ -104,9 +110,9 @@ export default function EstudiantesRegularesPanel() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="grid grid-cols-1 sm:grid-cols-[360px_1fr] grid-rows-1 h-full w-full overflow-hidden relative">
       {/* List */}
-      <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden w-full sm:w-[360px] flex-shrink-0">
+      <div className="flex flex-col bg-white border-r border-gray-100 overflow-hidden min-h-0">
         <div className="p-4 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-slate-800">Estudiantes Regulares</h3>
           <p className="text-xs text-slate-400 mt-0.5">Registro y preinscripción/inscripción (sin LMS).</p>
@@ -143,14 +149,15 @@ export default function EstudiantesRegularesPanel() {
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold truncate text-slate-800">{e.nombre_completo}</span>
+                  <span className="text-sm font-semibold truncate text-slate-800">{formatNombreCard(e.nombre_completo)}</span>
+
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                     #{e.id_estudiante}
                   </span>
                 </div>
                 <span className="text-xs text-slate-400 truncate">{e.email}</span>
                 <span className="text-[10px] text-slate-300">
-                  {e.cedula_rif || '—'} · {new Date(e.creado_en).toLocaleDateString('es-ES')}
+                  {e.cedula || '—'} · {new Date(e.creado_en).toLocaleDateString('es-ES')}
                 </span>
               </button>
             ))
@@ -159,7 +166,7 @@ export default function EstudiantesRegularesPanel() {
       </div>
 
       {/* Detail */}
-      <div className="flex-1 min-w-0 bg-gray-50 hidden sm:flex sm:flex-col">
+      <div className="bg-gray-50 overflow-hidden relative min-h-0 hidden sm:block">
         {!selected ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-300">
             <p className="text-sm font-medium">Selecciona un estudiante</p>
@@ -169,11 +176,12 @@ export default function EstudiantesRegularesPanel() {
             <p className="text-sm font-medium">Cargando detalle...</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto h-full">
+          <div className="absolute inset-0 overflow-y-auto p-4 sm:p-6">
             <div className="bg-white rounded-2xl p-4 border border-gray-100">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 leading-tight">{detail.estudiante.nombre_completo}</h3>
+                  <h3 className="text-sm font-bold text-slate-900 leading-tight">{formatNombreCard(detail.estudiante.nombre_completo)}</h3>
+
                   <p className="text-xs text-slate-400 mt-0.5 truncate">{detail.estudiante.email}</p>
                   <p className="text-xs text-slate-400 mt-0.5">{detail.estudiante.telefono || 'Teléfono: —'}</p>
                 </div>

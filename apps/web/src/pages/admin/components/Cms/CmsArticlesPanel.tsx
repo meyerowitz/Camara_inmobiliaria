@@ -1,20 +1,28 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { NoticiasPanel } from '@/pages/admin/components/Cms/NoticiasPanel'
-import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { DirectivaPanel } from '@/pages/admin/components/Cms/DirectivaPanel'
 import { ConfigPanel } from '@/pages/admin/components/Cms/ConfigPanel'
 import { PaginasPanel } from '@/pages/admin/components/Cms/PaginasPanel'
+import { NormativasPanel } from '@/pages/admin/components/Cms/NormativasPanel'
+import { ConveniosPanel } from '@/pages/admin/components/Cms/ConveniosPanel'
 import { LandingPreviewPane } from '@/pages/admin/components/Cms/LandingPreviewPane'
 
-export type CmsTab = 'noticias' | 'convenios' | 'directiva' | 'config' | 'paginas'
+export type CmsTab = 'noticias' | 'normativas' | 'directiva' | 'config' | 'paginas' | 'leyes' | 'reglamentos' | 'normas' | 'actas' | 'cursos' | 'hitos' | 'convenios';
 
 /** Maps each CMS tab to its relevant landing section anchor */
 const SECTION_ANCHORS: Record<CmsTab, string> = {
   noticias: '#noticias',
-  convenios: '#convenios',
+  normativas: '',
   directiva: '#directiva',
   config: '',
   paginas: '',
+  leyes: '',
+  reglamentos: '',
+  normas: '',
+  actas: '',
+  cursos: '',
+  hitos: '',
+  convenios: '',
 }
 
 const MIN_LEFT = 360   // px
@@ -22,7 +30,7 @@ const MIN_RIGHT = 260   // px
 const DEFAULT_LEFT = 650 // content column wider, preview narrower by default
 
 export default function CmsArticlesPanel({ externalTab = 'config' }: { externalTab?: CmsTab }) {
-  const [previewVisible, setPreviewVisible] = useState(true)
+  const [previewVisible, setPreviewVisible] = useState(false)
   const [leftWidth, setLeftWidth] = useState(DEFAULT_LEFT)
   const [dividerDragging, setDividerDragging] = useState(false)
   const [detailName, setDetailName] = useState<string | null>(null)
@@ -76,7 +84,7 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   // ── ConfigPanel renders its own split screen ───────────────────────────────
   if (externalTab === 'config') {
     return (
-      <div className="flex h-full overflow-hidden">
+      <div className="flex-1 w-full h-full min-w-0 overflow-y-auto bg-slate-50">
         <ConfigPanel />
       </div>
     )
@@ -91,21 +99,16 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
   }
 
   const sectionAnchor = SECTION_ANCHORS[externalTab]
+  const previewIframeSrc = externalTab === 'normativas' ? '/normativas' : '/'
+  const previewOpenTabHref = externalTab === 'normativas' ? '/normativas' : undefined
+  const mobileLandingHref =
+    externalTab === 'normativas' ? '/normativas' : sectionAnchor ? `/${sectionAnchor}` : '/'
 
   return (
-    <div ref={containerRef} className="flex w-full h-full overflow-hidden bg-white select-none">
-
-      {/* ── LEFT: content panel ───────────────────────────────────────────── */}
-      <div
-        className="flex flex-col overflow-hidden flex-shrink-0 max-lg:!w-full max-lg:!flex-1"
-        style={{
-          width: previewVisible ? leftWidth : undefined,
-          flex: previewVisible ? 'none' : '1 1 0%',
-          transition: dividerDragging ? 'none' : 'width 0.26s cubic-bezier(0.4,0,0.2,1)',
-        }}
-      >
+    <div className="flex w-full h-full min-w-0 overflow-y-auto bg-slate-50">
+      <div className="flex flex-col flex-1 w-full min-w-0">
         {/* Mini toolbar with interactive breadcrumb */}
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-1.5 bg-gray-50 border-b border-gray-100">
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 shadow-2xs">
           <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-slate-400">
             {detailName ? (
               <>
@@ -122,68 +125,23 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
                 </span>
               </>
             ) : (
-              <span className="uppercase">{externalTab}</span>
+              <span className="uppercase text-slate-600 font-extrabold">{externalTab}</span>
             )}
           </div>
-          {/* Show-preview button when hidden */}
-          {!previewVisible && (
-            <button
-              onClick={() => setPreviewVisible(true)}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1 rounded-lg text-[11px] font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all"
-            >
-              <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Mostrar preview
-            </button>
-          )}
         </div>
 
-        {/* Tab content — key forces remount+animation on every tab switch */}
-        <div key={externalTab} className="flex-1 overflow-hidden relative cms-fade-up">
+        {/* Tab content */}
+        <div key={externalTab} className="flex-1 w-full h-full min-w-0 overflow-y-auto relative cms-fade-up">
           {externalTab === 'noticias' && <NoticiasPanel />}
-          {externalTab === 'convenios' && <ConveniosPanel />}
+          {externalTab === 'normativas' && <NormativasPanel />}
+          {externalTab === 'leyes' && <NormativasPanel fixedCategory="Leyes y Decretos" />}
+          {externalTab === 'reglamentos' && <NormativasPanel fixedCategory="Reglamentos y Estatutos" />}
+          {externalTab === 'normas' && <NormativasPanel fixedCategory="Normas y Procedimientos" />}
+          {externalTab === 'actas' && <NormativasPanel fixedCategory="Actas de Asamblea" />}
           {externalTab === 'directiva' && <DirectivaPanel />}
+          {externalTab === 'convenios' && <ConveniosPanel />}
         </div>
       </div>
-
-      {/* ── DIVIDER (drag handle) ─────────────────────────────────────────── */}
-      {previewVisible && (
-        <div
-          onMouseDown={onDividerMouseDown}
-          className="hidden lg:flex flex-shrink-0 w-1.5 cursor-col-resize items-center justify-center bg-gray-200 hover:bg-[#00D084] transition-colors duration-150 z-10"
-          title="Arrastrar para redimensionar"
-        >
-          <div className="w-0.5 h-10 rounded-full bg-gray-400" />
-        </div>
-      )}
-
-      {/* ── RIGHT: landing preview ────────────────────────────────────────── */}
-      <div className={`hidden lg:flex flex-col overflow-hidden ${previewVisible ? 'flex-1' : 'w-0'}`}>
-        <LandingPreviewPane
-          visible={previewVisible}
-          onToggle={() => setPreviewVisible(v => !v)}
-          sectionAnchor={sectionAnchor}
-        />
-      </div>
-
-      {/* Mobile: open in new tab */}
-      <div className="lg:hidden fixed bottom-4 right-4 z-50">
-        <a
-          href={`/${sectionAnchor}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2.5 bg-[#00D084] text-white text-xs font-bold rounded-full shadow-lg shadow-emerald-500/30 hover:bg-[#00B870] transition-colors"
-        >
-          Ver landing
-        </a>
-      </div>
-
-      {/* ── DRAG OVERLAY: captures mouse events over the iframe during resize ── */}
-      {dividerDragging && (
-        <div className="fixed inset-0 z-[9999] cursor-col-resize" />
-      )}
     </div>
   )
 }

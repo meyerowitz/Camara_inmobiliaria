@@ -1,26 +1,39 @@
 import React, { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import logo from '@/pages/landing/assets/Logo.png'
+import logo from '@/assets/Logo2.webp'
 import ForgotPasswordModal from '@/pages/landing/components/ForgotPasswordModal'
+import { Eye, EyeOff } from 'lucide-react'
+import { FloatingInput } from '@/components/ui/FloatingInput'
+import { toast } from 'sonner'
 
 export default function LoginModal({ onClose }: { onClose: () => void }) {
   const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showForgot, setShowForgot] = useState(false)
+  const [shake, setShake] = useState(false)
+  const [hasError, setHasError] = useState(false)
+  const passwordRef = React.useRef<HTMLInputElement | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setLoading(true)
+    setHasError(false)
     try {
       await login(email, password)
       onClose()
     } catch (err: any) {
-      setError(err.message || 'Credenciales no autorizadas')
+      toast.error(err.message || 'Credenciales incorrectas')
+      setHasError(true)
+      setShake(true)
+      setTimeout(() => setShake(false), 600)
+      setTimeout(() => {
+        passwordRef.current?.focus()
+      }, 50)
     } finally {
       setLoading(false)
     }
@@ -32,7 +45,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
       <div className='absolute inset-0 bg-[#011a14]/60 backdrop-blur-md' onClick={onClose} />
 
       {/* Contenedor del Modal */}
-      <div className='relative bg-white w-full max-w-[420px] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden'>
+      <div className={`relative bg-white w-full max-w-[440px] rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden ${shake ? 'animate-shake' : ''}`}>
 
         {/* Botón Cerrar Minimalista */}
         <button
@@ -44,16 +57,14 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
           </svg>
         </button>
 
-        <div className='p-10 sm:p-12'>
+        <div className='p-8 sm:p-10'>
           {/* Título e Icono Sutil */}
-          <div className='mb-10 flex flex-col items-center text-center'>
-            <div className='w-20 h-20 bg-emerald-500/10 rounded-3xl flex items-center justify-center mb-6 overflow-hidden'>
+          <div className='mb-8 flex flex-col items-center text-center'>
+            <div className='mb-6 flex flex-col items-center'>
               <img
                 src={logo}
                 alt="Logo"
-                className='h-12 w-auto object-contain 
-                filter brightness-0 
-                [filter:invert(48%)_sepia(79%)_saturate(2476%)_hue-rotate(134deg)_brightness(94%)_contrast(92%)]'
+                className='h-28 w-auto object-contain transition-transform hover:scale-105 duration-300'
               />
             </div>
             <h2 className='text-3xl font-black text-slate-900 tracking-tight'>
@@ -64,31 +75,46 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
             </p>
           </div>
 
-          <form className='space-y-6' onSubmit={handleSubmit}>
+          <form className='space-y-5' onSubmit={handleSubmit}>
             {/* Campo Email */}
             <div className='space-y-2'>
-              <input
+              <FloatingInput
                 type='email'
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => {
+                  setEmail(e.target.value)
+                  setHasError(false)
+                }}
                 required
-                className='w-full px-0 py-3 border-b-2 border-slate-100 focus:border-emerald-500 transition-colors bg-transparent outline-none text-slate-800 placeholder-slate-300 font-medium'
-                placeholder="Correo electrónico"
+                label="Correo electrónico"
+                error={hasError}
               />
             </div>
 
             {/* Campo Password */}
             <div className='space-y-2'>
-              <div className='flex justify-between items-center'>
-                <input
-                  type='password'
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  className='w-full px-0 py-3 border-b-2 border-slate-100 focus:border-emerald-500 transition-colors bg-transparent outline-none text-slate-800 placeholder-slate-300 font-medium'
-                  placeholder="Contraseña"
-                />
-              </div>
+              <FloatingInput
+                type={showPassword ? 'text' : 'password'}
+                ref={passwordRef}
+                value={password}
+                onChange={e => {
+                  setPassword(e.target.value)
+                  setHasError(false)
+                }}
+                required
+                label="Contraseña"
+                error={hasError}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-slate-300 hover:text-emerald-600 transition-colors focus:outline-none pb-2 pt-2"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              />
               <div className='flex justify-end'>
                 <button
                   type='button'
@@ -100,30 +126,33 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Error */}
-            {error && (
-              <div className='text-red-500 text-xs font-bold flex items-center gap-2 bg-red-50 p-3 rounded-lg'>
-                <svg className='w-4 h-4' fill='currentColor' viewBox='0 0 20 20'>
-                  <path fillRule='evenodd' d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z' clipRule='evenodd' />
-                </svg>
-                {error}
-              </div>
-            )}
+
 
             {/* Botón Submit */}
             <div className='pt-4'>
               <button
                 type='submit'
                 disabled={loading}
-                className='w-full py-4 bg-[#022c22] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-900 transition-all active:scale-[0.98] disabled:opacity-50'
+                className='w-full py-4 bg-[#022c22] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-emerald-900 transition-colors transition-transform active:scale-[0.98] disabled:opacity-50'
               >
-                {loading ? 'Verificando...' : 'Acceder'}
+                {loading ? 'Verificando...' : 'Iniciar Sesión'}
               </button>
             </div>
           </form>
 
+          <p className='mt-8 text-center text-sm text-slate-500'>
+            ¿No estas afiliado?{' '}
+            <Link
+              to='/afiliate'
+              onClick={onClose}
+              className='font-semibold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 decoration-emerald-500/40 hover:decoration-emerald-600 transition-colors'
+            >
+              Afíliate aquí
+            </Link>
+          </p>
+
           {/* Footer del Modal */}
-          <div className='mt-10 text-center'>
+          <div className='mt-8 text-center'>
             <p className='text-slate-400 text-[11px] font-medium'>
               CÁMARA INMOBILIARIA DEL ESTADO BOLÍVAR
             </p>

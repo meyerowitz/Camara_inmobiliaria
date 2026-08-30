@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import { getUsers, createUser, updateUser, resetUserPassword, deleteUser } from '../controllers/users.controller.js'
+import { getUsers, createUser, updateUser, resetUserPassword, sendUserInvitation, deleteUser, impersonateUser } from '../controllers/users.controller.js'
 import { requireAuth, requireRole } from '../middlewares/auth.middleware.js'
 
 const router = Router()
 
-// Todas las rutas de usuarios requieren autenticación de admin o super_admin
-router.use(requireAuth, requireRole('admin', 'super_admin'))
+// Las rutas de usuarios requieren autenticación y rol administrativo (admin, super_admin, asistente)
+router.use(requireAuth, requireRole('admin', 'super_admin', 'asistente', 'administrativo'))
 
 // GET /api/users — listar usuarios
 router.get('/', getUsers)
@@ -19,7 +19,13 @@ router.patch('/:id', updateUser)
 // POST /api/users/:id/reset — reset de contraseña
 router.post('/:id/reset', resetUserPassword)
 
-// DELETE /api/users/:id — eliminar usuario (solo super_admin internally in controller)
-router.delete('/:id', deleteUser)
+// POST /api/users/:id/invite — enviar correo de invitación
+router.post('/:id/invite', sendUserInvitation)
+
+// POST /api/users/:id/impersonate — suplantar sesión (solo admin y super_admin)
+router.post('/:id/impersonate', requireRole('admin', 'super_admin'), impersonateUser)
+
+// DELETE /api/users/:id — eliminar usuario (solo admin y super_admin)
+router.delete('/:id', requireRole('admin', 'super_admin'), deleteUser)
 
 export { router as usersRoutes }

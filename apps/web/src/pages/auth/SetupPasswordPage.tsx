@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { API_URL } from '@/config/env';
+import { toast } from 'sonner';
+import logo from '@/assets/Logo2.webp';
 
 export default function SetupPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -31,7 +33,9 @@ export default function SetupPasswordPage() {
   useEffect(() => {
     if (!token) {
       setStatus('error');
-      setMessage('El enlace no es válido o ha expirado.');
+      const msg = 'El enlace de acceso es incorrecto o ha caducado. Por favor, solicita una nueva invitación.';
+      setMessage(msg);
+      toast.error(msg);
     }
   }, [token]);
 
@@ -51,18 +55,38 @@ export default function SetupPasswordPage() {
         body: JSON.stringify({ token, password }),
       });
 
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setStatus('error');
+        let errMsg = data.message || 'Error al procesar la solicitud.';
+        if (errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('expira') || errMsg.toLowerCase().includes('vencido') || errMsg.toLowerCase().includes('caducado')) {
+          errMsg = 'El enlace de activación no es válido, ya fue utilizado o ha caducado. Por favor, solicita una nueva invitación.';
+        }
+        setMessage(errMsg);
+        toast.error(errMsg);
+        return;
+      }
+
       const data = await res.json();
 
       if (data.success) {
         setStatus('success');
         setMessage(successMsg);
+        toast.success(successMsg);
       } else {
         setStatus('error');
-        setMessage(data.message || 'Error al procesar la solicitud.');
+        let errMsg = data.message || 'Error al procesar la solicitud.';
+        if (errMsg.toLowerCase().includes('token') || errMsg.toLowerCase().includes('expira') || errMsg.toLowerCase().includes('vencido') || errMsg.toLowerCase().includes('caducado')) {
+          errMsg = 'El enlace de activación no es válido, ya fue utilizado o ha caducado. Por favor, solicita una nueva invitación.';
+        }
+        setMessage(errMsg);
+        toast.error(errMsg);
       }
     } catch (err) {
       setStatus('error');
-      setMessage('Error de conexión con el servidor.');
+      const connErr = 'Tiempo de espera agotado o error de conexión con el servidor. Por favor, intente de nuevo.';
+      setMessage(connErr);
+      toast.error(connErr);
     } finally {
       setLoading(false);
     }
@@ -81,7 +105,7 @@ export default function SetupPasswordPage() {
           </div>
           <button 
             onClick={() => navigate('/')} 
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-200"
+            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-200"
           >
             Ir al Inicio de Sesión <ArrowRight size={18} />
           </button>
@@ -92,19 +116,20 @@ export default function SetupPasswordPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center p-4 selection:bg-emerald-100 italic-none">
-      {/* Logo Placeholder / Header */}
-      <div className="mb-8 text-center flex flex-col items-center">
-        <div className="w-16 h-16 bg-emerald-600 rounded-2xl shadow-lg flex items-center justify-center mb-4 transform -rotate-3">
-          <ShieldCheck className="text-white w-10 h-10" />
-        </div>
-        <h2 className="text-xl font-black text-slate-800 tracking-tight">CIEBO <span className="text-emerald-500">Membresía</span></h2>
-      </div>
-
       <div className="max-w-md w-full bg-white rounded-[32px] shadow-2xl shadow-slate-200/50 p-8 sm:p-10 border border-slate-100 relative overflow-hidden">
         {/* Background micro-decoration */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 opacity-50" />
         
         <div className="relative">
+          {/* Logo */}
+          <div className="mb-8 flex justify-center">
+            <img
+              src={logo}
+              alt="Logo Cámara Inmobiliaria"
+              className="h-40 w-auto object-contain transition-transform hover:scale-105 duration-300"
+            />
+          </div>
+
           <h1 className="text-2xl font-black text-slate-800 mb-2">{title}</h1>
           <p className="text-slate-400 text-sm mb-8">{subtitle}</p>
 
@@ -129,7 +154,7 @@ export default function SetupPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 8 caracteres"
                   disabled={status === 'error'}
-                  className="w-full bg-slate-50 border border-slate-100 group-focus-within:border-emerald-500 group-focus-within:bg-white rounded-2xl pl-11 pr-12 py-4 text-slate-700 font-medium focus:outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 group-focus-within:border-emerald-500 group-focus-within:bg-white rounded-2xl pl-11 pr-12 py-4 text-slate-700 font-medium focus:outline-none transition-colors"
                 />
                 <button 
                   type="button" 
@@ -154,7 +179,7 @@ export default function SetupPasswordPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repite tu contraseña"
                   disabled={status === 'error'}
-                  className={`w-full bg-slate-50 border group-focus-within:bg-white rounded-2xl pl-11 pr-4 py-4 text-slate-700 font-medium focus:outline-none transition-all ${
+                  className={`w-full bg-slate-50 border group-focus-within:bg-white rounded-2xl pl-11 pr-4 py-4 text-slate-700 font-medium focus:outline-none transition-colors ${
                     confirmPassword && !isMatch ? 'border-rose-200 focus:border-rose-500 bg-rose-50/30' : 'border-slate-100 focus:border-emerald-500'
                   }`}
                 />
@@ -175,7 +200,7 @@ export default function SetupPasswordPage() {
             <button
               type="submit"
               disabled={loading || !isMatch || status === 'error'}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:grayscale text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-colors transition-transform shadow-xl shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-2 mt-2"
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : btnText}
             </button>
@@ -183,9 +208,6 @@ export default function SetupPasswordPage() {
         </div>
       </div>
 
-      <p className="mt-8 text-slate-400 text-xs font-medium">
-        ¿Tienes problemas? <Link to="/contacto" className="text-emerald-600 font-bold hover:underline">Contacta a soporte</Link>
-      </p>
     </div>
   );
 }

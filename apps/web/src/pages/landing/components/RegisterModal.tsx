@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterModal({ onClose }: { onClose: () => void }) {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className='fixed inset-0 z-[100] flex items-center justify-center p-4'>
       <div
@@ -9,6 +12,7 @@ export default function RegisterModal({ onClose }: { onClose: () => void }) {
       />
       <div className='relative bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center'>
         <button
+          type="button"
           onClick={onClose}
           className='absolute top-6 right-6 text-gray-400 hover:text-emerald-600 transition'
         >
@@ -30,8 +34,20 @@ export default function RegisterModal({ onClose }: { onClose: () => void }) {
           <div className='text-left'>
             <input type='email' placeholder='Correo electrónico:' className='w-full px-6 py-3.5 border border-gray-400 rounded-full text-gray-700 focus:outline-none focus:border-emerald-500 transition-colors' />
           </div>
-          <div className='text-left'>
-            <input type='password' placeholder='Crea una contraseña:' className='w-full px-6 py-3.5 border border-gray-400 rounded-full text-gray-700 focus:outline-none focus:border-emerald-500 transition-colors' />
+          <div className='text-left relative flex items-center'>
+            <input 
+              type={showPassword ? 'text' : 'password'} 
+              placeholder='Crea una contraseña:' 
+              className='w-full px-6 py-3.5 border border-gray-400 rounded-full text-gray-700 focus:outline-none focus:border-emerald-500 transition-colors pr-12' 
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 text-gray-400 hover:text-emerald-600 focus:outline-none transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
           <div className='flex items-center gap-2 px-2 pt-2'>
             <input type='checkbox' className='w-4 h-4 accent-emerald-600' id='terms' />
@@ -40,7 +56,7 @@ export default function RegisterModal({ onClose }: { onClose: () => void }) {
             </label>
           </div>
           <div className='pt-6'>
-            <button className='w-full px-10 py-3.5 bg-emerald-500 text-white rounded-full font-bold hover:bg-[#022c22] transition-all shadow-lg shadow-emerald-500/20'>
+            <button type="submit" className='w-full px-10 py-3.5 bg-emerald-500 text-white rounded-full font-bold hover:bg-[#022c22] transition-colors shadow-lg shadow-emerald-500/20'>
               Registrarme ahora
             </button>
           </div>

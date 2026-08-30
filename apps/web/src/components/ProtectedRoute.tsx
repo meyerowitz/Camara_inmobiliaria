@@ -5,6 +5,7 @@ import { useAuth, type UserRole } from '@/context/AuthContext'
 interface ProtectedRouteProps {
   /** Si se especifica, el usuario debe tener al menos uno de estos roles */
   requiredRoles?: UserRole[]
+  children?: React.ReactNode
 }
 
 /**
@@ -12,9 +13,9 @@ interface ProtectedRouteProps {
  * - Si está cargando: muestra spinner.
  * - Si no hay usuario autenticado: redirige a `/`.
  * - Si los roles no coinciden: redirige a `/panel` (vista unificada).
- * - Si todo OK: renderiza los hijos con <Outlet />.
+ * - Si todo OK: renderiza los hijos o <Outlet />.
  */
-export default function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
+export default function ProtectedRoute({ requiredRoles, children }: ProtectedRouteProps) {
   const { user, isLoading, hasRole } = useAuth()
 
   if (isLoading) {
@@ -34,10 +35,18 @@ export default function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
 
   // Si hay roles requeridos, verificar que el usuario tenga al menos uno
   if (requiredRoles && requiredRoles.length > 0) {
-    // super_admin tiene acceso a todo lo que requiera admin
-    const effectiveRoles: UserRole[] = requiredRoles.includes('admin')
-      ? [...requiredRoles, 'super_admin']
-      : requiredRoles
+    let effectiveRoles: UserRole[] = [...requiredRoles]
+    if (requiredRoles.includes('admin') && !effectiveRoles.includes('super_admin')) {
+      effectiveRoles.push('super_admin')
+    }
+    const staffRoles: UserRole[] = ['asistente', 'administrativo', 'secretario', 'secretaria', 'personal', 'personal_admin', 'personal_administrativo']
+    if (requiredRoles.some(r => staffRoles.includes(r))) {
+      for (const r of staffRoles) {
+        if (!effectiveRoles.includes(r)) effectiveRoles.push(r)
+      }
+      if (!effectiveRoles.includes('admin')) effectiveRoles.push('admin')
+      if (!effectiveRoles.includes('super_admin')) effectiveRoles.push('super_admin')
+    }
 
     const hasAccess = effectiveRoles.some(r => hasRole(r))
     if (!hasAccess) {
@@ -45,5 +54,5 @@ export default function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
     }
   }
 
-  return <Outlet />
+  return children ? <>{children}</> : <Outlet />
 }

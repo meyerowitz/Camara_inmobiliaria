@@ -98,8 +98,3 @@ pnpm dev
 | Despliegue | Vercel (frontend + backend serverless) |
 
 ---
-
-## 🚢 Despliegue en Vercel
-
-Cada app (`web` y `api`) tiene su propio `vercel.json` y se despliega como proyecto independiente en Vercel. Ver los README individuales para instrucciones detalladas.
- 

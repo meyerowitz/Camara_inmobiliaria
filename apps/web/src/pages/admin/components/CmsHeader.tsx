@@ -1,4 +1,5 @@
 import React from 'react';
+import NotificationCenter from '@/components/NotificationCenter';
 
 interface CmsHeaderProps {
   title?: string;
@@ -67,6 +68,7 @@ const CmsHeader = ({
 
       {/* Right: search + action button */}
       <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
+        <NotificationCenter />
 
         {/* Search */}
         <div className="relative flex-1 sm:w-[240px] sm:flex-none">
@@ -78,7 +80,7 @@ const CmsHeader = ({
           </div>
           <input
             type="text"
-            className="block w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-full text-sm placeholder-gray-400 outline-none transition-all"
+            className="block w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-100 rounded-full text-sm placeholder-gray-400 outline-none transition-colors"
             style={{ '--tw-ring-color': 'var(--color-admin-accent)' } as React.CSSProperties}
             placeholder={searchPlaceholder}
             onChange={(e) => onSearch?.(e.target.value)}

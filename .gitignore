@@ -27,3 +27,46 @@ dist-ssr
 .vscode
 .vercel
 .env*.local
+
+# Agent / Skills directory
+.agents/
+.agents
+@.agents/
+@.agents
+
+scripts/
+scripts/temp_*
+apps/api/src/scripts/inspect_*
+*.temp.js
+*.temp.ts
+*.temp.sh
+*.temp.py
+scratch/
+temp/
+tmp/
+docs/
+
+# Database Seeds
+apps/api/src/config/seed-*.ts
+apps/api/src/config/afiliados_seed.json
+apps/api/src/config/send-invitacion-contrasena.ts
+
+# Temporary Data Extractions
+corporativos_asociacion.md
+
+# Temporary scripts
+apps/api/src/config/check-tokens.ts
+apps/api/src/config/search-preinscripciones.ts
+apps/api/src/config/verify-emails-are-affiliates.ts
+
+# Temporary JSON files
+/*.json
+!/package.json
+!/package-lock.json
+!/turbo.json
+
+# Diagrams and documentation
+apps/web/casos de uso/
+apps/web/dfds/
+
+*.db

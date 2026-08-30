@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
+import Footer from '@/pages/landing/components/Footer'
 
 export default function Direccion() {
   const [darkMode, setDarkMode] = useState(false)
@@ -52,9 +53,7 @@ export default function Direccion() {
           </footer>
         </div>
       </main>
-      <footer className='bg-[#011a14] py-12 text-center'>
-        <p className='text-gray-600 text-[10px] uppercase tracking-[0.2em]'>Cámara Inmobiliaria del Estado Bolívar | Ciudad Guayana, 2026</p>
-      </footer>
+      <Footer />
     </div>
   )
 }
