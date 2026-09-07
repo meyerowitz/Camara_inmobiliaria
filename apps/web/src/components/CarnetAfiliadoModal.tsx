@@ -382,13 +382,16 @@ export default function CarnetAfiliadoModal({ isOpen, onClose, afiliado, onUpdat
 
       const { signedUploadUrl, token: uploadToken, publicUrl } = presignData.data;
 
-      // 2. Upload to Supabase Storage via PUT
+      // 2. Upload to Storage via PUT
+      const uploadHeaders: Record<string, string> = {
+        'Content-Type': fileToUpload.type,
+      };
+      if (uploadToken) {
+        uploadHeaders['Authorization'] = `Bearer ${uploadToken}`;
+      }
       const uploadRes = await fetch(signedUploadUrl, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${uploadToken}`,
-          'Content-Type': fileToUpload.type,
-        },
+        headers: uploadHeaders,
         body: fileToUpload,
       });
 
@@ -416,9 +419,15 @@ export default function CarnetAfiliadoModal({ isOpen, onClose, afiliado, onUpdat
           const presignRawData = await presignRaw.json();
           if (presignRaw.ok && presignRawData.success) {
             const { signedUploadUrl: sUrl, token: uTok, publicUrl: origPubUrl } = presignRawData.data;
+            const uploadHeadersRaw: Record<string, string> = {
+              'Content-Type': compressedRaw.type,
+            };
+            if (uTok) {
+              uploadHeadersRaw['Authorization'] = `Bearer ${uTok}`;
+            }
             const uRes = await fetch(sUrl, {
               method: 'PUT',
-              headers: { Authorization: `Bearer ${uTok}`, 'Content-Type': compressedRaw.type },
+              headers: uploadHeadersRaw,
               body: compressedRaw,
             });
             if (uRes.ok) {

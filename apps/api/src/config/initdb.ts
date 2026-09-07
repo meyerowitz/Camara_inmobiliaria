@@ -609,15 +609,16 @@ async function run() {
     }
   }
 
+  const b2Base = (env.B2_PUBLIC_URL_BASE || 'https://f005.backblazeb2.com/file/files-supa/').replace(/\/$/, '')
   // Normativas de ejemplo
   const normativas = [
-    { titulo: "ESTATUTOS CIV", categoria: "Reglamentos y Estatutos", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/48add48d-420a-4ae5-ab70-5fc02369b56e-Estatutos-CIV.pdf" },
-    { titulo: "CÓDIGO DE ÉTICA DEL PROFESIONAL INMOBILIARIO", categoria: "Reglamentos y Estatutos", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/812fd943-a934-4ab9-a7e1-cf4d0831c10f-Codigo-etica-vigencia_-29-09-2.020-ONCDOFT.pdf" },
-    { titulo: "REGLAMENTO CERTIFICACIÓN DEL PROFESIONAL INMOBILIARIO CIV", categoria: "Reglamentos y Estatutos", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/6e9fd86a-a714-414e-b38d-ae999297e522-REGLAMENTO-DE-CERTIFICACION-CIV-APROBADO-JUNTA-DIRECTIVA-1-1.pdf" },
-    { titulo: "LEY PARA LA REGULARIZACIÓN Y CONTROL DE LOS ARRENDAMIENTOS DE VIVIENDA", categoria: "Reglamentos y Estatutos", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/15705918-16ba-42c6-9637-a2cb0eb53a2f-mietengesetz-venezuela-1.pdf" },
-    { titulo: "ACTA DE ASAMBLEA ORDINARIA CIEB (SEPT 2012)", categoria: "Actas de Asamblea", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/2723a35a-a51f-40d2-ad23-08aef4c57104-Acta_Asamblea_Ordinaria_de_la_Camara.pdf" },
-    { titulo: "ACTA CONSTITUTIVA Y ESTATURIA DE LA CÁMARA", categoria: "Actas de Asamblea", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/b2cf8ff2-5ef7-45c3-b113-ad2e97f44eab-Acta-1.pdf" },
-    { titulo: "LEY DE FISCALIZACIÓN Y FINANCIAMIENTO DE LAS ONG", categoria: "Leyes y Decretos", url: "https://gmhybfyxcbfhcaugtvlx.supabase.co/storage/v1/object/public/public-docs/normativas/8262feae-4105-41e7-8cf4-1d6a7baa741a-GACETA-6855_(1).pdf" }
+    { titulo: "ESTATUTOS CIV", categoria: "Reglamentos y Estatutos", url: `${b2Base}/public-docs/normativas/48add48d-420a-4ae5-ab70-5fc02369b56e-Estatutos-CIV.pdf` },
+    { titulo: "CÓDIGO DE ÉTICA DEL PROFESIONAL INMOBILIARIO", categoria: "Reglamentos y Estatutos", url: `${b2Base}/public-docs/normativas/812fd943-a934-4ab9-a7e1-cf4d0831c10f-Codigo-etica-vigencia_-29-09-2.020-ONCDOFT.pdf` },
+    { titulo: "REGLAMENTO CERTIFICACIÓN DEL PROFESIONAL INMOBILIARIO CIV", categoria: "Reglamentos y Estatutos", url: `${b2Base}/public-docs/normativas/6e9fd86a-a714-414e-b38d-ae999297e522-REGLAMENTO-DE-CERTIFICACION-CIV-APROBADO-JUNTA-DIRECTIVA-1-1.pdf` },
+    { titulo: "LEY PARA LA REGULARIZACIÓN Y CONTROL DE LOS ARRENDAMIENTOS DE VIVIENDA", categoria: "Reglamentos y Estatutos", url: `${b2Base}/public-docs/normativas/15705918-16ba-42c6-9637-a2cb0eb53a2f-mietengesetz-venezuela-1.pdf` },
+    { titulo: "ACTA DE ASAMBLEA ORDINARIA CIEB (SEPT 2012)", categoria: "Actas de Asamblea", url: `${b2Base}/public-docs/normativas/2723a35a-a51f-40d2-ad23-08aef4c57104-Acta_Asamblea_Ordinaria_de_la_Camara.pdf` },
+    { titulo: "ACTA CONSTITUTIVA Y ESTATURIA DE LA CÁMARA", categoria: "Actas de Asamblea", url: `${b2Base}/public-docs/normativas/b2cf8ff2-5ef7-45c3-b113-ad2e97f44eab-Acta-1.pdf` },
+    { titulo: "LEY DE FISCALIZACIÓN Y FINANCIAMIENTO DE LAS ONG", categoria: "Leyes y Decretos", url: `${b2Base}/public-docs/normativas/8262feae-4105-41e7-8cf4-1d6a7baa741a-GACETA-6855_(1).pdf` }
   ]
 
   for (const n of normativas) {

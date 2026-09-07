@@ -40,6 +40,14 @@ const envSchema = z.object({
   RESEND_FROM_EMAIL: z.string().email().default('info@camarainmobiliariadebolivar.com'),
   ADMIN_EMAIL: z.string().email().default('info@camarainmobiliariadebolivar.com'),
 
+  // ── Backblaze B2 Storage ───────────────────────────────────────────────────
+  KEY_ID: z.string().optional(),
+  APPLICATION_KEY: z.string().optional(),
+  BUCKET_NAME: z.string().default('files-supa'),
+  B2_ENDPOINT: z.string().default('https://s3.us-east-005.backblazeb2.com'),
+  B2_REGION: z.string().default('us-east-005'),
+  B2_PUBLIC_URL_BASE: z.string().default('https://f005.backblazeb2.com/file/files-supa/'),
+
   // ── Supabase Storage ───────────────────────────────────────────────────────
   SUPABASE_URL: z.string().url().optional(),
   // Compatibilidad con nombre antiguo en .env

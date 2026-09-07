@@ -132,13 +132,17 @@ export default function FileUpload({
 
       const { signedUploadUrl, token, publicUrl } = presignData.data;
 
-      // 2. Upload to Supabase Storage via PUT
+      // 2. Upload to Storage via PUT
+      const uploadHeaders: Record<string, string> = {
+        'Content-Type': fileToUpload.type,
+      };
+      if (token) {
+        uploadHeaders['Authorization'] = `Bearer ${token}`;
+      }
+
       const uploadRes = await fetch(signedUploadUrl, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': fileToUpload.type,
-        },
+        headers: uploadHeaders,
         body: fileToUpload,
       });
 
@@ -260,6 +264,7 @@ export default function FileUpload({
     isImage || 
     (uploadedUrl && (
       uploadedUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || 
+      uploadedUrl.includes('backblazeb2.com') ||
       uploadedUrl.includes('supabase.co/storage/v1/object/public/logos/') ||
       uploadedUrl.includes('supabase.co/storage/v1/object/public/')
     )) ||

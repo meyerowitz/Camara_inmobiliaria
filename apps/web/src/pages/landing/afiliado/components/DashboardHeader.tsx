@@ -206,12 +206,15 @@ const DashboardHeader = ({
 
       const { signedUploadUrl, token: uploadToken, publicUrl } = presignData.data;
 
+      const uploadHeaders: Record<string, string> = {
+        'Content-Type': fileToUpload.type,
+      };
+      if (uploadToken) {
+        uploadHeaders['Authorization'] = `Bearer ${uploadToken}`;
+      }
       const uploadRes = await fetch(signedUploadUrl, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${uploadToken}`,
-          'Content-Type': fileToUpload.type,
-        },
+        headers: uploadHeaders,
         body: fileToUpload,
       });
 
@@ -238,9 +241,15 @@ const DashboardHeader = ({
           const presignRawData = await presignRaw.json();
           if (presignRaw.ok && presignRawData.success) {
             const { signedUploadUrl: sUrl, token: uTok, publicUrl: origPubUrl } = presignRawData.data;
+            const uploadHeadersRaw: Record<string, string> = {
+              'Content-Type': compressedRaw.type,
+            };
+            if (uTok) {
+              uploadHeadersRaw['Authorization'] = `Bearer ${uTok}`;
+            }
             const uRes = await fetch(sUrl, {
               method: 'PUT',
-              headers: { 'Authorization': `Bearer ${uTok}`, 'Content-Type': compressedRaw.type },
+              headers: uploadHeadersRaw,
               body: compressedRaw,
             });
             if (uRes.ok) {
