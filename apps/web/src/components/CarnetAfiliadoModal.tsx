@@ -91,7 +91,7 @@ function CarnetCropperModal({
                   minZoom={1}
                   maxZoom={8}
                   restrictPosition={true}
-                  objectFit="cover"
+                  objectFit="contain"
                   aspect={155 / 185}
                   onCropChange={onCropChange}
                   onZoomChange={onZoomChange}

@@ -81,7 +81,7 @@ export function CarnetCardPreview({
 
       {/* Cuerpo */}
       <div className="relative z-10 flex-grow flex flex-col items-center justify-center gap-1.5 xs:gap-2 pt-1 pb-1">
-        <div className="w-[130px] xs:w-[155px] h-[155px] xs:h-[185px] rounded-2xl overflow-hidden border-2 border-emerald-600 bg-slate-100 shadow-md flex items-center justify-center relative shrink-0">
+        <div className="w-[130px] xs:w-[155px] aspect-[155/185] rounded-2xl overflow-hidden border-2 border-emerald-600 bg-slate-100 shadow-md flex items-center justify-center relative shrink-0">
           {activePhoto ? (
             <img
               src={activePhoto}

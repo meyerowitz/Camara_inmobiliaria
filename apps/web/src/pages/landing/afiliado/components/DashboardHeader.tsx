@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Menu, User, X, Download, Loader2, Award, RefreshCw, Pencil, Image as ImageIcon } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { toast } from 'sonner';
@@ -75,8 +74,10 @@ const DashboardHeader = ({
   const setSavingCrop = (saving: boolean) => setCropper(c => ({ ...c, saving }));
 
   const [prevUserFotoUrl, setPrevUserFotoUrl] = useState(userFotoUrl);
-  if (prevUserFotoUrl !== userFotoUrl) {
+  const [prevAfiliadoId, setPrevAfiliadoId] = useState(afiliado?.id_afiliado);
+  if (prevUserFotoUrl !== userFotoUrl || prevAfiliadoId !== afiliado?.id_afiliado) {
     setPrevUserFotoUrl(userFotoUrl);
+    setPrevAfiliadoId(afiliado?.id_afiliado);
     setImgError(false);
   }
 
@@ -480,21 +481,19 @@ const DashboardHeader = ({
             </div>
           </div>
 
-          {/* Floating Dropdown — portal + altura fija (top/bottom) para scroll real en pantallas bajas */}
-          {isOpen && createPortal(
+          {/* Floating Dropdown anchored to photo bubble */}
+          {isOpen && (
             <>
               <div
-                className="fixed inset-0 z-[100] bg-transparent"
+                className="fixed inset-0 z-[100] bg-slate-900/10 backdrop-blur-[1px]"
                 aria-hidden="true"
                 onClick={() => setIsOpen(false)}
               />
               <div
                 ref={carnetPanelRef}
-                className="transition-opacity transition-transform fixed z-[101] top-[4.5rem] right-4 sm:right-8 bottom-4 bg-white dark:bg-[#022c22] rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-emerald-500/20 fade-in slide-in-from-top-2 duration-200 overflow-y-scroll overflow-x-hidden overscroll-y-contain custom-scrollbar-light pr-1"
-                style={{ width: 'min(360px, calc(100vw - 2rem))', WebkitOverflowScrolling: 'touch' }}
+                className="absolute right-0 top-full mt-2.5 z-[101] bg-white dark:bg-[#022c22] rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-emerald-500/20 fade-in slide-in-from-top-2 duration-200 w-[min(420px,calc(100vw-2rem))] max-h-[calc(100vh-6.5rem)] overflow-y-auto overscroll-y-contain custom-scrollbar-light select-none flex flex-col items-center gap-4"
                 onClick={(e) => e.stopPropagation()}
               >
-              <div className="flex flex-col items-center gap-4">
               {hasCredential ? (
                 <>
                   <div className="text-center w-full">
@@ -507,7 +506,7 @@ const DashboardHeader = ({
                   </div>
 
                   {/* AREA DE CAPTURA DEL CARNET */}
-                  <div className="p-1 bg-slate-50 rounded-3xl border border-slate-100 shadow-inner overflow-hidden select-none">
+                  <div className="p-1.5 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-inner overflow-hidden select-none flex items-center justify-center shrink-0 max-w-full">
                     <div
                       ref={cardRef}
                       id="carnet-card-capture"
@@ -561,7 +560,7 @@ const DashboardHeader = ({
 
                       {/* Foto */}
                       <div className="relative z-10 flex-grow flex flex-col items-center justify-center gap-1.5 xs:gap-2 pt-1 pb-1">
-                        <div className="w-[130px] xs:w-[155px] h-[155px] xs:h-[185px] rounded-2xl overflow-hidden border-2 border-emerald-600 bg-slate-100 shadow-md flex items-center justify-center relative shrink-0">
+                        <div className="w-[130px] xs:w-[155px] aspect-[155/185] rounded-2xl overflow-hidden border-2 border-emerald-600 bg-slate-100 shadow-md flex items-center justify-center relative shrink-0">
                           {(() => {
                             const redes = parseRedes(afiliado?.redes_sociales);
                             const carnetPhotoUrl = useJuntaPhoto
@@ -744,9 +743,7 @@ const DashboardHeader = ({
                 </div>
               )}
               </div>
-              </div>
-            </>,
-            document.body
+            </>
           )}
         </div>
       </div>
@@ -798,7 +795,7 @@ const DashboardHeader = ({
                     minZoom={1}
                     maxZoom={8}
                     restrictPosition={true}
-                    objectFit="cover"
+                    objectFit="contain"
                     aspect={155 / 185}
                     onCropChange={setCrop}
                     onZoomChange={setCropperZoom}
