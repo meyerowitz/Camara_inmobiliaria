@@ -4,10 +4,35 @@ import { useAuth } from '@/context/AuthContext';
 import Swal from 'sweetalert2';
 import { toast } from 'sonner';
 import { formatNombreCard } from '@/utils/formatters';
-import { Calendar, Users, Pencil, Lock, Unlock, UserPlus, Search, CheckCircle2, XCircle, X, User, ChevronDown, Trash2, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { Calendar, Users, Pencil, Lock, Unlock, UserPlus, Search, CheckCircle2, XCircle, X, User, ChevronDown, Trash2, ArrowUp, ArrowDown, AlertTriangle, GraduationCap, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import logoUrl from '@/assets/Logo2.webp';
 
-import { uploadFileSupabase } from '@/pages/admin/components/Cms/CmsShared';
+import { uploadFileSupabase, CmsPanelHeader } from '@/pages/admin/components/Cms/CmsShared';
 import { apiFetch } from '@/lib/apiClient';
+
+function loadLogoDataUrl(src: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas 2d no disponible'));
+        return;
+      }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error(`No se pudo cargar imagen: ${src.slice(0, 60)}`));
+    img.src = src;
+  });
+}
 
 export interface FirmanteItem {
   id?: string | number;
@@ -37,6 +62,8 @@ interface CursoDB {
   creado_en: string;
   actualizado_en: string | null;
   instructor_nombre?: string;
+  num_estudiantes?: number;
+  inscritos?: number;
   categoria?: string | null;
   modulos?: { nombre_modulo: string; id_profesor: number | null; profesor?: string | null; orden: number }[];
 }
@@ -61,15 +88,35 @@ const getSafeNumber = (val: any, fallback = 0): number => {
 };
 
 const calcInscritos = (c: any): number => {
-  if (typeof c?.num_estudiantes === 'number' && !isNaN(c.num_estudiantes)) {
-    return c.num_estudiantes;
+  if (c?.num_estudiantes !== undefined && c?.num_estudiantes !== null) {
+    return getSafeNumber(c.num_estudiantes, 0);
   }
-  if (typeof c?.inscritos === 'number' && !isNaN(c.inscritos)) {
-    return c.inscritos;
+  if (c?.inscritos !== undefined && c?.inscritos !== null) {
+    return getSafeNumber(c.inscritos, 0);
+  }
+  if (c?.cant_inscritos !== undefined && c?.cant_inscritos !== null) {
+    return getSafeNumber(c.cant_inscritos, 0);
+  }
+  if (c?.total_inscritos !== undefined && c?.total_inscritos !== null) {
+    return getSafeNumber(c.total_inscritos, 0);
   }
   const totales = getSafeNumber(c?.cupos_totales, 0);
   const disponibles = getSafeNumber(c?.cupos_disponibles, totales);
   return Math.max(0, totales - disponibles);
+};
+
+const attachInscritosCounts = (cursosList: CursoDB[], preinscripcionesList?: any[]) => {
+  if (!preinscripcionesList || !Array.isArray(preinscripcionesList)) return cursosList;
+  const countsMap: Record<number, number> = {};
+  preinscripcionesList.forEach((p: any) => {
+    if (p.id_curso && p.estatus !== 'Rechazado' && p.estatus !== 'Cancelado') {
+      countsMap[p.id_curso] = (countsMap[p.id_curso] || 0) + 1;
+    }
+  });
+  return cursosList.map(c => ({
+    ...c,
+    num_estudiantes: countsMap[c.id_curso] !== undefined ? countsMap[c.id_curso] : getSafeNumber(c.num_estudiantes, 0)
+  }));
 };
 
 const CursosAdminPanel = () => {
@@ -79,6 +126,21 @@ const CursosAdminPanel = () => {
   const [viewingCurso, setViewingCurso] = useState<CursoDB | null>(null);
   const [profesores, setProfesores] = useState<any[]>([]);
   const [directivaMembers, setDirectivaMembers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cms_view_mode_cursos')
+      if (saved === 'grid' || saved === 'list') return saved
+    }
+    return 'grid'
+  })
+
+  const changeViewMode = (mode: 'grid' | 'list') => {
+    setViewMode(mode)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cms_view_mode_cursos', mode)
+    }
+  }
 
   // States for Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -150,11 +212,16 @@ const CursosAdminPanel = () => {
   const fetchCursos = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/academia/cursos`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const json = await res.json();
-      if (json.success) {
-        setCursos(json.data);
+      const [resC, resPre] = await Promise.all([
+        fetch(`${API_URL}/api/academia/cursos`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/api/academia/preinscripciones?estatus=Todos&onlyCursos=true`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      if (!resC.ok) throw new Error(`HTTP error! status: ${resC.status}`);
+      const jsonC = await resC.json();
+      const jsonPre = resPre.ok ? await resPre.json() : null;
+      if (jsonC.success) {
+        const updated = attachInscritosCounts(jsonC.data, jsonPre?.data);
+        setCursos(updated);
       }
     } catch (error) {
       console.error(error);
@@ -216,13 +283,17 @@ const CursosAdminPanel = () => {
     const load = async () => {
       setLoading(true);
       try {
-        const [jsonC, jsonP, jsonD] = await Promise.all([
+        const [jsonC, jsonP, jsonD, jsonPre] = await Promise.all([
           apiFetch(`${API_URL}/api/academia/cursos`, { headers: { Authorization: `Bearer ${token}` } }),
           apiFetch(`${API_URL}/api/academia/profesores`, { headers: { Authorization: `Bearer ${token}` } }),
-          apiFetch(`${API_URL}/api/cms/directiva`)
+          apiFetch(`${API_URL}/api/cms/directiva`),
+          apiFetch(`${API_URL}/api/academia/preinscripciones?estatus=Todos&onlyCursos=true`, { headers: { Authorization: `Bearer ${token}` } }).catch(() => null)
         ]);
         if (!active) return;
-        if (jsonC.success) setCursos(jsonC.data);
+        if (jsonC.success) {
+          const updated = attachInscritosCounts(jsonC.data, jsonPre?.data);
+          setCursos(updated);
+        }
         if (jsonP.success) setProfesores(jsonP.data);
         if (jsonD.success) setDirectivaMembers(jsonD.data.filter((m: any) => m.activo));
       } catch (e) {
@@ -500,171 +571,243 @@ const CursosAdminPanel = () => {
     return <ListaInscritosCurso curso={viewingCurso} onBack={() => { setViewingCurso(null); fetchCursos() }} token={token} />;
   }
 
+  const filteredCursos = cursos.filter(c => {
+    const query = searchQuery.toLowerCase().trim()
+    if (!query) return true
+    const nombreMatch = (c.titulo || c.nombre || '').toLowerCase().includes(query)
+    const catMatch = (c.categoria || '').toLowerCase().includes(query)
+    const instMatch = (c.instructor_nombre || '').toLowerCase().includes(query)
+    return nombreMatch || catMatch || instMatch
+  })
+
   return (
-    <div className="w-full flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto h-full relative flex flex-col">
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-800">Cursos & Talleres</h3>
-          <p className="text-xs text-slate-400 mt-0.5">{cursos.length} programas registrados</p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#00D084] text-white text-xs font-semibold hover:bg-[#00B870] transition-colors whitespace-nowrap"
-        >
-          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Nuevo Curso
-        </button>
-      </div>
+    <div className="w-full flex-1 min-w-0 p-4 sm:p-5 pb-16 sm:pb-24 space-y-4 max-w-[1600px] mx-auto overflow-y-auto h-full relative flex flex-col">
+      <CmsPanelHeader
+        icon={<GraduationCap size={22} />}
+        title="Gestión de Formación"
+        subtitle="Administra los cursos, talleres y programas educativos de la Cámara"
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Buscar por título, categoría o instructor..."
+        viewMode={viewMode}
+        onViewModeChange={changeViewMode}
+        actionButtonText="Nuevo Curso"
+        onActionClick={() => handleOpenModal()}
+      />
 
       {loading ? (
-        <div className="flex justify-center p-10"><span className="text-sm text-slate-500 font-semibold">Cargando cursos...</span></div>
-      ) : (
-        <>
-          {/* ── MOBILE: cards ── */}
-          <div className="sm:hidden flex flex-col gap-3">
-            {cursos.map(c => (
-              <div key={c.id_curso} className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex flex-col gap-1.5 flex-1">
-                    <p className="font-semibold text-slate-800 text-sm leading-tight">{c.titulo || c.nombre}</p>
-                    {c.categoria && (
-                      <span className="self-start text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 uppercase tracking-wider">{c.categoria}</span>
+        <div className="flex justify-center p-10"><span className="text-sm text-slate-500 font-semibold">Cargando programas académicos...</span></div>
+      ) : filteredCursos.length === 0 ? (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center text-slate-400 space-y-3">
+          <GraduationCap size={40} className="mx-auto text-slate-300" />
+          <p className="text-sm font-bold">No se encontraron cursos o programas académicos</p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-12">
+          {filteredCursos.map(c => {
+            const isPublic = c.estatus !== 'Cerrado'
+            const totales = getSafeNumber(c.cupos_totales, 0)
+            const ins = calcInscritos(c)
+            const isIlimitado = totales >= 999999
+            const pct = totales > 0 ? Math.max(0, Math.min(100, (ins / totales) * 100)) : 0
+
+            return (
+              <div
+                key={c.id_curso}
+                onClick={() => setViewingCurso(c)}
+                className="bg-white border border-slate-200/80 rounded-3xl p-4 shadow-xs hover:border-emerald-400 hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden cursor-pointer"
+              >
+                <div className="space-y-3">
+                  {/* Portada del Curso / Banner con Badges */}
+                  <div className="relative w-full aspect-[16/9] bg-slate-900/5 rounded-2xl overflow-hidden border border-slate-200/60 shadow-inner flex items-center justify-center">
+                    {c.imagen_url ? (
+                      <img
+                        src={c.imagen_url}
+                        alt={c.titulo || c.nombre}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-slate-400 space-y-1">
+                        <GraduationCap size={32} className="opacity-40" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Sin Portada</span>
+                      </div>
+                    )}
+
+                    <div className="absolute top-2 left-2 flex items-center gap-1.5 z-10 flex-wrap">
+                      {c.categoria && (
+                        <span className="bg-slate-900/80 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/20">
+                          {c.categoria}
+                        </span>
+                      )}
+                      {(Boolean(c.solo_informativo) || Number(c.solo_informativo) === 1) && (
+                        <span className="bg-purple-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/20">
+                          Informativo
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="absolute top-2 right-2 z-10">
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-2xs ${STATUS_STYLES[c.estatus] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                        {c.estatus}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Título e Instructor */}
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-slate-800 leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
+                      {c.titulo || c.nombre}
+                    </h4>
+                    <p className="text-xs text-slate-500 font-medium line-clamp-1">
+                      Instructor: <span className="font-bold text-slate-700">{c.instructor_nombre || 'Sin Instructor'}</span>
+                    </p>
+                  </div>
+
+                  {/* Detalle de Cupos y Fecha */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 font-semibold">
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar size={12} className="text-emerald-600" />
+                        {c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString() : 'Por definir'}
+                      </span>
+                      {c.precio && <span className="font-extrabold text-emerald-700">{c.precio}</span>}
+                    </div>
+
+                    {!(Number(c.solo_informativo) === 1 || c.solo_informativo === true || (c.estatus as string) === 'Solo Informativo') && (
+                      isIlimitado ? (
+                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-xl">
+                          <span>CUPOS ILIMITADOS</span>
+                          <span>{ins} inscritos</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                            <span>Cupos Ocupados</span>
+                            <span>{ins}/{totales} ({Math.round(pct)}%)</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-500 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      )
                     )}
                   </div>
-                  <span className={`flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-full ${STATUS_STYLES[c.estatus] || 'bg-gray-100'}`}>
-                    {c.estatus}
-                  </span>
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate-500">
-                  <span>{c.instructor_nombre || 'Sin Instructor'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} className="text-slate-400" />
-                    {c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString() : 'Por definir'}
-                  </span>
-                </div>
-                {/* Cupos bar */}
-                {!(Number(c.solo_informativo) === 1 || c.solo_informativo === true || (c.estatus as string) === 'Solo Informativo') && (() => {
-                  const totales = getSafeNumber(c.cupos_totales, 0);
-                  const ins = calcInscritos(c);
-                  const isIlimitado = totales >= 999999;
-                  const pct = totales > 0 ? Math.max(0, Math.min(100, (ins / totales) * 100)) : 0;
-                  return isIlimitado ? (
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider">Cupos Ilimitados</span>
-                      <span className="text-[10px] text-slate-500 ml-auto tabular-nums">{ins} inscritos</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#00D084] rounded-full" style={{ width: `${pct}%` }} />
-                      </div>
-                      <span className="text-[10px] text-slate-500 whitespace-nowrap tabular-nums">{ins}/{totales} inscritos</span>
-                    </div>
-                  );
-                })()}
-                <div className="flex gap-2 mt-2 border-t pt-2 border-gray-100 justify-end">
+
+                {/* Acciones principales del footer */}
+                <div
+                  className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-1.5 flex-wrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <button
+                    type="button"
                     onClick={() => setViewingCurso(c)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-[#00B870] bg-[#E9FAF4] hover:bg-[#D3F5E7] active:scale-95 rounded-xl transition-colors transition-transform shadow-sm shadow-[#00D084]/5"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors shadow-2xs"
+                    title="Ver inscritos"
                   >
-                    <Users size={12} />
-                    <span>Inscritos</span>
+                    <Users size={13} />
+                    <span>Inscritos ({ins})</span>
                   </button>
-                  <button
-                    onClick={() => handleOpenModal(c)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
-                  >
-                    <Pencil size={12} />
-                    <span>Editar</span>
-                  </button>
-                  {c.estatus === 'Cerrado' ? (
+
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={() => handleToggleStatus(c)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
+                      type="button"
+                      onClick={() => handleOpenModal(c)}
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                      title="Editar curso"
                     >
-                      <Unlock size={12} />
-                      <span>Abrir</span>
+                      <Pencil size={14} />
                     </button>
-                  ) : (
                     <button
+                      type="button"
                       onClick={() => handleToggleStatus(c)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        c.estatus === 'Cerrado'
+                          ? 'text-emerald-600 hover:bg-emerald-50'
+                          : 'text-amber-600 hover:bg-amber-50'
+                      }`}
+                      title={c.estatus === 'Cerrado' ? 'Abrir inscripciones' : 'Cerrar inscripciones'}
                     >
-                      <Lock size={12} />
-                      <span>Cerrar</span>
+                      {c.estatus === 'Cerrado' ? <Unlock size={14} /> : <Lock size={14} />}
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(c.id_curso)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
-                    title="Eliminar curso"
-                  >
-                    <Trash2 size={12} />
-                    <span>Eliminar</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(c.id_curso)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                      title="Eliminar curso"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-
-          <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px] table-auto">
+            )
+          })}
+        </div>
+      ) : (
+        /* Vista Lista / Tabla */
+        <div className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px] table-auto">
               <thead>
-                <tr className="bg-gray-50/60 border-b border-gray-100">
-                  <th className="px-4 py-3 text-center text-[10px] font-semibold text-slate-400 tracking-wide uppercase whitespace-nowrap w-[30%]">CURSO</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-semibold text-slate-400 tracking-wide uppercase whitespace-nowrap w-[20%]">INSTRUCTOR</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-semibold text-slate-400 tracking-wide uppercase whitespace-nowrap w-[20%]">INSCRITOS</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-semibold text-slate-400 tracking-wide uppercase whitespace-nowrap w-[15%]">FECHA INICIO</th>
-                  <th className="px-4 py-3 text-center text-[10px] font-semibold text-slate-400 tracking-wide uppercase whitespace-nowrap w-[15%]">ACCIONES</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80">
+                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 tracking-wider uppercase w-[35%]">CURSO</th>
+                  <th className="px-4 py-3.5 text-center text-[10px] font-black text-slate-400 tracking-wider uppercase w-[20%]">INSTRUCTOR</th>
+                  <th className="px-4 py-3.5 text-center text-[10px] font-black text-slate-400 tracking-wider uppercase w-[20%]">INSCRITOS</th>
+                  <th className="px-4 py-3.5 text-center text-[10px] font-black text-slate-400 tracking-wider uppercase w-[12%]">INICIO</th>
+                  <th className="px-4 py-3.5 text-center text-[10px] font-black text-slate-400 tracking-wider uppercase w-[13%]">ACCIONES</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {cursos.map(c => {
+              <tbody className="divide-y divide-slate-100">
+                {filteredCursos.map(c => {
                   const totales = getSafeNumber(c.cupos_totales, 0);
                   const ins = calcInscritos(c);
                   const isIlimitado = totales >= 999999;
                   const pct = totales > 0 ? Math.max(0, Math.min(100, (ins / totales) * 100)) : 0;
                   return (
-                    <tr key={c.id_curso} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-left">
+                    <tr
+                      key={c.id_curso}
+                      onClick={() => setViewingCurso(c)}
+                      className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3.5 text-left">
                         <div className="flex flex-col gap-1 items-start">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="font-semibold text-slate-800 text-xs leading-tight">{c.titulo || c.nombre}</p>
+                            <p className="font-black text-slate-800 text-xs leading-tight">{c.titulo || c.nombre}</p>
                             {(c.solo_informativo === 1 || c.solo_informativo === true) && (
                               <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 uppercase tracking-wider">Solo Informativo</span>
                             )}
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${STATUS_STYLES[c.estatus] || 'bg-slate-100 text-slate-500'}`}>
+                              {c.estatus}
+                            </span>
                           </div>
                           {c.categoria && (
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 uppercase tracking-wider">{c.categoria}</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap text-center">{c.instructor_nombre || 'Sin Instructor'}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3.5 text-xs text-slate-600 font-bold whitespace-nowrap text-center">{c.instructor_nombre || 'Sin Instructor'}</td>
+                      <td className="px-4 py-3.5 text-center">
                         {isIlimitado ? (
                           <div className="flex items-center justify-center gap-2">
                             <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">Ilimitados</span>
-                            <span className="text-xs text-slate-500 tabular-nums">({ins} inscritos)</span>
+                            <span className="text-xs text-slate-500 tabular-nums">({ins})</span>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-2">
-                            <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0">
-                              <div className="h-full bg-[#00D084] rounded-full" style={{ width: `${pct}%` }} />
+                            <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
                             </div>
-                            <span className="text-xs text-slate-500 whitespace-nowrap tabular-nums">{ins}/{totales}</span>
+                            <span className="text-xs text-slate-500 font-bold whitespace-nowrap tabular-nums">{ins}/{totales}</span>
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap text-center">{c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString() : 'Por definir'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <td className="px-4 py-3.5 text-xs text-slate-500 font-medium whitespace-nowrap text-center">{c.fecha_inicio ? new Date(c.fecha_inicio).toLocaleDateString() : 'Por definir'}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             onClick={() => setViewingCurso(c)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-[#00B870] bg-[#E9FAF4] hover:bg-[#D3F5E7] active:scale-95 rounded-xl transition-colors transition-transform shadow-sm shadow-[#00D084]/5"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors shadow-2xs"
                             title="Ver inscritos"
                           >
                             <Users size={12} />
@@ -672,38 +815,34 @@ const CursosAdminPanel = () => {
                           </button>
                           <button
                             onClick={() => handleOpenModal(c)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
+                            className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
                             title="Editar curso"
                           >
-                            <Pencil size={12} />
-                            <span>Editar</span>
+                            <Pencil size={14} />
                           </button>
                           {c.estatus === 'Cerrado' ? (
                             <button
                               onClick={() => handleToggleStatus(c)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
-                              title="Reabrir inscripciones"
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              title="Abrir inscripciones"
                             >
-                              <Unlock size={12} />
-                              <span>Abrir</span>
+                              <Unlock size={14} />
                             </button>
                           ) : (
                             <button
                               onClick={() => handleToggleStatus(c)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
                               title="Cerrar inscripciones"
                             >
-                              <Lock size={12} />
-                              <span>Cerrar</span>
+                              <Lock size={14} />
                             </button>
                           )}
                           <button
                             onClick={() => handleDelete(c.id_curso)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-xl transition-colors transition-transform shadow-sm"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
                             title="Eliminar curso"
                           >
-                            <Trash2 size={12} />
-                            <span>Eliminar</span>
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -713,7 +852,7 @@ const CursosAdminPanel = () => {
               </tbody>
             </table>
           </div>
-        </>
+        </div>
       )}
 
       {/* Modal */}
@@ -1467,6 +1606,208 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
     esCorredorInmobiliario: true
   });
 
+  // Modal Edit Participant State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingInscripcionId, setEditingInscripcionId] = useState<number | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    nombreCompleto: '',
+    email: '',
+    cedulaPrefix: 'V',
+    cedulaRif: '',
+    telefono: ''
+  });
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+
+  const handleOpenEditModal = (r: any) => {
+    setEditingInscripcionId(r.id_inscripcion);
+    const rawCed = String(r.estudiante_cedula || '');
+    const prefix = rawCed.includes('-') ? rawCed.split('-')[0].toUpperCase() : 'V';
+    const numCed = rawCed.includes('-') ? rawCed.split('-')[1] : rawCed.replace(/\D/g, '');
+
+    setEditFormData({
+      nombreCompleto: r.estudiante_nombre || '',
+      email: r.estudiante_email || '',
+      cedulaPrefix: ['V', 'E', 'J', 'G', 'P'].includes(prefix) ? prefix : 'V',
+      cedulaRif: numCed,
+      telefono: r.estudiante_telefono || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInscripcionId) return;
+    setSubmittingEdit(true);
+    try {
+      const res = await fetch(`${API_URL}/api/academia/inscripciones/${editingInscripcionId}/datos`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Error al actualizar datos');
+
+      Swal.fire({
+        title: '¡Actualizado!',
+        text: 'Información del participante actualizada correctamente.',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      setIsEditModalOpen(false);
+      fetchRows();
+    } catch (err: any) {
+      Swal.fire('Error', err.message || 'Error al actualizar información', 'error');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const exportPDF = async () => {
+    if (rows.length === 0) {
+      Swal.fire('Información', 'No hay participantes para exportar en este curso.', 'info');
+      return;
+    }
+
+    try {
+      let logoBase64: string | null = null;
+      try {
+        logoBase64 = await loadLogoDataUrl(String(logoUrl));
+      } catch {
+        logoBase64 = null;
+      }
+
+      const nombreCurso = curso.titulo || curso.nombre || 'Curso';
+      const landscape = true;
+      const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 14;
+      let y = margin;
+
+      if (logoBase64) {
+        doc.addImage(logoBase64, 'PNG', margin, y, 32, 32);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Reporte de Participantes', margin + 38, y + 12);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Cámara Inmobiliaria de Bolívar', margin + 38, y + 18);
+
+        y += 36;
+      } else {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(15, 23, 42);
+        doc.text('Reporte de Participantes', margin, y + 10);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Cámara Inmobiliaria de Bolívar', margin, y + 16);
+
+        y += 22;
+      }
+
+      const generatedAt = new Date();
+      const dateStr = generatedAt.toLocaleString('es-VE', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generado: ${dateStr}`, pageWidth - margin, margin + 8, { align: 'right' });
+      doc.text(`${rows.length} participante${rows.length === 1 ? '' : 's'}`, pageWidth - margin, margin + 14, { align: 'right' });
+
+      // Resumen de detalles del programa
+      const filterSummary = [
+        `Programa: ${nombreCurso}`,
+        `Categoría: ${curso.categoria || 'Formación'}`
+      ];
+
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(51, 65, 85);
+      doc.text('Detalles del programa:', margin, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 116, 139);
+      const filtersText = filterSummary.join(' | ');
+      const lines = doc.splitTextToSize(filtersText, pageWidth - (margin * 2));
+      doc.text(lines, margin, y + 4);
+      y += (lines.length * 3) + 6;
+
+      const head = [['#', 'Participante', 'Cédula', 'Correo Electrónico', 'Teléfono', 'Fecha Registro', 'Estatus']];
+      const body = rows.map((r, index) => [
+        String(index + 1),
+        formatNombreCard(r.estudiante_nombre) || 'S/N',
+        r.estudiante_cedula || 'S/N',
+        r.estudiante_email || 'Sin correo',
+        r.estudiante_telefono || 'Sin teléfono',
+        new Date(r.creado_en).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
+        r.completado === 1 ? 'Completado' : r.estatus === 'Preinscrito' ? 'Pendiente' : r.estatus === 'Inscrito' ? 'Admitido' : (r.estatus || 'Registrado')
+      ]);
+
+      const HEADER_COLOR: [number, number, number] = [4, 120, 87];
+      const ALT_ROW: [number, number, number] = [248, 250, 252];
+
+      autoTable(doc, {
+        startY: y,
+        head,
+        body,
+        margin: { left: margin, right: margin },
+        styles: {
+          font: 'helvetica',
+          fontSize: 7.5,
+          cellPadding: 2.5,
+          overflow: 'linebreak',
+          valign: 'middle',
+        },
+        headStyles: {
+          fillColor: HEADER_COLOR,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'left',
+        },
+        alternateRowStyles: {
+          fillColor: ALT_ROW,
+        },
+      });
+
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        const pageH = doc.internal.pageSize.getHeight();
+        doc.setFontSize(7);
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `Página ${i} de ${totalPages} · Total: ${rows.length} participantes`,
+          pageWidth / 2,
+          pageH - 8,
+          { align: 'center' }
+        );
+      }
+
+      const filename = `reporte-inscritos-${nombreCurso.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${generatedAt.toISOString().slice(0, 10)}.pdf`;
+      doc.save(filename);
+      toast.success('Listado exportado en PDF correctamente');
+    } catch (err: any) {
+      console.error('Error generando PDF:', err);
+      Swal.fire('Error', 'No se pudo generar el archivo PDF.', 'error');
+    }
+  };
+
   const handleOpenEnrollModal = async () => {
     setIsEnrollModalOpen(true);
     setAfiliadoSearch('');
@@ -1831,6 +2172,15 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
 
         <div className="flex items-center gap-3">
           <button
+            onClick={exportPDF}
+            className="flex items-center gap-2 bg-[#E9FAF4] hover:bg-[#D3F5E7] text-[#00B870] text-xs font-bold py-2.5 px-4 rounded-xl border border-[#00D084]/20 shadow-xs transition-colors transition-transform active:scale-95 cursor-pointer"
+            title="Exportar listado completo en PDF"
+          >
+            <FileDown className="w-4 h-4" />
+            <span>Exportar PDF</span>
+          </button>
+
+          <button
             onClick={handleOpenEnrollModal}
             className="flex items-center gap-2 bg-[#00D084] hover:bg-[#00B870] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-md shadow-[#00D084]/20 transition-colors transition-transform active:scale-95 cursor-pointer"
           >
@@ -1949,10 +2299,12 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
                       title="Seleccionar todos"
                     />
                   </th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Participante</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Identificación</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Fecha Registro</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Estatus</th>
+                  <th className="px-5 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Participante</th>
+                  <th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Cédula</th>
+                  <th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Correo</th>
+                  <th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Teléfono</th>
+                  <th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Fecha Registro</th>
+                  <th className="px-4 py-4 text-left text-[10px] font-black text-slate-400 tracking-widest uppercase">Estatus</th>
                   <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 tracking-widest uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -1972,24 +2324,26 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
                           className="w-4 h-4 rounded border-slate-300 text-[#00D084] focus:ring-[#00D084] cursor-pointer accent-[#00D084]"
                         />
                       </td>
-                      <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#E9FAF4] text-[#00B870] flex items-center justify-center font-black text-xs shrink-0 border border-[#00D084]/10 shadow-sm">
-                          {r.estudiante_nombre?.charAt(0)}
-                        </div>
-                        <div className="flex flex-col">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#E9FAF4] text-[#00B870] flex items-center justify-center font-black text-xs shrink-0 border border-[#00D084]/10 shadow-sm">
+                            {r.estudiante_nombre?.charAt(0)}
+                          </div>
                           <span className="font-bold text-slate-800 leading-tight">{formatNombreCard(r.estudiante_nombre)}</span>
-
-                          <span className="text-[10px] font-semibold text-slate-400 lowercase">{r.estudiante_email}</span>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-bold text-slate-600 tabular-nums bg-gray-100 px-2 py-1 rounded-md">{r.estudiante_cedula || 'S/N'}</span>
-                    </td>
-                    <td className="px-6 py-4 text-xs font-bold text-slate-500 tabular-nums">
-                      {new Date(r.creado_en).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-xs font-bold text-slate-600 tabular-nums bg-gray-100 px-2 py-1 rounded-md">{r.estudiante_cedula || 'S/N'}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-xs font-semibold text-slate-600 truncate max-w-[220px] block" title={r.estudiante_email || ''}>{r.estudiante_email || 'Sin correo'}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="text-xs font-semibold text-slate-600 whitespace-nowrap">{r.estudiante_telefono || 'Sin teléfono'}</span>
+                      </td>
+                      <td className="px-4 py-4 text-xs font-bold text-slate-500 tabular-nums whitespace-nowrap">
+                        {new Date(r.creado_en).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
                     <td className="px-6 py-4">
                       {r.completado === 1 ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest border border-blue-100">
@@ -2028,6 +2382,13 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
                         {r.completado === 1 && (
                           <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] italic">Finalizado</span>
                         )}
+                        <button
+                          onClick={() => handleOpenEditModal(r)}
+                          className="p-2 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors border border-slate-200 hover:border-emerald-200 cursor-pointer shrink-0"
+                          title="Editar información del participante"
+                        >
+                          <Pencil size={13} />
+                        </button>
                         <button
                           onClick={() => handleDeleteInscripcion(r.id_inscripcion, r.estudiante_nombre)}
                           className="p-2 text-rose-500 hover:text-white hover:bg-rose-600 rounded-lg transition-colors border border-rose-100 hover:border-rose-600 cursor-pointer shrink-0"
@@ -2352,6 +2713,127 @@ const ListaInscritosCurso = ({ curso, onBack, token }: { curso: CursoDB, onBack:
                       <UserPlus className="w-4 h-4" />
                       <span>Inscribir en {curso.titulo || curso.nombre}</span>
                     </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Participante */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-gray-100 flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">Editar Participante</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Modificar datos personales</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Nombre Completo del Participante *
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. María Pérez"
+                  value={editFormData.nombreCompleto}
+                  onChange={(e) => setEditFormData({ ...editFormData, nombreCompleto: e.target.value })}
+                  className="w-full text-xs font-semibold rounded-xl border border-gray-200 px-3.5 py-2.5 text-slate-800 focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    Correo Electrónico *
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="ejemplo@correo.com"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full text-xs font-semibold rounded-xl border border-gray-200 px-3.5 py-2.5 text-slate-800 focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                    Tipo y Cédula / RIF
+                  </label>
+                  <div className="flex rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-[#00D084]/20 focus-within:border-[#00D084] transition-colors bg-white">
+                    <select
+                      value={editFormData.cedulaPrefix}
+                      onChange={(e) => setEditFormData({ ...editFormData, cedulaPrefix: e.target.value })}
+                      className="bg-slate-50 border-r border-gray-200 px-2.5 text-xs font-black text-slate-700 outline-none cursor-pointer shrink-0"
+                    >
+                      <option value="V">V-</option>
+                      <option value="E">E-</option>
+                      <option value="J">J-</option>
+                      <option value="G">G-</option>
+                      <option value="P">P-</option>
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="12345678"
+                      value={editFormData.cedulaRif}
+                      onChange={(e) => setEditFormData({ ...editFormData, cedulaRif: e.target.value.replace(/[^\d]/g, '') })}
+                      className="w-full text-xs font-semibold px-3 py-2.5 text-slate-800 outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                  Teléfono de Contacto
+                </label>
+                <input
+                  type="text"
+                  placeholder="0414-1234567"
+                  value={editFormData.telefono}
+                  onChange={(e) => setEditFormData({ ...editFormData, telefono: e.target.value })}
+                  className="w-full text-xs font-semibold rounded-xl border border-gray-200 px-3.5 py-2.5 text-slate-800 focus:ring-2 focus:ring-[#00D084]/20 focus:border-[#00D084] outline-none"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingEdit}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-[#00D084] hover:bg-[#00B870] rounded-xl shadow-md shadow-[#00D084]/20 transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {submittingEdit ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <span>Guardar Cambios</span>
                   )}
                 </button>
               </div>

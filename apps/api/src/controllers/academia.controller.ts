@@ -1563,7 +1563,9 @@ export const adminListCursos = async (req: Request, res: Response): Promise<void
     const where = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : ''
 
     const result = await db.execute({
-      sql: `SELECT c.*, NULL as instructor_nombre
+      sql: `SELECT c.*,
+            (SELECT COUNT(*) FROM inscripciones_cursos ic WHERE ic.id_curso = c.id_curso AND ic.estatus NOT IN ('Rechazado', 'Cancelado')) AS num_estudiantes,
+            NULL as instructor_nombre
             FROM cursos c
             ${where}
             ORDER BY c.id_curso DESC`,
@@ -3179,6 +3181,91 @@ export const adminDeleteInscripcion = async (req: Request, res: Response): Promi
   } catch (error) {
     console.error('adminDeleteInscripcion:', error)
     res.status(500).json({ success: false, message: 'Error al borrar la solicitud de inscripción' })
+  }
+}
+
+/**
+ * PUT /api/academia/inscripciones/:id/datos
+ * Actualiza la información personal (nombre, cédula/RIF, email, teléfono) de un participante.
+ */
+export const adminUpdateInscripcionDatos = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const id = Number(req.params.id)
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ success: false, message: 'ID de inscripción inválido' })
+      return
+    }
+
+    const { nombreCompleto, email, cedulaPrefix, cedulaRif, telefono } = req.body
+
+    const insRes = await db.execute({
+      sql: `SELECT ic.*, e.id_persona, e.id_empresa
+            FROM inscripciones_cursos ic
+            JOIN estudiantes e ON e.id_estudiante = ic.id_estudiante
+            WHERE ic.id_inscripcion = ?`,
+      args: [id]
+    })
+
+    if (insRes.rows.length === 0) {
+      res.status(404).json({ success: false, message: 'Inscripción no encontrada' })
+      return
+    }
+
+    const ins = insRes.rows[0] as any
+    const idPersona = ins.id_persona
+    const idEmpresa = ins.id_empresa
+
+    const cedulaTipo = (cedulaPrefix || 'V').toUpperCase()
+    const cedulaNum = (cedulaRif || '').replace(/\D/g, '')
+
+    if (idPersona) {
+      const parts = (nombreCompleto || '').trim().split(/\s+/)
+      const nombres = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0] || ''
+      const apellidos = parts.length > 1 ? parts.slice(-1)[0] : ''
+
+      await db.execute({
+        sql: `UPDATE personas SET
+                nombres = COALESCE(NULLIF(TRIM(?), ''), nombres),
+                apellidos = COALESCE(NULLIF(TRIM(?), ''), apellidos),
+                cedula = CASE WHEN ? != '' THEN ? ELSE cedula END,
+                cedula_tipo = CASE WHEN ? != '' THEN ? ELSE cedula_tipo END,
+                email = COALESCE(NULLIF(TRIM(?), ''), email),
+                telefono = COALESCE(NULLIF(TRIM(?), ''), telefono),
+                actualizado_en = strftime('%Y-%m-%dT%H:%M:%SZ','now')
+              WHERE id = ?`,
+        args: [
+          nombres,
+          apellidos,
+          cedulaNum, cedulaNum,
+          cedulaTipo, cedulaTipo,
+          email ? email.trim() : null,
+          telefono ? telefono.trim() : null,
+          idPersona
+        ]
+      })
+    } else if (idEmpresa) {
+      await db.execute({
+        sql: `UPDATE empresas SET
+                razon_social = COALESCE(NULLIF(TRIM(?), ''), razon_social),
+                rif_numero = CASE WHEN ? != '' THEN ? ELSE rif_numero END,
+                email = COALESCE(NULLIF(TRIM(?), ''), email),
+                telefono = COALESCE(NULLIF(TRIM(?), ''), telefono),
+                actualizado_en = strftime('%Y-%m-%dT%H:%M:%SZ','now')
+              WHERE id_empresa = ?`,
+        args: [
+          nombreCompleto ? nombreCompleto.trim() : null,
+          cedulaNum, cedulaNum,
+          email ? email.trim() : null,
+          telefono ? telefono.trim() : null,
+          idEmpresa
+        ]
+      })
+    }
+
+    res.json({ success: true, message: 'Datos del participante actualizados correctamente' })
+  } catch (error) {
+    console.error('adminUpdateInscripcionDatos:', error)
+    res.status(500).json({ success: false, message: 'Error al actualizar datos del participante' })
   }
 }
 

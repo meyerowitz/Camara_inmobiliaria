@@ -21,6 +21,7 @@ import {
   adminBuscarReferenciaAfiliado,
   adminToggleCorredorStatus,
   adminDeleteInscripcion,
+  adminUpdateInscripcionDatos,
   adminGetModulosInscripcion,
   adminAprobarModuloInscripcion,
   adminRechazarModuloInscripcion,
@@ -81,6 +82,9 @@ router.patch('/inscripciones/:id/rechazar', adminRechazarPreinscripcion)
 
 // DELETE /api/academia/inscripciones/:id
 router.delete('/inscripciones/:id', requireRole('admin', 'super_admin'), adminDeleteInscripcion)
+
+// PUT /api/academia/inscripciones/:id/datos
+router.put('/inscripciones/:id/datos', adminUpdateInscripcionDatos)
 
 // PATCH /api/academia/inscripciones/:id/completar
 router.patch('/inscripciones/:id/completar', adminCompletarCursoEstudiante)
