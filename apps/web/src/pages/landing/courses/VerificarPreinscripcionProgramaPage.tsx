@@ -1639,6 +1639,7 @@ export default function VerificarPreinscripcionProgramaPage() {
                       accept="image/*,.pdf"
                       folder="afiliados/empresas"
                       required
+                      maxSizeMB={20}
                       initialUrl={formData.url_titulo || undefined}
                       onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_titulo: url }))}
                       onClear={() => setFormData(prev => ({ ...prev, url_titulo: '' }))}
@@ -1648,7 +1649,7 @@ export default function VerificarPreinscripcionProgramaPage() {
                       accept=".pdf"
                       folder="afiliados/empresas"
                       required
-                      maxSizeMB={10}
+                      maxSizeMB={20}
                       initialUrl={formData.url_registro_mercantil || undefined}
                       onUploadSuccess={(url) => setFormData(prev => ({ ...prev, url_registro_mercantil: url }))}
                       onClear={() => setFormData(prev => ({ ...prev, url_registro_mercantil: '' }))}

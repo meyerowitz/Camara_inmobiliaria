@@ -3606,7 +3606,7 @@ function AdminDocumentosManager({ afiliado, token, onUpdateDocs }: AdminDocument
                 label={customTitle || (editingDoc ? getDocLabel(editingDoc.tipo_doc) : getDocLabel(activeUploadKey))}
                 accept=".pdf,image/*"
                 folder={availableTypes.find(t => activeUploadKey.startsWith(t.key))?.folder || 'documentos'}
-                maxSizeMB={10}
+                maxSizeMB={20}
                 onUploadSuccess={(url, name) => handleSaveDoc(activeUploadKey, url, customTitle.trim() || name)}
                 onClear={() => { setActiveUploadKey(null); setEditingDoc(null); setCustomTitle(''); }}
               />

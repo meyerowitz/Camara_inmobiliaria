@@ -31,7 +31,7 @@ interface FileUploadProps {
   disableImagePreview?: boolean;
   /** Si es true, bloquea la relación de aspecto y no permite cambiarla en el modal */
   lockAspect?: boolean;
-  /** Tamaño máximo permitido en MB (por defecto 10MB) */
+  /** Tamaño máximo permitido en MB (por defecto 20MB) */
   maxSizeMB?: number;
 }
 
@@ -52,7 +52,7 @@ export default function FileUpload({
   hasError = false,
   disableImagePreview = false,
   lockAspect = false,
-  maxSizeMB = 10,
+  maxSizeMB = 20,
 }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
