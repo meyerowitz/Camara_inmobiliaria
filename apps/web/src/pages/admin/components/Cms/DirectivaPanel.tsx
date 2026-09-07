@@ -239,6 +239,7 @@ interface MemberFormState {
     orden: number
     activo: boolean
     foto_junta_url: string
+    firma_url?: string
   }
   saving: boolean
   uploadingPhoto: boolean

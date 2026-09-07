@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // Force Vite HMR reload
 import {
   LayoutDashboard,
@@ -165,8 +165,10 @@ const PanelPage = () => {
   const [agentesCorp, setAgentesCorp] = useState<any[]>([]);
   const [loadingAgentes, setLoadingAgentes] = useState(false);
 
-  const fetchAfiliado = () => {
+  const fetchAfiliado = useCallback(() => {
     if (!user?.id_afiliado || !token) {
+      setAfiliado(null);
+      setAgentesCorp([]);
       setLoadingAfiliado(false);
       return;
     }
@@ -179,12 +181,20 @@ const PanelPage = () => {
           setAfiliado(d.data);
           if (d.data.tipo_afiliado === 'Corporativo' && d.data.id_empresa) {
             fetchAgentes(d.data.id_empresa);
+          } else {
+            setAgentesCorp([]);
           }
+        } else {
+          setAfiliado(null);
+          setAgentesCorp([]);
         }
       })
-      .catch(() => { })
+      .catch(() => {
+        setAfiliado(null);
+        setAgentesCorp([]);
+      })
       .finally(() => setLoadingAfiliado(false));
-  };
+  }, [user?.id_afiliado, token]);
 
   const fetchAgentes = (idEmpresa: number) => {
     setLoadingAgentes(true);
@@ -196,7 +206,7 @@ const PanelPage = () => {
       .finally(() => setLoadingAgentes(false));
   };
 
-  useEffect(() => { fetchAfiliado(); }, [user?.id_afiliado, token]);
+  useEffect(() => { fetchAfiliado(); }, [user?.id, user?.id_afiliado, token, fetchAfiliado]);
 
   const solicitudesPendientesCount = Array.isArray(agentesCorp) ? agentesCorp.filter(a => a && a.fase === 'Solicitud').length : 0;
 

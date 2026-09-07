@@ -105,30 +105,26 @@ export default function CmsArticlesPanel({ externalTab = 'config' }: { externalT
     externalTab === 'normativas' ? '/normativas' : sectionAnchor ? `/${sectionAnchor}` : '/'
 
   return (
-    <div className="flex w-full h-full min-w-0 overflow-y-auto bg-slate-50">
+    <div className="flex w-full h-full min-w-0 overflow-hidden bg-slate-50">
       <div className="flex flex-col flex-1 w-full min-w-0">
-        {/* Mini toolbar with interactive breadcrumb */}
-        <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 shadow-2xs">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-slate-400">
-            {detailName ? (
-              <>
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('cms-clear-selection'))}
-                  className="uppercase hover:text-slate-700 transition-colors cursor-pointer outline-none"
-                  title="Volver a la lista completa"
-                >
-                  {externalTab}
-                </button>
-                <span className="text-slate-300">/</span>
-                <span className="uppercase text-slate-600 truncate max-w-[140px] sm:max-w-[200px]" title={detailName}>
-                  {detailName}
-                </span>
-              </>
-            ) : (
-              <span className="uppercase text-slate-600 font-extrabold">{externalTab}</span>
-            )}
+        {/* Mini toolbar with interactive breadcrumb (shown only when viewing a specific item detail) */}
+        {detailName && (
+          <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-100 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-slate-400">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('cms-clear-selection'))}
+                className="uppercase hover:text-slate-700 transition-colors cursor-pointer outline-none"
+                title="Volver a la lista completa"
+              >
+                {externalTab}
+              </button>
+              <span className="text-slate-300">/</span>
+              <span className="uppercase text-slate-600 truncate max-w-[140px] sm:max-w-[200px]" title={detailName}>
+                {detailName}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Tab content */}
         <div key={externalTab} className="flex-1 w-full h-full min-w-0 overflow-y-auto relative cms-fade-up">

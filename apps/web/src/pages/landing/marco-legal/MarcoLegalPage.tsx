@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { FileText } from 'lucide-react'
 import bgBolivar from '@/assets/Pzo.webp'
 import Navbar from '@/pages/landing/components/navbar/Navbar'
@@ -121,22 +121,27 @@ export default function MarcoLegalPage() {
                 >
                   <div className="absolute top-0 left-0 w-full h-1 md:h-1.5 bg-gradient-to-r from-emerald-400 to-[#022c22] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                  <div className="flex justify-center md:justify-start mb-4 md:mb-6">
-                    <span className="inline-block px-2 py-1 md:px-3 bg-emerald-50 text-emerald-700 text-[9px] md:text-[10px] font-black uppercase tracking-[0.1em] md:tracking-[0.15em] rounded-full border border-emerald-100/50 truncate max-w-full">
+                  <div className="flex justify-center md:justify-start mb-3">
+                    <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em] rounded-full border border-emerald-100/60 truncate max-w-full">
                       {item.categoria?.trim() || 'General'}
                     </span>
                   </div>
 
-                  <div className="flex flex-col flex-grow gap-3">
-                    <div className="w-full h-40 rounded-2xl bg-slate-50 border-2 border-slate-100 flex items-center justify-center shrink-0 group-hover:border-emerald-200 transition-colors shadow-inner">
-                      <FileText className="w-16 h-16 text-emerald-600 opacity-20 group-hover:opacity-40 transition-opacity" />
+                  <div className="flex flex-col flex-grow gap-4">
+                    <div className="w-full h-36 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-center shrink-0 group-hover:bg-emerald-100/50 group-hover:border-emerald-400 transition-colors">
+                      <FileText className="w-14 h-14 text-emerald-600 group-hover:scale-105 transition-transform" />
                     </div>
-                    <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-800 tracking-tight group-hover:text-[#022c22] transition-colors leading-snug">
-                      {item.titulo}
+
+                    <h2 className="text-base sm:text-lg md:text-xl font-bold tracking-tight leading-snug">
+                      <a
+                        href={item.url_archivo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-slate-800 hover:text-[#022c22] active:text-[#022c22] visited:text-slate-800 transition-colors"
+                      >
+                        {item.titulo}
+                      </a>
                     </h2>
-                    {item.descripcion?.trim() ? (
-                      <p className="text-xs md:text-sm text-slate-600 line-clamp-4 leading-relaxed">{item.descripcion}</p>
-                    ) : null}
                   </div>
  
                   <a
@@ -152,29 +157,6 @@ export default function MarcoLegalPage() {
                   </a>
                 </article>
               ))}
-            </div>
-
-            <div className="mt-20 md:mt-32 bg-gradient-to-br from-[#022c22] to-[#011a14] rounded-[2rem] md:rounded-[3rem] p-8 md:p-20 text-center text-white relative overflow-hidden shadow-2xl border border-emerald-900/50">
-              <div className="absolute top-0 right-0 w-64 h-64 md:w-80 md:h-80 bg-emerald-500/10 rounded-full -mr-20 -mt-20 blur-2xl md:blur-3xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-48 h-48 md:w-64 md:h-64 bg-emerald-700/10 rounded-full -ml-20 -mb-20 blur-2xl md:blur-3xl pointer-events-none" />
-
-              <div className="relative z-10 max-w-2xl mx-auto space-y-6 md:space-y-8">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter">
-                  ¿Necesitas orientación <br /> sobre el{' '}
-                  <span className="text-emerald-400">marco legal?</span>
-                </h2>
-                <p className="text-emerald-100/70 text-sm md:text-lg leading-relaxed font-medium max-w-xl mx-auto">
-                  Los documentos se alojan en enlaces públicos gestionados por la Cámara. Para consultas específicas, contáctanos.
-                </p>
-                <div className="pt-4 md:pt-6">
-                  <Link
-                    to="/direccion"
-                    className="inline-block bg-emerald-500 text-[#022c22] w-full sm:w-auto px-8 py-4 md:px-12 md:py-5 rounded-full font-black text-xs md:text-sm uppercase tracking-[0.2em] hover:bg-white hover:scale-105 transition-colors transition-transform duration-300 shadow-[0_0_30px_-10px_rgba(16,185,129,0.5)] active:scale-95"
-                  >
-                    Contactar
-                  </Link>
-                </div>
-              </div>
             </div>
           </div>
         )}

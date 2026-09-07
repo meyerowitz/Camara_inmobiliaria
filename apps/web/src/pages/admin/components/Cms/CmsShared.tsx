@@ -1,8 +1,116 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
+import { Search, Plus, LayoutGrid, List } from 'lucide-react'
 import { API_URL } from '@/config/env'
 import { compressImage } from '@/utils/imageCompressor'
 
 export const API = API_URL
+
+export interface CmsPanelHeaderProps {
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
+  searchPlaceholder?: string
+  viewMode?: 'grid' | 'list'
+  onViewModeChange?: (mode: 'grid' | 'list') => void
+  actionButtonText?: string
+  onActionClick?: () => void
+  actionIcon?: React.ReactNode
+  extraControls?: React.ReactNode
+  className?: string
+}
+
+export const CmsPanelHeader = ({
+  icon,
+  title,
+  subtitle,
+  searchQuery,
+  onSearchChange,
+  searchPlaceholder = 'Buscar...',
+  viewMode,
+  onViewModeChange,
+  actionButtonText,
+  onActionClick,
+  actionIcon = <Plus size={16} />,
+  extraControls,
+  className = '',
+}: CmsPanelHeaderProps) => {
+  return (
+    <div className={`flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs ${className}`}>
+      {/* Título e Info */}
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100/60">
+          {icon}
+        </div>
+        <div>
+          <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight leading-tight">
+            {title}
+          </h2>
+          {subtitle && (
+            <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Controles: Búsqueda, Grid/List Toggle, Extra Controls, Botón de Acción */}
+      <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-1 max-w-2xl justify-end">
+        {onSearchChange !== undefined && (
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery || ''}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
+            />
+          </div>
+        )}
+
+        {onViewModeChange !== undefined && viewMode !== undefined && (
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl shrink-0 border border-slate-200/50">
+            <button
+              type="button"
+              onClick={() => onViewModeChange('grid')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'grid' ? 'bg-white text-emerald-700 shadow-xs font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
+              title="Vista en Cards Grid"
+            >
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onViewModeChange('list')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'list' ? 'bg-white text-emerald-700 shadow-xs font-bold' : 'text-slate-400 hover:text-slate-600'
+              }`}
+              title="Vista en Lista"
+            >
+              <List size={16} />
+            </button>
+          </div>
+        )}
+
+        {extraControls}
+
+        {actionButtonText && onActionClick && (
+          <button
+            type="button"
+            onClick={onActionClick}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 transition-all cursor-pointer shrink-0"
+          >
+            {actionIcon}
+            <span>{actionButtonText}</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 const getAuthHeaders = (extra: Record<string, string> = {}) => {
   return {
@@ -176,9 +284,9 @@ export const SkeletonDetail = () => (
 export const Loading = () => <SkeletonList />
 
 // ── Resize constants ───────────────────────────────────────────────────────────
-const LIST_MIN     = 200
-const LIST_MAX     = 560
-const LIST_DEFAULT = 320   // sensible starting width — room for titles + metadata
+const LIST_MIN     = 280
+const LIST_MAX     = 650
+const LIST_DEFAULT = 440   // Wider default starting width for titles and action badges
 
 export function ListDetail<T extends { id?: string | number }>({
   listHeader,
@@ -192,6 +300,7 @@ export function ListDetail<T extends { id?: string | number }>({
   setSelectedId,
   isEditing,
   setIsEditing,
+  hideNewButton,
 }: {
   listHeader?: React.ReactNode
   items: T[]
@@ -204,17 +313,32 @@ export function ListDetail<T extends { id?: string | number }>({
   setSelectedId: (id: string | number | null) => void
   isEditing?: boolean
   setIsEditing?: (val: boolean) => void
+  hideNewButton?: boolean
 }) {
   const selected    = items.find(i => String(i.id) === String(selectedId)) ?? null
   const showDetail  = !!(selected || selectedId === 'new')
 
-  // ── Column resize ───────────────────────────────────────────────────────────
-  const [listWidth, setListWidth] = useState(LIST_DEFAULT)
+  // ── Column resize & persistence ─────────────────────────────────────────────
+  const [listWidth, setListWidth] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('cms_list_width')
+      if (saved) {
+        const parsed = Number(saved)
+        if (!isNaN(parsed) && parsed >= LIST_MIN && parsed <= LIST_MAX) return parsed
+      }
+    }
+    return LIST_DEFAULT
+  })
   const [dragging,  setDragging]  = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const isDragging   = useRef(false)
   const startX       = useRef(0)
   const startW       = useRef(LIST_DEFAULT)
+  const currentW     = useRef(listWidth)
+
+  useEffect(() => {
+    currentW.current = listWidth
+  }, [listWidth])
 
   const onDividerDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true
@@ -231,7 +355,9 @@ export function ListDetail<T extends { id?: string | number }>({
       if (!isDragging.current || !containerRef.current) return
       const containerW = containerRef.current.getBoundingClientRect().width
       const delta = e.clientX - startX.current
-      setListWidth(Math.max(LIST_MIN, Math.min(startW.current + delta, Math.min(LIST_MAX, containerW - 200))))
+      const nextW = Math.max(LIST_MIN, Math.min(startW.current + delta, Math.min(LIST_MAX, containerW - 200)))
+      currentW.current = nextW
+      setListWidth(nextW)
     }
     const onUp = () => {
       if (!isDragging.current) return
@@ -239,6 +365,9 @@ export function ListDetail<T extends { id?: string | number }>({
       setDragging(false)
       document.body.style.cursor     = ''
       document.body.style.userSelect = ''
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cms_list_width', String(currentW.current))
+      }
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup',   onUp)
@@ -291,7 +420,7 @@ export function ListDetail<T extends { id?: string | number }>({
                   key={item.id}
                   onClick={() => setSelectedId(item.id ?? null)}
                   className={[
-                    'w-full text-left px-4 py-3 transition-colors duration-150 group cursor-pointer select-none',
+                    'w-full text-left px-2 py-2.5 transition-colors duration-150 group cursor-pointer select-none relative',
                     String(selectedId) === String(item.id)
                       ? 'bg-[#E9FAF4] border-l-2 border-[#00D084]'
                       : 'hover:bg-slate-50 border-l-2 border-transparent',
@@ -308,17 +437,19 @@ export function ListDetail<T extends { id?: string | number }>({
         </div>
 
         {/* + New button */}
-        <div className="p-4 border-t border-gray-100 bg-white">
-          <button
-            onClick={onNew}
-            className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] active:scale-[0.98] transition-colors transition-transform"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nuevo
-          </button>
-        </div>
+        {!hideNewButton && (
+          <div className="p-4 border-t border-gray-100 bg-white">
+            <button
+              onClick={onNew}
+              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00D084] text-white text-sm font-semibold hover:bg-[#00B870] active:scale-[0.98] transition-colors transition-transform"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Nuevo
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── DIVIDER ─────────────────────────────────────────────────────────── */}
